@@ -56,6 +56,11 @@ jobs:
         with:
           name: ThreatAtlas-Windows-MSI
           path: dist/*.msi
+  updater-tests:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: ./scripts/test-updater.ps1
   msi-install-test:
     needs: msi
     runs-on: windows-latest
