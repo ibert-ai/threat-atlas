@@ -13,7 +13,7 @@ extern uint32_t ta_height(void);
 @implementation ThreatAtlasSOCView
 - (instancetype)initWithFrame:(NSRect)frame isPreview:(BOOL)preview {
     self=[super initWithFrame:frame isPreview:preview];
-    if (self) self.animationTimeInterval=preview ? 1.0/10.0 : 1.0/20.0;
+    if (self) {self.animationTimeInterval=preview ? 1.0/10.0 : 1.0/20.0;self.session=ta_new();}
     return self;
 }
 - (void)dealloc {[_fallbackTimer invalidate];if (_session) ta_drop(_session);}
