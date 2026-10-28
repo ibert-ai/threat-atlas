@@ -12,6 +12,8 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - run: rustup toolchain install stable --profile minimal --component rustfmt --component clippy
+      - run: python3 scripts/version.py --check
+      - run: python3 scripts/test-version.py
       - run: cargo +stable fmt --all --check
       - run: cargo +stable test --workspace --locked
       - run: cargo +stable clippy --workspace --all-targets --locked -- -D warnings

@@ -1,7 +1,12 @@
-# SignPath Foundation application draft
+# SignPath Foundation application reference
 
-Publish the GitHub repository and an unsigned release first. Do not substitute
-an inaccessible/local URL or claim signing approval before it is granted.
+Application submitted 28 October 2026; approval is not yet confirmed. Public
+repository: https://github.com/ibert-ai/threat-atlas
+Published preview downloads: https://github.com/ibert-ai/threat-atlas/releases
+This reference records application information; it does not establish signing approval.
+
+The public repository and unsigned preview are available. Use their public URLs;
+do not substitute local links or claim signing approval before it is confirmed.
 
 - Project name: Threat Atlas SOC
 - Repository and homepage: the actual public GitHub repository URL
@@ -23,10 +28,12 @@ telemetry as an animated world map, activity counters, and recent observations. 
 runs natively on Windows and macOS and clearly indicates when its data feed is live,
 stale, or offline.
 
-Reputation (update with evidence after publishing):
-This is a new project preparing its first public GitHub release. It has been tested
-by its maintainer on Windows and macOS. It does not yet have public download
-statistics, independent reviews, or an established user community.
+Reputation:
+This is a new public open-source project with preview downloads and successful
+GitHub Actions builds, including Windows MSI installation/uninstallation tests.
+Maintainer testing has covered Windows and macOS; full acceptance of the latest
+macOS repair remains pending. Download statistics, independent reviews and user
+community size have not been evaluated.
 
 Enter the maintainer's real name and chosen account email. Review all terms and
 privacy consent personally. Approval is at SignPath's discretion, especially for

@@ -63,8 +63,8 @@ extern uint32_t ta_height(void);
 - (BOOL)hasConfigureSheet {return YES;}
 - (NSWindow *)configureSheet {
     self.options=[[NSPanel alloc] initWithContentRect:NSMakeRect(0,0,520,240) styleMask:NSWindowStyleMaskTitled backing:NSBackingStoreBuffered defer:NO];
-    self.options.title=@"Threat Atlas SOC";
-    NSTextField *text=[NSTextField wrappingLabelWithString:@"Native Rust SOC display • GreyNoise public telemetry\n\nNo browser, cookie approval, API key or account needed.\n\nLIVE means records arrived within 10 seconds. Routes expire after 6 seconds. Disconnections trigger automatic retry. The time shown is receipt time in UTC; the provider supplies no event timestamps.\n\nUse macOS settings for idle time and password requirements."];
+    self.options.title=[NSString stringWithFormat:@"Threat Atlas SOC %@", [NSBundle bundleForClass:self.class].infoDictionary[@"CFBundleShortVersionString"]];
+    NSTextField *text=[NSTextField wrappingLabelWithString:@"Native Rust SOC display • GreyNoise public telemetry\n\nNo browser, cookie approval, API key or account needed.\n\nLIVE means records arrived within 10 seconds. Routes expire after 6 seconds. Disconnections trigger automatic retry. The header shows UTC and system local time. Observation times are receipt times in UTC; the provider supplies no event timestamps.\n\nUse macOS settings for idle time and password requirements."];
     text.frame=NSMakeRect(20,55,480,170);[self.options.contentView addSubview:text];
     NSButton *done=[NSButton buttonWithTitle:@"Done" target:self action:@selector(closeOptions:)];done.frame=NSMakeRect(405,15,95,32);[self.options.contentView addSubview:done];return self.options;
 }

@@ -2133,7 +2133,7 @@ dependencies = [
 
 [[package]]
 name = "threat-atlas"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "softbuffer",
  "tao",
@@ -2143,7 +2143,7 @@ dependencies = [
 
 [[package]]
 name = "threat-atlas-core"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "chrono",
  "fontdue",

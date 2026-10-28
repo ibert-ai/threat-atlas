@@ -2,6 +2,9 @@
 set -euo pipefail
 export MACOSX_DEPLOYMENT_TARGET=12.0
 cd "$(dirname "$0")/.."
+python3 scripts/version.py --check
+product_version=$(python3 scripts/version.py --version)
+product_build=$(python3 scripts/version.py --build)
 stage=$(mktemp -d "${TMPDIR:-/tmp}/threatatlas-build.XXXXXX")
 source_dir="$PWD"
 trap 'rm -rf "$stage"' EXIT
@@ -44,14 +47,14 @@ xattr -cr dist/ThreatAtlasSOC.saver
 codesign "${sign_options[@]}" dist/ThreatAtlasSOC.saver
 codesign --verify --strict dist/ThreatAtlasSOC.saver
 mkdir -p "dist/Threat Atlas SOC.app/Contents/MacOS" "dist/Threat Atlas SOC.app/Contents/Resources"
-cat > "dist/Threat Atlas SOC.app/Contents/Info.plist" <<'PLIST'
+cat > "dist/Threat Atlas SOC.app/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><dict>
 <key>CFBundleIdentifier</key><string>dev.threatatlas.preview.v4</string>
 <key>CFBundleName</key><string>Threat Atlas SOC</string>
 <key>CFBundleExecutable</key><string>ThreatAtlasPreview</string>
 <key>CFBundlePackageType</key><string>APPL</string>
-<key>CFBundleShortVersionString</key><string>0.3.0</string>
-<key>CFBundleVersion</key><string>6</string>
+<key>CFBundleShortVersionString</key><string>${product_version}</string>
+<key>CFBundleVersion</key><string>${product_build}</string>
 <key>LSMinimumSystemVersion</key><string>12.0</string>
 <key>NSHighResolutionCapable</key><true/>
 </dict></plist>

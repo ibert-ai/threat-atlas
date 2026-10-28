@@ -44,7 +44,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         .map(|s| s.to_ascii_lowercase())
         .unwrap_or_else(|| "/c".into());
     if command.starts_with("/c") || command.starts_with("-c") {
-        let message: Vec<u16> = "Threat Atlas 0.2 — Native SOC display\n\nLive GreyNoise public threat-map telemetry.\nNo cookies, browser, account or API key required.\n\nGreen LIVE means records arrived within 10 seconds.\nRoutes expire after 6 seconds. Offline feeds reconnect automatically.\nTimes are local receipt times displayed in UTC.\n\nUse Windows Screen Saver Settings for idle time and lock behavior.".encode_utf16().chain(Some(0)).collect();
+        let message: Vec<u16> = format!("Threat Atlas {} — Native SOC display\n\nLive GreyNoise public threat-map telemetry.\nNo cookies, browser, account or API key required.\n\nGreen LIVE means records arrived within 10 seconds.\nRoutes expire after 6 seconds. Offline feeds reconnect automatically.\nThe header shows UTC and system local time.\nObservation times are receipt times in UTC.\n\nUse Windows Screen Saver Settings for idle time and lock behavior.", env!("CARGO_PKG_VERSION")).encode_utf16().chain(Some(0)).collect();
         let title: Vec<u16> = "Threat Atlas".encode_utf16().chain(Some(0)).collect();
         unsafe {
             MessageBoxW(
