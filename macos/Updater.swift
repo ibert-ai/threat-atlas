@@ -85,6 +85,13 @@ func download(_ url: URL, to file: URL, limit: Int) throws {
     guard let result = outcome.value else { throw UpdateError.invalid("Download did not complete") }; try result.get()
 }
 func log(_ message: String) { try? fm.createDirectory(at: status.deletingLastPathComponent(), withIntermediateDirectories: true); try? "\(Date()): \(message)\n".write(to: status, atomically: true, encoding: .utf8) }
+func saverIsBusy() throws -> Bool {
+    for name in ["ScreenSaverEngine", "legacyScreenSaver", "legacyScreenSaver-x86_64", "ThreatAtlasPreview", "System Settings"] {
+        let check = Process(); check.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep"); check.arguments = ["-x", name]; check.standardOutput = FileHandle.nullDevice
+        try check.run(); check.waitUntilExit(); if check.terminationStatus == 0 { return true }
+    }
+    return false
+}
 func main() throws {
     let mode = CommandLine.arguments.dropFirst().first ?? "--check"
     if mode == "--inspect-archive", CommandLine.arguments.count == 3 {
@@ -118,11 +125,7 @@ func main() throws {
         try data.write(to: agent, options: .atomic)
         try run("/bin/launchctl", ["bootstrap", "gui/\(uid)", agent.path]); log("Automatic updates enabled"); return
     }
-    // launchd serializes invocations. Defer while the saver, settings, or preview might load bundles.
-    for name in ["ScreenSaverEngine", "legacyScreenSaver", "legacyScreenSaver-x86_64", "ThreatAtlasPreview", "System Settings"] {
-        let check = Process(); check.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep"); check.arguments = ["-x", name]; check.standardOutput = FileHandle.nullDevice
-        try check.run(); check.waitUntilExit(); if check.terminationStatus == 0 { log("Update deferred while screen saver/settings/preview is running"); return }
-    }
+    if try saverIsBusy() { log("Update deferred while screen saver/settings/preview is running"); return }
     let stage = fm.temporaryDirectory.appendingPathComponent("ThreatAtlas-update-\(UUID().uuidString)")
     try fm.createDirectory(at: stage, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700]); defer { try? fm.removeItem(at: stage) }
     let metadata = stage.appendingPathComponent("release.json")
@@ -145,6 +148,7 @@ func main() throws {
     _ = try signedTeam(newSaver, identifier: "dev.threatatlas.soc.screensaver", team: team)
     guard try version(bundleVersion(newApp)) == next, try version(bundleVersion(newSaver)) == next else { throw UpdateError.invalid("Release and bundle versions differ") }
     try run("/usr/sbin/spctl", ["--assess", "--type", "execute", newApp.path])
+    if try saverIsBusy() { log("Update deferred: screen saver/settings/preview started during download"); return }
     // Stage on each destination volume, then rename with rollback on failure.
     let pairs = [(newSaver, saver), (newApp, app)]
     var backups: [(URL, URL)] = []

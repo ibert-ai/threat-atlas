@@ -20,6 +20,9 @@ try {
         Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
         exit 0
     }
+    # A PS7 caller can pass a module search path containing incompatible PS7 modules to PS5.1.
+    # Load Authenticode from this host's own trusted installation instead of that inherited path.
+    Import-Module (Join-Path $PSHOME 'Modules/Microsoft.PowerShell.Security/Microsoft.PowerShell.Security.psd1') -ErrorAction Stop
     $publisher = Trusted-Signature $saver
     if ($Mode -eq 'Enable') {
         $script = Join-Path $install 'Update-ThreatAtlas.ps1'
