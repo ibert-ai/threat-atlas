@@ -14,7 +14,8 @@ common=[(root/n,n) for n in ['README.md','LICENSE','SECURITY.md','PRIVACY.md','T
 mac=[]
 for n in ['ThreatAtlasSOC.saver','Threat Atlas SOC.app']:
  mac += [(p,p.relative_to(root/'dist')) for p in (root/'dist'/n).rglob('*') if p.is_file()]
-if mac:pack('ThreatAtlas-macOS-v0.3.0.zip',mac+common)
+# Keep the stable updater asset name; legal notices are inside the signed app.
+if mac:pack('ThreatAtlas-macOS.zip',mac)
 if (root/'dist/ThreatAtlas.scr').exists():pack('ThreatAtlas-Windows-v0.3.0.zip',[(root/'dist/ThreatAtlas.scr','ThreatAtlas.scr')]+common)
 # The source release must use the same sanitized allowlist as the GitHub export.
 with tempfile.TemporaryDirectory(prefix='threatatlas-source-') as temporary:

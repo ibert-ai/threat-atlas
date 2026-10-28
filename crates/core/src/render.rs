@@ -245,23 +245,13 @@ impl Renderer {
             self.dot(p.0, p.1, 3., c, 240);
             self.dot(b.0, b.1, 2., c, alpha);
         }
-        let sec = s.now_ms / 1000;
+        let (utc, local) = crate::clock::labels(s.now_ms);
+        self.text(1044, 24, 18, &utc, [218, 236, 242]);
+        self.text(1044, 50, 18, &local, [218, 236, 242]);
         self.text(
-            1050,
-            36,
-            22,
-            &format!(
-                "{:02}:{:02}:{:02} UTC",
-                sec / 3600 % 24,
-                sec / 60 % 60,
-                sec % 60
-            ),
-            [218, 236, 242],
-        );
-        self.text(
-            1050,
-            75,
-            16,
+            1044,
+            80,
+            14,
             &format!("FEED / {}", s.status),
             if s.status == "LIVE" {
                 color(2)

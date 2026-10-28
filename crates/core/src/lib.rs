@@ -1,3 +1,4 @@
+pub mod clock;
 pub mod feed;
 pub mod render;
 use feed::{Feed, Snapshot};
