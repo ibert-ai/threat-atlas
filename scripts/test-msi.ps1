@@ -23,7 +23,7 @@ try {
         $check = Start-Process powershell.exe -ArgumentList "-NoProfile -NonInteractive -File `"$updater`" -Mode Enable" -Wait -PassThru
         if ($check.ExitCode -eq 0) { throw 'Unsigned build enabled automatic updates' }
         $status = Get-Content (Join-Path $installDir 'update-status.txt') -Raw
-        if ($status -notmatch 'trusted code signature') { throw 'Unexpected unsigned-build failure' }
+        if ($status -notmatch 'trusted code signature') { throw "Unexpected unsigned-build failure: $status" }
         Remove-Item (Join-Path $installDir 'update-status.txt')
     }
     & (Join-Path $installDir 'Update-ThreatAtlas.ps1') -Mode Disable
