@@ -1,0 +1,11 @@
+/target/
+.DS_Store
+
+# Local credentials and signing material
+.env
+.env.*
+*.pfx
+*.p12
+*.key
+*.pem
+__pycache__/

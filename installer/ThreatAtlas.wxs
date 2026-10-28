@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" Name="Threat Atlas SOC" Language="1033" Version="0.3.0"
+           Manufacturer="Ibert Consulting" UpgradeCode="9D690E47-8F57-4B7C-BB7E-C9DA787FE981">
+    <Package InstallerVersion="500" Compressed="yes" InstallScope="perUser" />
+    <MajorUpgrade DowngradeErrorMessage="A newer Threat Atlas version is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+    <Property Id="WINDOWSBUILD">
+      <RegistrySearch Id="WindowsBuildSearch" Root="HKLM" Key="SOFTWARE\Microsoft\Windows NT\CurrentVersion" Name="CurrentBuildNumber" Type="raw" Win64="yes" />
+    </Property>
+    <Condition Message="Threat Atlas requires 64-bit Windows 10 or later.">Installed OR (VersionNT64 AND WINDOWSBUILD &gt;= 10240)</Condition>
+    <Property Id="ARPNOMODIFY" Value="1" />
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="LocalAppDataFolder">
+        <Directory Id="INSTALLFOLDER" Name="ThreatAtlas">
+          <Component Id="SaverComponent" Guid="FA5C69B3-1EA6-4B5C-9375-793AABCD1889" Win64="yes">
+            <File Id="ScreenSaver" Source="dist/ThreatAtlas.scr" KeyPath="no" />
+            <RegistryValue Root="HKCU" Key="Software\Ibert Consulting\ThreatAtlas" Name="InstallPath" Value="[INSTALLFOLDER]" Type="string" KeyPath="yes" />
+          </Component>
+          <Component Id="DocsComponent" Guid="E85DA2DB-882A-4E0B-908F-D1C4CC1E8760" Win64="yes">
+            <File Id="SetupGuide" Source="installer/INSTALL.txt" KeyPath="no" />
+            <File Id="ThirdPartyNotices" Source="THIRD-PARTY-NOTICES.txt" />
+            <File Id="FontLicense" Source="assets/FONT-LICENSE.txt" />
+            <File Id="AssetAttribution" Source="assets/ATTRIBUTION.md" />
+            <File Id="PrivacyPolicy" Source="PRIVACY.md" />
+            <File Id="LicenseFile" Source="LICENSE" Name="LICENSE.txt" />
+            <RegistryValue Root="HKCU" Key="Software\Ibert Consulting\ThreatAtlas" Name="DocsVersion" Value="0.3.0" Type="string" KeyPath="yes" />
+          </Component>
+        </Directory>
+      </Directory>
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="AppMenu" Name="Threat Atlas SOC">
+          <Component Id="MenuComponent" Guid="DA3F7A39-998D-471B-A138-DB74AE67F0E4" Win64="yes">
+            <Shortcut Id="SelectSaver" Name="Set up Threat Atlas" Target="[System64Folder]rundll32.exe" Arguments="desk.cpl,InstallScreenSaver &quot;[#ScreenSaver]&quot;" WorkingDirectory="INSTALLFOLDER" />
+            <Shortcut Id="PreviewSaver" Name="Preview Threat Atlas" Target="[#ScreenSaver]" Arguments="--windowed" WorkingDirectory="INSTALLFOLDER" />
+            <Shortcut Id="ReadGuide" Name="Installation instructions" Target="[#SetupGuide]" WorkingDirectory="INSTALLFOLDER" />
+            <RemoveFolder Id="RemoveAppMenu" On="uninstall" />
+            <RegistryValue Root="HKCU" Key="Software\Ibert Consulting\ThreatAtlas" Name="MenuInstalled" Value="1" Type="integer" KeyPath="yes" />
+          </Component>
+        </Directory>
+      </Directory>
+      <Directory Id="System64Folder" />
+    </Directory>
+    <InstallExecuteSequence>
+      <RemoveExistingProducts After="InstallInitialize" />
+    </InstallExecuteSequence>
+    <Feature Id="Complete" Title="Threat Atlas SOC" Level="1">
+      <ComponentRef Id="SaverComponent" /><ComponentRef Id="DocsComponent" /><ComponentRef Id="MenuComponent" />
+    </Feature>
+  </Product>
+</Wix>

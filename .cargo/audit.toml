@@ -1,0 +1,11 @@
+[advisories]
+# Reviewed 2026-10-28; see docs/QUALITY.md. Revisit on dependency updates.
+ignore = [
+  # Linux-only GTK branch of Tao; not linked into either supported target.
+  "RUSTSEC-2024-0429",
+  # Linux-only GTK build macro; not used by Windows/macOS builds.
+  "RUSTSEC-2024-0370",
+  # fontdue's parser for the immutable, bundled font only; no user/network fonts.
+  # No known exploit is reported, but upstream maintenance is a release risk.
+  "RUSTSEC-2026-0192",
+]

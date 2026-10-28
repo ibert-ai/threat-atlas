@@ -1,0 +1,49 @@
+#import <ScreenSaver/ScreenSaver.h>
+extern void *ta_new(void);
+extern const unsigned char *ta_frame(void *session);
+extern void ta_drop(void *session);
+extern uint32_t ta_width(void);
+extern uint32_t ta_height(void);
+
+@interface ThreatAtlasView : ScreenSaverView
+@property(nonatomic) void *session;
+@property(nonatomic, strong) NSPanel *options;
+@end
+@implementation ThreatAtlasView
+- (instancetype)initWithFrame:(NSRect)frame isPreview:(BOOL)preview {
+    self=[super initWithFrame:frame isPreview:preview];
+    if (self) self.animationTimeInterval=preview ? 1.0/10.0 : 1.0/20.0;
+    return self;
+}
+- (void)dealloc {if (_session) ta_drop(_session);}
+- (void)startAnimation {[super startAnimation];if (!self.session) self.session=ta_new();[self setNeedsDisplay:YES];}
+- (void)stopAnimation {if (self.session) {ta_drop(self.session);self.session=NULL;}[super stopAnimation];}
+- (void)animateOneFrame {[self setNeedsDisplay:YES];}
+- (void)drawRect:(NSRect)dirty {
+    [[NSColor colorWithCalibratedRed:6.0/255 green:12.0/255 blue:20.0/255 alpha:1] setFill];NSRectFill(self.bounds);
+    if (!self.session) return;
+    const unsigned char *bytes=ta_frame(self.session);if (!bytes) return;
+    size_t w=ta_width(),h=ta_height();
+    CGColorSpaceRef space=CGColorSpaceCreateDeviceRGB();
+    CGDataProviderRef provider=CGDataProviderCreateWithData(NULL,bytes,w*h*4,NULL);
+    CGImageRef image=CGImageCreate(w,h,8,32,w*4,space,kCGImageAlphaPremultipliedLast|kCGBitmapByteOrder32Big,provider,NULL,false,kCGRenderingIntentDefault);
+    CGFloat scale=MIN(self.bounds.size.width/w,self.bounds.size.height/h);
+    CGFloat dw=w*scale,dh=h*scale;
+    CGContextRef context=NSGraphicsContext.currentContext.CGContext;
+    CGContextSaveGState(context);
+    CGContextTranslateCTM(context,(self.bounds.size.width-dw)/2,(self.bounds.size.height-dh)/2);
+    CGContextSetInterpolationQuality(context,kCGInterpolationHigh);
+    CGContextDrawImage(context,CGRectMake(0,0,dw,dh),image);
+    CGContextRestoreGState(context);
+    CGImageRelease(image);CGDataProviderRelease(provider);CGColorSpaceRelease(space);
+}
+- (BOOL)hasConfigureSheet {return YES;}
+- (NSWindow *)configureSheet {
+    self.options=[[NSPanel alloc] initWithContentRect:NSMakeRect(0,0,520,240) styleMask:NSWindowStyleMaskTitled backing:NSBackingStoreBuffered defer:NO];
+    self.options.title=@"Threat Atlas 0.2";
+    NSTextField *text=[NSTextField wrappingLabelWithString:@"Native Rust SOC display • GreyNoise public telemetry\n\nNo browser, cookie approval, API key or account needed.\n\nLIVE means records arrived within 10 seconds. Routes expire after 6 seconds. Disconnections trigger automatic retry. The time shown is receipt time in UTC; the provider supplies no event timestamps.\n\nUse macOS settings for idle time and password requirements."];
+    text.frame=NSMakeRect(20,55,480,170);[self.options.contentView addSubview:text];
+    NSButton *done=[NSButton buttonWithTitle:@"Done" target:self action:@selector(closeOptions:)];done.frame=NSMakeRect(405,15,95,32);[self.options.contentView addSubview:done];return self.options;
+}
+- (void)closeOptions:(id)sender {[self.options.sheetParent endSheet:self.options];}
+@end
