@@ -20,6 +20,13 @@ Screen Saver → Custom → Other → Show All and select **Threat Atlas SOC**. 
 also contains **Threat Atlas SOC.app**, a windowed preview. The universal bundle
 supports Intel and Apple Silicon. Keep bundles zipped when syncing through cloud
 storage: Finder metadata on unpacked bundles can invalidate ad-hoc signatures.
+If an upgrade shows a blank **Threat Atlas** preview, check that you selected
+**Threat Atlas SOC**, rather than the old 0.2 bundle. Older copies named
+`ThreatAtlas.saver` may remain in both `~/Library/Screen Savers` and
+`/Library/Screen Savers`; back them up before removing duplicates. The new bundle
+uses a distinct class/identifier and includes screenshot thumbnails. Reopen
+System Settings after installing. Automatic updating requires a trusted signed
+release; it is unavailable in the current unsigned/ad-hoc previews.
 
 Local builds are unsigned on Windows and ad-hoc signed on macOS. Public releases
 need trusted signing; see [signing instructions](docs/SIGNING.md). Do not disable

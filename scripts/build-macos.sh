@@ -14,7 +14,8 @@ if [[ "${1:-}" == "--universal" ]]; then
 else
   case "$(uname -m)" in arm64) targets=(aarch64-apple-darwin);; x86_64) targets=(x86_64-apple-darwin);; *) exit 1;; esac
 fi
-mkdir -p dist/ThreatAtlasSOC.saver/Contents/MacOS
+mkdir -p dist/ThreatAtlasSOC.saver/Contents/MacOS dist/ThreatAtlasSOC.saver/Contents/Resources
+cp macos/thumbnail*.png dist/ThreatAtlasSOC.saver/Contents/Resources/
 cp macos/Info.plist dist/ThreatAtlasSOC.saver/Contents/
 sign_identity="${MACOS_SIGN_IDENTITY:--}"
 sign_options=(--force --sign "$sign_identity")
@@ -50,6 +51,7 @@ cat > "dist/Threat Atlas SOC.app/Contents/Info.plist" <<'PLIST'
 <key>CFBundleExecutable</key><string>ThreatAtlasPreview</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleShortVersionString</key><string>0.3.0</string>
+<key>CFBundleVersion</key><string>5</string>
 <key>LSMinimumSystemVersion</key><string>12.0</string>
 <key>NSHighResolutionCapable</key><true/>
 </dict></plist>
