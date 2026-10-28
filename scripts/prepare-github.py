@@ -9,7 +9,7 @@ destination = Path(sys.argv[1]).resolve()
 if destination.exists():
     raise SystemExit('Destination must be new; existing repositories are never overwritten.')
 destination.mkdir(parents=True)
-folders = ['.cargo', '.github', 'assets', 'crates', 'macos', 'scripts', 'installer', 'docs']
+folders = ['.cargo', '.github', 'assets', 'crates', 'macos', 'scripts', 'installer', 'docs', 'updater']
 files = ['Cargo.toml', 'Cargo.lock', 'README.md', 'LICENSE', 'SECURITY.md', 'PRIVACY.md', 'THIRD-PARTY-NOTICES.txt', '.gitignore']
 for name in folders:
     shutil.copytree(root/name, destination/name, ignore=shutil.ignore_patterns('__pycache__', '.DS_Store'))

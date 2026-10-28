@@ -2,7 +2,7 @@
 
 Native Rust SOC screensaver for macOS 12+ and Windows 10/11 x64. It draws a world
 map, animated routes, receipt counters and a recent-observations log from the
-GreyNoise public threat-map feed. No embedded website, cookies, login or API key.
+GreyNoise public threat-map feed. The header shows both UTC and the computer's local time, including its current UTC offset, using the operating system's timezone and daylight-saving rules. No embedded website, cookies, login or API key.
 
 ## Install
 
@@ -25,9 +25,24 @@ Local builds are unsigned on Windows and ad-hoc signed on macOS. Public releases
 need trusted signing; see [signing instructions](docs/SIGNING.md). Do not disable
 OS security protections to run an untrusted download.
 
+## Automatic updates (next signed release)
+
+After a one-time install of a trusted signed build, enable automatic updates:
+- **Windows:** Start Menu → Threat Atlas SOC → **Enable automatic updates**.
+  A per-user task checks daily while signed in; **Check for updates** runs it now.
+- **macOS:** open the preview app and choose **Enable automatic updates** from
+  its application menu. This installs the preview in `~/Applications` and a
+  per-user LaunchAgent, which checks at login and every 24 hours.
+
+Updates download and install in place without repeating the installation steps.
+Checks use stable releases only and defer while the screen saver is running.
+They preserve screen saver selection, idle time and password settings.
+Unsigned/ad-hoc preview builds cannot enable updates. See [update design and
+release requirements](docs/UPDATES.md), including signing-key rotation and removal.
+
 ## Data and privacy
 
-The only runtime network destination is GreyNoise's public threat-map WebSocket,
+The telemetry runtime connects to GreyNoise's public threat-map WebSocket,
 `wss://threat-map-api.greynoise.io/ws`, using certificate-validated TLS. GreyNoise
 receives your IP address and normal connection metadata. No analytics or observed
 IP-address scanning is added. See [GreyNoise's privacy policy](https://www.greynoise.io/privacy-policy).

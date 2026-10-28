@@ -21,7 +21,7 @@ for row in table('Registry'):
 for row in table('Component'):
     assert int(row['Attributes']) & 256, 'Expected 64-bit components'
 shortcuts = table('Shortcut')
-assert len(shortcuts) == 3
+assert len(shortcuts) == 6
 assert any(r['Target'] == '[#ScreenSaver]' and r['Arguments'] == '--windowed' for r in shortcuts)
 seq = {r['Action']: int(r['Sequence']) for r in table('InstallExecuteSequence')}
 assert seq['InstallInitialize'] < seq['RemoveExistingProducts'] < seq['InstallFiles'], 'Upgrade must allow rollback'

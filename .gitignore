@@ -9,3 +9,6 @@
 *.key
 *.pem
 __pycache__/
+
+# Generated installers and bundles
+/dist/

@@ -20,3 +20,11 @@ GitHub handles repository downloads, issues and discussions under GitHub's own
 privacy policy. Signing providers process release artifacts and maintainer account
 information under their own policies. This policy does not claim that third-party
 services collect no data. Changes to network behavior should update this policy.
+
+If you enable automatic updates, a separate per-user background task checks the
+public GitHub releases API at login/daily (macOS) or daily while signed in
+(Windows). It downloads stable updates from GitHub and its release-asset CDN over
+HTTPS, verifies publisher code signatures locally, and installs them. GitHub/CDN
+operators receive your IP address and normal request metadata. No account/token
+is sent. A local status file records the latest result; it is not uploaded.
+Disable updates from the preview app menu (macOS) or Start Menu (Windows).

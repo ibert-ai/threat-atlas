@@ -18,6 +18,7 @@
             <RegistryValue Root="HKCU" Key="Software\Ibert Consulting\ThreatAtlas" Name="InstallPath" Value="[INSTALLFOLDER]" Type="string" KeyPath="yes" />
           </Component>
           <Component Id="DocsComponent" Guid="E85DA2DB-882A-4E0B-908F-D1C4CC1E8760" Win64="yes">
+            <File Id="UpdateScript" Source="updater/Update-ThreatAtlas.ps1" KeyPath="no" />
             <File Id="SetupGuide" Source="installer/INSTALL.txt" KeyPath="no" />
             <File Id="ThirdPartyNotices" Source="THIRD-PARTY-NOTICES.txt" />
             <File Id="FontLicense" Source="assets/FONT-LICENSE.txt" />
@@ -33,6 +34,9 @@
           <Component Id="MenuComponent" Guid="DA3F7A39-998D-471B-A138-DB74AE67F0E4" Win64="yes">
             <Shortcut Id="SelectSaver" Name="Set up Threat Atlas" Target="[System64Folder]rundll32.exe" Arguments="desk.cpl,InstallScreenSaver &quot;[#ScreenSaver]&quot;" WorkingDirectory="INSTALLFOLDER" />
             <Shortcut Id="PreviewSaver" Name="Preview Threat Atlas" Target="[#ScreenSaver]" Arguments="--windowed" WorkingDirectory="INSTALLFOLDER" />
+            <Shortcut Id="EnableUpdates" Name="Enable automatic updates" Target="[System64Folder]WindowsPowerShell\v1.0\powershell.exe" Arguments="-NoProfile -File &quot;[#UpdateScript]&quot; -Mode Enable" WorkingDirectory="INSTALLFOLDER" />
+            <Shortcut Id="DisableUpdates" Name="Disable automatic updates" Target="[System64Folder]WindowsPowerShell\v1.0\powershell.exe" Arguments="-NoProfile -File &quot;[#UpdateScript]&quot; -Mode Disable" WorkingDirectory="INSTALLFOLDER" />
+            <Shortcut Id="CheckUpdates" Name="Check for updates" Target="[System64Folder]WindowsPowerShell\v1.0\powershell.exe" Arguments="-NoProfile -File &quot;[#UpdateScript]&quot; -Mode Check" WorkingDirectory="INSTALLFOLDER" />
             <Shortcut Id="ReadGuide" Name="Installation instructions" Target="[#SetupGuide]" WorkingDirectory="INSTALLFOLDER" />
             <RemoveFolder Id="RemoveAppMenu" On="uninstall" />
             <RegistryValue Root="HKCU" Key="Software\Ibert Consulting\ThreatAtlas" Name="MenuInstalled" Value="1" Type="integer" KeyPath="yes" />

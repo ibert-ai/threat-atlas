@@ -5,7 +5,7 @@ cd "$(dirname "$0")/.."
 stage=$(mktemp -d "${TMPDIR:-/tmp}/threatatlas-build.XXXXXX")
 source_dir="$PWD"
 trap 'rm -rf "$stage"' EXIT
-cp -R Cargo.toml Cargo.lock .cargo crates assets macos "$stage/"
+cp -R Cargo.toml Cargo.lock LICENSE PRIVACY.md THIRD-PARTY-NOTICES.txt .cargo crates assets macos "$stage/"
 cd "$stage"
 # Build for the current architecture, or pass --universal for both architectures.
 if [[ "${1:-}" == "--universal" ]]; then
@@ -22,14 +22,17 @@ if [[ "$sign_identity" != "-" ]]; then
   sign_options+=(--options runtime --timestamp)
 fi
 binaries=()
+updaters=()
 for target in "${targets[@]}"; do
   cargo build --locked --release -p threat-atlas-core --target "$target"
   case "$target" in aarch64*) arch=arm64;; *) arch=x86_64;; esac
   clang -arch "$arch" -mmacosx-version-min=12.0 -fobjc-arc -bundle \
     macos/ThreatAtlasView.m "${CARGO_TARGET_DIR:-target}/$target/release/libthreat_atlas_core.a" \
-    -framework ScreenSaver -framework Cocoa -framework CoreGraphics -framework Security \
+    -framework ScreenSaver -framework Cocoa -framework CoreGraphics -framework CoreFoundation -framework Security \
     -framework SystemConfiguration -liconv -o "dist/ThreatAtlas-$arch"
   binaries+=("dist/ThreatAtlas-$arch")
+  swiftc -target "$arch-apple-macos12" macos/Updater.swift -o "dist/Updater-$arch"
+  updaters+=("dist/Updater-$arch")
 done
 if [[ ${#binaries[@]} == 1 ]]; then
   cp "${binaries[0]}" dist/ThreatAtlasSOC.saver/Contents/MacOS/ThreatAtlas
@@ -51,8 +54,11 @@ cat > "dist/Threat Atlas SOC.app/Contents/Info.plist" <<'PLIST'
 <key>NSHighResolutionCapable</key><true/>
 </dict></plist>
 PLIST
+lipo -create "${updaters[@]}" -output "dist/Threat Atlas SOC.app/Contents/MacOS/ThreatAtlasUpdater"
+codesign "${sign_options[@]}" "dist/Threat Atlas SOC.app/Contents/MacOS/ThreatAtlasUpdater"
 clang -arch arm64 -arch x86_64 -mmacosx-version-min=12.0 -fobjc-arc macos/Preview.m -framework Cocoa -framework ScreenSaver -o "dist/Threat Atlas SOC.app/Contents/MacOS/ThreatAtlasPreview"
 ditto dist/ThreatAtlasSOC.saver "dist/Threat Atlas SOC.app/Contents/Resources/ThreatAtlasSOC.saver"
+cp LICENSE PRIVACY.md THIRD-PARTY-NOTICES.txt assets/FONT-LICENSE.txt assets/ATTRIBUTION.md "dist/Threat Atlas SOC.app/Contents/Resources/"
 xattr -cr "dist/Threat Atlas SOC.app"
 codesign "${sign_options[@]}" "dist/Threat Atlas SOC.app"
 codesign --verify --strict "dist/Threat Atlas SOC.app"
