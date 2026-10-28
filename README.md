@@ -4,6 +4,10 @@ Native Rust SOC screensaver for macOS 12+ and Windows 10/11 x64. It draws a worl
 map, animated routes, receipt counters and a recent-observations log from the
 GreyNoise public threat-map feed. No embedded website, cookies, login or API key.
 
+![Threat Atlas SOC macOS preview showing live telemetry, world map, animated routes and observation counters](docs/images/threat-atlas-macos.png)
+
+*Captured macOS preview with live GreyNoise telemetry. Counters represent received records.*
+
 ## Install
 
 **Windows:** use `ThreatAtlas-0.3.0-x64.msi`. The per-user installer copies the
