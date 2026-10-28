@@ -2,6 +2,18 @@
 $ErrorActionPreference = 'Stop'
 $script = Join-Path $PSScriptRoot '../updater/Update-ThreatAtlas.ps1'
 $fixture = Join-Path ([IO.Path]::GetTempPath()) ('ThreatAtlas-test-' + [guid]::NewGuid())
+# Load the real version parser without running the updater's platform side effects.
+$tokens = $null; $parseErrors = $null
+$ast = [System.Management.Automation.Language.Parser]::ParseFile($script, [ref]$tokens, [ref]$parseErrors)
+if ($parseErrors.Count) { throw ($parseErrors | Out-String) }
+$definition = $ast.Find({ param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Stable-Version' }, $true)
+. ([scriptblock]::Create($definition.Extent.Text))
+if ((Stable-Version 'v1.10.0') -le (Stable-Version '1.9.0')) { throw 'Version ordering failed' }
+foreach ($invalid in 'v1.0.0-rc.1', '1.2', '../1.0.0', '1.0.0.1') {
+    $rejected = $false
+    try { [void](Stable-Version $invalid) } catch { $rejected = $true }
+    if (!$rejected) { throw "Accepted invalid version: $invalid" }
+}
 $originalLocalAppData = $env:LOCALAPPDATA
 try {
     $env:LOCALAPPDATA = $fixture

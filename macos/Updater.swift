@@ -86,7 +86,7 @@ func download(_ url: URL, to file: URL, limit: Int) throws {
 }
 func log(_ message: String) { try? fm.createDirectory(at: status.deletingLastPathComponent(), withIntermediateDirectories: true); try? "\(Date()): \(message)\n".write(to: status, atomically: true, encoding: .utf8) }
 func saverIsBusy() throws -> Bool {
-    for name in ["ScreenSaverEngine", "legacyScreenSaver", "legacyScreenSaver-x86_64", "ThreatAtlasPreview", "System Settings"] {
+    for name in ["ScreenSaverEngine", "legacyScreenSaver", "legacyScreenSaver-x86_64", "ThreatAtlasPreview", "System Settings", "System Preferences"] {
         let check = Process(); check.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep"); check.arguments = ["-x", name]; check.standardOutput = FileHandle.nullDevice
         try check.run(); check.waitUntilExit(); if check.terminationStatus == 0 { return true }
     }
