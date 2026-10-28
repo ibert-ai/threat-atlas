@@ -19,6 +19,10 @@ with tempfile.TemporaryDirectory(prefix='threatatlas-versions-') as folder:
         assert (result.returncode == 0) == succeeds, result.stdout + result.stderr
         return result.stdout.strip()
     run('--check')
+    # Simulate a Windows core.autocrlf checkout, including generated plist/XML.
+    for path in stage.rglob('*'):
+        if path.is_file(): path.write_bytes(path.read_bytes().replace(b'\r\n', b'\n').replace(b'\n', b'\r\n'))
+    run('--check')
     manifest = json.loads((stage/'version.json').read_text())
     manifest.update(version='0.4.1', build=8, prerelease='rc.2')
     (stage/'version.json').write_text(json.dumps(manifest))

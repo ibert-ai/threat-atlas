@@ -55,7 +55,8 @@ def main():
         if getattr(args, flag): print(value); return
     stale = []
     for path, expected in generated():
-        if path.read_bytes() != expected:
+        # Git may check text out as CRLF on Windows; that is not version drift.
+        if path.read_bytes().replace(b'\r\n', b'\n') != expected:
             stale.append(str(path.relative_to(ROOT)))
             if args.write: path.write_bytes(expected)
     if stale and not args.write: parser.exit(1, 'Stale version metadata: ' + ', '.join(stale) + '\nRun python3 scripts/version.py --write\n')
