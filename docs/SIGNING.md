@@ -1,5 +1,13 @@
 # Release signing
 
+## Current project status
+
+Official 0.4.0 was published without trusted signing. Windows artifacts are
+unsigned; macOS bundles are ad-hoc signed and not notarized. Stable release
+status does not mean a verified publisher signature. Certificate acquisition
+and signing work are on hold. Keep updater signature verification enabled;
+unsigned releases cannot establish trusted automatic updating.
+
 Let's Encrypt issues TLS certificates, not code-signing certificates:
 https://letsencrypt.org/docs/faq/
 

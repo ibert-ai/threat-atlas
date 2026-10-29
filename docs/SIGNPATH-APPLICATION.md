@@ -1,5 +1,9 @@
 # SignPath Foundation application reference
 
+Historical application reference. The initial application was not approved.
+There is no active SignPath certificate or signing integration. Certificate
+work is on hold; the application material below is not a claim of approval.
+
 Application submitted 28 October 2026; approval is not yet confirmed. Public
 repository: https://github.com/ibert-ai/threat-atlas
 Published preview downloads: https://github.com/ibert-ai/threat-atlas/releases

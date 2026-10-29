@@ -1,6 +1,6 @@
 # Quality and security review — 28 October 2026
 
-Original review: 0.3.0; updated for the 0.4.0 preview development line. This is a source review and automated checks,
+Original review: 0.3.0; updated for published 0.4.0 and the 0.4.1 development line. This is a source review and automated checks,
 not an independent penetration test or a guarantee that no bugs remain.
 
 ## Fixed in this review
@@ -24,6 +24,12 @@ not an independent penetration test or a guarantee that no bugs remain.
   publishable source export. Ignore common credential/private-key file extensions.
 
 ## Latest implementation and CI validation
+
+Official 0.4.0 (build 8) was published on 29 October 2026 from commit
+`07ec0d8ca323eb97c1165c831f8def28112aea01`. All six automated checks passed
+for that commit; final public asset hashes were verified against its checksums.
+These results apply to that release, not automatically to later development commits.
+Windows files remain unsigned; macOS bundles are ad-hoc signed and unnotarized.
 
 Merged PR #8 added the UTC/system-local clock, publisher-verified opt-in updater,
 PowerShell 5.1/7 regression tests, macOS first-frame/lifecycle repair, and screenshot
@@ -77,7 +83,7 @@ must be revisited when updating dependencies or adding Linux/custom-font support
   Windows beyond the CI lifecycle test. GitHub Actions has passed MSI installation,
   shortcut validation, preference preservation and uninstallation; signed upgrades,
   rollback failure injection and interactive user-launched setup still need acceptance.
-- Latest-preview interactive GUI behavior on both platforms after these changes. The owner
+- Latest-release interactive GUI behavior on both platforms after these changes. The owner
   confirmed the prior Windows and repaired macOS versions work. Those confirmations
   do not establish acceptance of this new release candidate.
 - Actual idle activation, lock/sign-in transitions, multiple monitors, Intel Mac
@@ -88,7 +94,7 @@ must be revisited when updating dependencies or adding Linux/custom-font support
   Network connect/read/write operations otherwise have explicit timeouts; do not
   claim immediate shutdown or zero background traffic after stopping a session.
 - Developer ID/notarization and Windows Authenticode signing are not configured.
-  The release candidate remains ad-hoc signed on Mac and unsigned on Windows.
+  Published 0.4.0 and development builds remain ad-hoc signed on Mac and unsigned on Windows.
 
 Re-run these checks after dependencies or implementation change. Keep prior
 known-working releases available until the candidate passes platform acceptance.

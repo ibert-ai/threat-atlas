@@ -6,6 +6,9 @@ GreyNoise public threat-map feed. The header shows both UTC and the computer's l
 
 ## Release status
 
+The next development version is **0.4.1-rc.1**, build **9**, defined in
+[version.json](version.json). It has not been published as a download.
+
 The official **0.4.0**, build **8**, release ships without trusted code signing.
 Windows SCR/MSI files are unsigned; macOS bundles are ad-hoc signed and unnotarized.
 Systems may warn or block installation. Do not disable OS security protections.
@@ -37,7 +40,7 @@ If an upgrade shows a blank **Threat Atlas** preview, check that you selected
 `/Library/Screen Savers`; back them up before removing duplicates. The new bundle
 uses a distinct class/identifier and includes screenshot thumbnails. Reopen
 System Settings after installing. Automatic updating requires a trusted signed
-release; it is unavailable in the current unsigned/ad-hoc previews.
+release; it is unavailable in unsigned/ad-hoc builds, including official 0.4.0.
 
 This release is unsigned on Windows and ad-hoc signed on macOS. Future trusted
 signing is described in [signing instructions](docs/SIGNING.md). Do not disable
@@ -56,7 +59,7 @@ After a one-time install of a trusted signed build, enable automatic updates:
 Updates download and install in place without repeating the installation steps.
 Checks use stable releases only and defer while the screen saver is running.
 They preserve screen saver selection, idle time and password settings.
-Unsigned/ad-hoc preview builds cannot enable updates. See [update design and
+Unsigned/ad-hoc builds cannot enable updates. See [update design and
 release requirements](docs/UPDATES.md), including signing-key rotation and removal.
 
 ## Data and privacy
@@ -104,7 +107,9 @@ account. Do not run that test on an account with an existing Threat Atlas instal
 
 GitHub Actions builds both platforms, produces an MSI, runs quality checks and
 runs an MSI lifecycle test on a Windows runner. Workflows use read-only repository
-permissions and pinned action commits. Release signing is deliberately separate
+permissions for build jobs and pinned action commits. The manual main-branch
+publication job has release-write permission only after all six checks pass.
+Release signing is deliberately separate
 from untrusted pull-request builds. Enable GitHub private vulnerability reporting
 and branch protection after creating the repository.
 

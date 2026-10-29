@@ -1,7 +1,7 @@
 # Automatic updates
 
 The next signed release includes optional per-user updates. Existing unsigned
-0.3 previews need one final manual install of that signed release to establish
+Unsigned 0.3 previews and official 0.4.0 need one final manual install of that signed release to establish
 publisher trust and install the updater. No release has been signed by this change.
 
 ## Behavior

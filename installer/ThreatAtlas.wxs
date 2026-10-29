@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <Product Id="*" Name="Threat Atlas SOC" Language="1033" Version="0.4.0"
+  <Product Id="*" Name="Threat Atlas SOC" Language="1033" Version="0.4.1"
            Manufacturer="Ibert Consulting" UpgradeCode="9D690E47-8F57-4B7C-BB7E-C9DA787FE981">
     <Package InstallerVersion="500" Compressed="yes" InstallScope="perUser" />
     <MajorUpgrade DowngradeErrorMessage="A newer Threat Atlas version is already installed." />
@@ -25,7 +25,7 @@
             <File Id="AssetAttribution" Source="assets/ATTRIBUTION.md" />
             <File Id="PrivacyPolicy" Source="PRIVACY.md" />
             <File Id="LicenseFile" Source="LICENSE" Name="LICENSE.txt" />
-            <RegistryValue Root="HKCU" Key="Software\Ibert Consulting\ThreatAtlas" Name="DocsVersion" Value="0.4.0" Type="string" KeyPath="yes" />
+            <RegistryValue Root="HKCU" Key="Software\Ibert Consulting\ThreatAtlas" Name="DocsVersion" Value="0.4.1" Type="string" KeyPath="yes" />
           </Component>
         </Directory>
       </Directory>
