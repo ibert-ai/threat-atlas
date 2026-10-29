@@ -6,8 +6,10 @@ GreyNoise public threat-map feed. The header shows both UTC and the computer's l
 
 ## Release status
 
-The next development version is **0.4.1-rc.1**, build **9**, defined in
-[version.json](version.json). It has not been published as a download.
+The **0.4.1-rc.1 beta**, build **9**, is a prerelease for manual testing:
+[beta downloads](https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.1-rc.1).
+It updates version metadata and documentation without runtime feature changes.
+Version **0.4.0** remains the latest stable release.
 
 The official **0.4.0**, build **8**, release ships without trusted code signing.
 Windows SCR/MSI files are unsigned; macOS bundles are ad-hoc signed and unnotarized.

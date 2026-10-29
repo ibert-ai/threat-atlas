@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.4.1-rc.1 — unreleased, build 9
+## 0.4.1-rc.1 — beta, 29 October 2026, build 9
 
 - Start the next patch development version without changing published 0.4.0 assets.
 - Clarify published versus development versions, signing status, update restrictions
