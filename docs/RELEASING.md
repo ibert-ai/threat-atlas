@@ -1,7 +1,12 @@
 # Versions and releases
 
-`version.json` is the authoritative release manifest. The current development
-preview is 0.4.0-rc.1, build 7; this does not mean that downloads are published.
+`version.json` is the authoritative release manifest. The official unsigned
+release is 0.4.0, build 8. Stable status does not imply trusted signatures.
+
+The maintainer authorized unsigned publication on 29 October 2026. For 0.4.0,
+the signing and manual acceptance gates below remain incomplete and must be
+disclosed in release notes. All six automated checks must pass for the exact
+published commit. Keep updater signature enforcement unchanged.
 
 - `version`: numeric major.minor.patch shared by Rust, macOS and MSI. It must fit
   MSI limits (255.255.65535). Increase it for every new public installer version.

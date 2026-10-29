@@ -6,11 +6,13 @@ GreyNoise public threat-map feed. The header shows both UTC and the computer's l
 
 ## Release status
 
-The next preview is **0.4.0-rc.1**, build **7**, configured in
-[version.json](version.json). It includes dual clocks, optional signed-update
-support, macOS preview fixes and screenshot thumbnails. It is not yet a published
-download. The [published 0.3.0 preview](https://github.com/ibert-ai/threat-atlas/releases/tag/v0.3.0-rc.1)
-predates these fixes. The signed, acceptance-tested 1.0 release remains pending.
+The official **0.4.0**, build **8**, release ships without trusted code signing.
+Windows SCR/MSI files are unsigned; macOS bundles are ad-hoc signed and unnotarized.
+Systems may warn or block installation. Do not disable OS security protections.
+It includes dual clocks, optional signed-update support, macOS preview fixes and
+screenshot thumbnails. Automatic updates remain unavailable without trusted signing.
+[Downloads](https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.0).
+Manual platform acceptance remains incomplete; see docs/QUALITY.md.
 See [release/version handling](docs/RELEASING.md) and [change history](CHANGELOG.md).
 
 ## Install
@@ -37,8 +39,8 @@ uses a distinct class/identifier and includes screenshot thumbnails. Reopen
 System Settings after installing. Automatic updating requires a trusted signed
 release; it is unavailable in the current unsigned/ad-hoc previews.
 
-Local builds are unsigned on Windows and ad-hoc signed on macOS. Public releases
-need trusted signing; see [signing instructions](docs/SIGNING.md). Do not disable
+This release is unsigned on Windows and ad-hoc signed on macOS. Future trusted
+signing is described in [signing instructions](docs/SIGNING.md). Do not disable
 OS security protections to run an untrusted download.
 
 ## Automatic updates (next signed release)

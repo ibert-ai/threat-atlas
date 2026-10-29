@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.4.0-rc.1 — unreleased, build 7
+## 0.4.0 — 29 October 2026, build 8
 
 - Display UTC and the system local clock with its current UTC offset and DST rules.
 - Add optional per-user, publisher-verified automatic updates for Windows/macOS;
@@ -11,7 +11,8 @@
 - Centralize release metadata and correct outdated documentation/settings text.
 
 On-device Mac Settings acceptance and signed upgrade validation remain pending.
-No 0.4.0 release downloads have been published by these source changes.
+Official unsigned release: Windows files unsigned; macOS ad-hoc signed and
+unnotarized. Automatic updates remain unavailable without trusted signing.
 
 ## 0.3.0-rc.1 — published 28 October 2026
 

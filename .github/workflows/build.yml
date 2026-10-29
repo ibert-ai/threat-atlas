@@ -4,6 +4,11 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish official unsigned 0.4.0 after all checks pass
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -80,3 +85,39 @@ jobs:
           name: ThreatAtlas-Windows-MSI
           path: dist
       - run: ./scripts/test-msi.ps1
+  publish:
+    if: github.event_name == 'workflow_dispatch' && inputs.publish && github.ref == 'refs/heads/main'
+    needs: [quality, macos, windows, msi, updater-tests, msi-install-test]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ThreatAtlas-macOS
+          path: release
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ThreatAtlas-Windows-MSI
+          path: release
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ThreatAtlas-Windows-binary
+          path: release/windows
+      - name: Publish exact-commit artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 scripts/version.py --check
+          TAG=$(python3 scripts/version.py --tag)
+          test "$TAG" = v0.4.0
+          test -f "release/$(python3 scripts/version.py --msi-name)"
+          cp README.md LICENSE SECURITY.md PRIVACY.md THIRD-PARTY-NOTICES.txt version.json release/windows/
+          (cd release/windows && zip -r "../ThreatAtlas-Windows-$TAG.zip" .)
+          rm -rf release/windows
+          git archive --format=zip --prefix=ThreatAtlas/ HEAD > "release/ThreatAtlas-source-$TAG.zip"
+          (cd release && sha256sum *.msi *.zip > "ThreatAtlas-$TAG-SHA256SUMS.txt")
+          printf '\nSource commit: `%s`\nMac build: %s\n' "$GITHUB_SHA" "$(python3 scripts/version.py --build)" >> docs/RELEASE-NOTES.md
+          gh release create "$TAG" release/* --target "$GITHUB_SHA" --title 'Threat Atlas SOC 0.4.0' --notes-file docs/RELEASE-NOTES.md --latest
