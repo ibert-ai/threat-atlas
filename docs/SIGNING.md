@@ -15,7 +15,7 @@ Certificate-store/token workflow on Windows:
 1. Build SCR with scripts/build-windows.ps1.
 2. Sign dist/ThreatAtlas.scr with scripts/sign-windows.ps1 -Thumbprint YOUR_THUMBPRINT -File dist/ThreatAtlas.scr.
 3. Build MSI using scripts/build-msi.sh on Linux/macOS with msitools/wixl.
-4. Sign dist/ThreatAtlas-0.3.0-x64.msi on Windows with the same script.
+4. Sign the versioned MSI in dist/ (name from scripts/version.py --msi-name) on Windows with the same script.
 5. Verify both signatures and test the final MSI on a fresh Windows account.
 For a cloud service such as SignPath/Azure, insert the provider's signing step at
 steps 2 and 4. Azure needs its client tools/dlib and account metadata; the generic

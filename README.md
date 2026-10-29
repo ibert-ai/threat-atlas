@@ -4,9 +4,20 @@ Native Rust SOC screensaver for macOS 12+ and Windows 10/11 x64. It draws a worl
 map, animated routes, receipt counters and a recent-observations log from the
 GreyNoise public threat-map feed. The header shows both UTC and the computer's local time, including its current UTC offset, using the operating system's timezone and daylight-saving rules. No embedded website, cookies, login or API key.
 
+## Release status
+
+The official **0.4.0**, build **8**, release ships without trusted code signing.
+Windows SCR/MSI files are unsigned; macOS bundles are ad-hoc signed and unnotarized.
+Systems may warn or block installation. Do not disable OS security protections.
+It includes dual clocks, optional signed-update support, macOS preview fixes and
+screenshot thumbnails. Automatic updates remain unavailable without trusted signing.
+[Downloads](https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.0).
+Manual platform acceptance remains incomplete; see docs/QUALITY.md.
+See [release/version handling](docs/RELEASING.md) and [change history](CHANGELOG.md).
+
 ## Install
 
-**Windows:** use `ThreatAtlas-0.3.0-x64.msi`. The per-user installer copies the
+**Windows:** use the MSI matching the release you downloaded. The per-user installer copies the
 screensaver to `%LOCALAPPDATA%\ThreatAtlas` and adds a **Threat Atlas SOC** Start
 Menu folder. Open **Set up Threat Atlas**, choose the saver, set the wait time,
 and Apply. **Preview Threat Atlas** opens a normal window. No manual copying or
@@ -28,13 +39,14 @@ uses a distinct class/identifier and includes screenshot thumbnails. Reopen
 System Settings after installing. Automatic updating requires a trusted signed
 release; it is unavailable in the current unsigned/ad-hoc previews.
 
-Local builds are unsigned on Windows and ad-hoc signed on macOS. Public releases
-need trusted signing; see [signing instructions](docs/SIGNING.md). Do not disable
+This release is unsigned on Windows and ad-hoc signed on macOS. Future trusted
+signing is described in [signing instructions](docs/SIGNING.md). Do not disable
 OS security protections to run an untrusted download.
 
 ## Automatic updates (next signed release)
 
 After a one-time install of a trusted signed build, enable automatic updates:
+
 - **Windows:** Start Menu → Threat Atlas SOC → **Enable automatic updates**.
   A per-user task checks daily while signed in; **Check for updates** runs it now.
 - **macOS:** open the preview app and choose **Enable automatic updates** from
@@ -65,10 +77,11 @@ its feed commercially; the MIT license covers this project's code, not telemetry
 
 ## Build and check
 
-Install current stable Rust. macOS requires Xcode Command Line Tools; Windows
+Install Python 3.9+ and current stable Rust. macOS requires Xcode Command Line Tools; Windows
 requires MSVC C++ Build Tools and the Windows SDK.
 
 ```sh
+python3 scripts/version.py --check
 cargo fmt --all --check
 cargo test --workspace --locked
 cargo clippy --workspace --all-targets --locked -- -D warnings

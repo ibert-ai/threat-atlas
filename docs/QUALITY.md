@@ -1,6 +1,6 @@
 # Quality and security review — 28 October 2026
 
-Reviewed release candidate: 0.3.0. This is a source review and automated checks,
+Original review: 0.3.0; updated for the 0.4.0 preview development line. This is a source review and automated checks,
 not an independent penetration test or a guarantee that no bugs remain.
 
 ## Fixed in this review
@@ -23,9 +23,21 @@ not an independent penetration test or a guarantee that no bugs remain.
 - Keep private project history, share links, old binaries and Git objects out of the
   publishable source export. Ignore common credential/private-key file extensions.
 
+## Latest implementation and CI validation
+
+Merged PR #8 added the UTC/system-local clock, publisher-verified opt-in updater,
+PowerShell 5.1/7 regression tests, macOS first-frame/lifecycle repair, and screenshot
+thumbnails. All six PR checks passed before merge: quality, Windows, macOS,
+updater-tests, MSI package and MSI install/uninstall. Current CI also checks
+version metadata consistency. Native Mac smoke checks cover drawing before window
+attachment and animation, both preview modes, restart, and thumbnail validity.
+These tests do not establish real idle/lock behavior or signed N → N+1 updates.
+The repaired saver was installed locally; on-device Settings preview/thumbnail
+acceptance after restart remains unconfirmed.
+
 ## Checks performed locally
 
-- Seven Rust tests pass, including invalid coordinates/schema, overlong/control
+- Ten Rust tests pass, including invalid coordinates/schema, overlong/control
   text, oversized messages, bounded buffers/glyph cache, staleness and route expiry.
 - Rust formatting and Clippy with warnings denied pass for the host workspace and
   Windows x64 code (cross-target toolchain).
@@ -45,7 +57,8 @@ not an independent penetration test or a guarantee that no bugs remain.
 ## Dependency advisories
 
 RustSec database snapshot: 40f5be6fb12ed93fc591bf4ab23b7d793b3f2239,
-1,381 advisories, 305 lockfile packages. No reported vulnerabilities found.
+1,381 advisories in the recorded snapshot; the current lockfile has 310 packages.
+The evidence JSON files preserve the original 0.3.0 review and its 305-package lockfile. No reported vulnerabilities found.
 Three informational advisories are explicitly reviewed in `.cargo/audit.toml`:
 
 | Advisory | Dependency | Disposition |
@@ -61,9 +74,10 @@ must be revisited when updating dependencies or adding Linux/custom-font support
 ## Still requiring acceptance testing
 
 - MSI installation, upgrade, rollback, user-launched setup and uninstallation on
-  Windows. A disposable-account test is in scripts/test-msi.ps1 and CI; that CI
-  workflow has not yet run on GitHub. Static/extraction checks do not replace it.
-- 0.3.0 interactive GUI behavior on both platforms after these changes. The owner
+  Windows beyond the CI lifecycle test. GitHub Actions has passed MSI installation,
+  shortcut validation, preference preservation and uninstallation; signed upgrades,
+  rollback failure injection and interactive user-launched setup still need acceptance.
+- Latest-preview interactive GUI behavior on both platforms after these changes. The owner
   confirmed the prior Windows and repaired macOS versions work. Those confirmations
   do not establish acceptance of this new release candidate.
 - Actual idle activation, lock/sign-in transitions, multiple monitors, Intel Mac

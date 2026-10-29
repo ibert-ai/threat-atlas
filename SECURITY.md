@@ -7,7 +7,9 @@ public issue before the maintainer can respond. Only the latest release is maint
 
 The app connects to GreyNoise's public threat-map service over certificate-validated
 TLS. The service receives the user's IP address and normal connection metadata.
-No login, credentials or cookies are used. There is no updater, arbitrary URL input,
+No login, credentials or cookies are used. The optional updater requires trusted
+publisher signatures and cannot be enabled by this unsigned/ad-hoc release.
+There is no arbitrary URL input,
 network scanning, execution of incoming data, or opening of observed IP addresses.
 
 Live records are untrusted input. Payloads, strings, history and drawing work are

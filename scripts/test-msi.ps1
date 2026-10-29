@@ -1,7 +1,8 @@
 # Run only on a disposable Windows test account/CI runner.
 $ErrorActionPreference = 'Stop'
 Set-Location (Join-Path $PSScriptRoot '..')
-$msi = (Resolve-Path 'dist/ThreatAtlas-0.3.0-x64.msi').Path
+$release = Get-Content (Join-Path $PWD 'version.json') -Raw | ConvertFrom-Json
+$msi = (Resolve-Path (Join-Path 'dist' ('ThreatAtlas-' + $release.version + '-x64.msi'))).Path
 $installDir = Join-Path $env:LOCALAPPDATA 'ThreatAtlas'
 if (Test-Path $installDir) { throw 'Test requires a clean account without Threat Atlas installed.' }
 $before = Get-ItemProperty 'HKCU:\Control Panel\Desktop'

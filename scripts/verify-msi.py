@@ -5,14 +5,17 @@ import io
 from pathlib import Path
 import subprocess
 import tempfile
+from version import VERSION, MSI_NAME
 root = Path(__file__).resolve().parents[1]
-msi = root/'dist/ThreatAtlas-0.3.0-x64.msi'
+msi = root/'dist'/MSI_NAME
 def table(name):
     text = subprocess.check_output(['msiinfo', 'export', str(msi), name], text=True)
     lines = text.splitlines()
     return list(csv.DictReader(io.StringIO('\n'.join([lines[0], *lines[3:]])), delimiter='\t'))
 props = {r['Property']: r['Value'] for r in table('Property')}
-assert props['ProductVersion'] == '0.3.0'
+assert props['ProductVersion'] == VERSION
+registry = table('Registry')
+assert next(r['Value'] for r in registry if r['Name'] == 'DocsVersion') == VERSION
 assert props.get('ALLUSERS', '') in ['', '0'], 'Must stay per-user'
 assert 'x64;1033' in subprocess.check_output(['msiinfo', 'suminfo', str(msi)], text=True)
 for row in table('Registry'):
