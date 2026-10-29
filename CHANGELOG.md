@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.1-rc.1 — unreleased, build 9
+
+- Start the next patch development version without changing published 0.4.0 assets.
+- Clarify published versus development versions, signing status, update restrictions
+  and outstanding platform acceptance in the documentation.
+
+This version/documentation update introduces no runtime feature changes.
+
 ## 0.4.0 — 29 October 2026, build 8
 
 - Display UTC and the system local clock with its current UTC offset and DST rules.
