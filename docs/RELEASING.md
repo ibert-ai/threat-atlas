@@ -2,8 +2,8 @@
 
 `version.json` is the authoritative release manifest. The official unsigned
 release is 0.4.0, build 8. Stable status does not imply trusted signatures.
-The current development manifest is 0.4.1-rc.1, build 9; no matching downloads
-are published. Historical 0.4.0 release notes and assets remain unchanged.
+The current manifest is the 0.4.1-rc.1 beta, build 9. It is published as a
+prerelease; 0.4.0 stays latest stable. Historical 0.4.0 assets remain unchanged.
 
 The maintainer authorized unsigned publication on 29 October 2026. For 0.4.0,
 the signing and manual acceptance gates below remain incomplete and must be
@@ -49,7 +49,8 @@ Windows ZIP names include the derived tag. See UPDATES.md for signature/key rule
 Do not overwrite old release assets with new payloads under an old tag/version.
 Keep previous downloads available and publish a new preview when the checks pass.
 
-The current manual publication job is deliberately restricted to v0.4.0.
+The current manual publication job is deliberately restricted to v0.4.1-rc.1
+and sets the GitHub prerelease flag without replacing latest stable.
 Preparing a new version does not authorize that job to publish it. Before the
 next publication, review its version guard, release notes, prerelease flag and
 acceptance evidence together; do not reuse the 0.4.0 notes for a new tag.
