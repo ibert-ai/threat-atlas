@@ -54,3 +54,11 @@ and sets the GitHub prerelease flag without replacing latest stable.
 Preparing a new version does not authorize that job to publish it. Before the
 next publication, review its version guard, release notes, prerelease flag and
 acceptance evidence together; do not reuse the 0.4.0 notes for a new tag.
+
+## Known bugs in every release
+
+Include a **Known bugs** section for the exact release version and platforms.
+List confirmed defects, affected versions, issue links and workarounds; identify
+unverified reports and incomplete acceptance separately. Update
+[KNOWN-BUGS.md](KNOWN-BUGS.md) when a fix is verified and name its first released
+version. Do not describe a candidate fix as available in an older download.
