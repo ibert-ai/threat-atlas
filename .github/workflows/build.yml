@@ -19,12 +19,25 @@ jobs:
       - run: rustup toolchain install stable --profile minimal --component rustfmt --component clippy
       - run: python3 scripts/version.py --check
       - run: python3 scripts/test-version.py
+      - run: sudo apt-get update && sudo apt-get install -y pkg-config libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev
       - run: cargo +stable fmt --all --check
       - run: cargo +stable test --workspace --locked
       - run: cargo +stable clippy --workspace --all-targets --locked -- -D warnings
       - run: cargo +stable install cargo-audit --version 0.22.2 --locked
       - run: cargo audit --deny warnings
       - run: python3 scripts/check-source.py
+  linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: sudo apt-get update && sudo apt-get install -y pkg-config libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev xvfb
+      - run: rustup toolchain install stable --profile minimal
+      - run: bash scripts/build-linux.sh
+      - run: xvfb-run -a target/release/threat-atlas-linux --smoke-test
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ThreatAtlas-Linux-preview
+          path: dist/ThreatAtlas-Linux-*.tar.gz
   macos:
     runs-on: macos-latest
     steps:
