@@ -20,6 +20,12 @@ screenshot thumbnails. Automatic updates remain unavailable without trusted sign
 Manual platform acceptance remains incomplete; see docs/QUALITY.md.
 See [release/version handling](docs/RELEASING.md) and [change history](CHANGELOG.md).
 
+## Known bugs
+
+See [known bugs and limitations](docs/KNOWN-BUGS.md) for affected versions,
+workarounds and testing gaps. Report reproducible issues through GitHub Issues;
+follow the security policy for security concerns.
+
 ## Install
 
 **Windows:** use the MSI matching the release you downloaded. The per-user installer copies the
