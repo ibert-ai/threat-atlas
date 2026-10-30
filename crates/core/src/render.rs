@@ -130,6 +130,26 @@ impl Renderer {
         r.text(1044, 225, 17, "RECENT OBSERVATIONS", CYAN);
         r.text(45, 750, 14, "RECEIVED RECORDS / SECOND", MUTED);
         r.text(35,875,12,"GREYNOISE PUBLIC THREAT MAP | RECEIPT TIMES UTC | COUNTS ARE RECEIVED RECORDS, NOT UNIQUE ATTACKS",MUTED);
+        let release: serde_json::Value =
+            serde_json::from_str(include_str!("../../../version.json")).unwrap_or_default();
+        let version = release["version"]
+            .as_str()
+            .unwrap_or(env!("CARGO_PKG_VERSION"));
+        let suffix = release["prerelease"]
+            .as_str()
+            .map(|value| format!("-{value}"))
+            .unwrap_or_default();
+        let build = release["build"]
+            .as_u64()
+            .map(|value| value.to_string())
+            .unwrap_or_else(|| "unknown".into());
+        r.text(
+            1120,
+            875,
+            12,
+            &format!("v{version}{suffix} | b{build}"),
+            MUTED,
+        );
         r.base = r.pix.clone();
         r
     }
