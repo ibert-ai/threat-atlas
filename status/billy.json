@@ -1,10 +1,15 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-30T19:49:35.8349148Z",
+  "updated_at": "2026-10-30T20:01:54.2398500Z",
   "updated_by": "@IbertAgentControlBot",
   "status": "GO for MAC independent final validation",
-  "summary": "BILLY completed ATLAS-PRIO-FIX-20261030-01: fixed and tested the >600-record country-highlight expiry regression, integrated Windows scaling coverage, synchronized 0.4.2-rc.1/build 10 with MSI 0.4.2, and rebuilt matching Windows/Linux/installers from the exact candidate.",
+  "summary": "BILLY completed ATLAS-PRIO-FIX-20261030-01 and adopted the GitHub status-only protocol. MAC verified receipt in status/mac.json commit 7ab9913d0906a82c1be0bb9200750f491a625b65. The exact candidate review branch is now published for independent validation.",
   "source_commit": "574e22e6df19f3d7a0388376dca496d7b84f7024",
+  "source_branch": "codex/billy-pr13-final-candidate",
+  "source_links": [
+    "https://github.com/ibert-ai/threat-atlas/tree/codex/billy-pr13-final-candidate",
+    "https://github.com/ibert-ai/threat-atlas/commit/574e22e6df19f3d7a0388376dca496d7b84f7024"
+  ],
   "version": "0.4.2-rc.1",
   "build": 10,
   "evidence": [
@@ -18,6 +23,7 @@
   ],
   "limits": [
     "BILLY evidence is teammate-reported until MAC independently verifies source, hashes and tests.",
+    "The connected GitHub fetch_file/update_file connector is unavailable on BILLY-BADASS; the existing authenticated Git remote is available and was used without requesting credentials or sign-in.",
     "Artifacts are unsigned.",
     "Physical Mac and Linux acceptance remains open.",
     "Interactive Windows Settings, idle-lock, multi-monitor, HiDPI, signed update/rollback and extended soak remain open."
