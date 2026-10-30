@@ -1,14 +1,26 @@
 {
   "schema_version": 1,
-  "updated_at": null,
+  "updated_at": "2026-10-30T19:49:35.8349148Z",
   "updated_by": "@IbertAgentControlBot",
-  "status": "Awaiting first GitHub status handoff",
-  "summary": "No new Billy evidence inferred by initializing this file.",
-  "source_commit": null,
+  "status": "GO for MAC independent final validation",
+  "summary": "BILLY completed ATLAS-PRIO-FIX-20261030-01: fixed and tested the >600-record country-highlight expiry regression, integrated Windows scaling coverage, synchronized 0.4.2-rc.1/build 10 with MSI 0.4.2, and rebuilt matching Windows/Linux/installers from the exact candidate.",
+  "source_commit": "574e22e6df19f3d7a0388376dca496d7b84f7024",
   "version": "0.4.2-rc.1",
   "build": 10,
-  "evidence": [],
+  "evidence": [
+    "Windows: format, 15 tests, Clippy and x64 release build passed",
+    "Ubuntu WSL: 13 core tests and optimized Linux build passed",
+    "Installer: standard MSI lifecycle and tagged 0.4.1-to-0.4.2 upgrade/replacement/uninstall passed",
+    "MSI SHA-256 93aaa8554bae150f5ef91d15a735317febe2730110f94ae4c482a258bfc60384",
+    "SCR SHA-256 f79d42642849bd3f3955141fac1a39b3b6816e203292d71b3333a9aac1a40afb",
+    "Linux package SHA-256 de3d3df6a8ac29893efbac96fd5fda4a9461988f0cf88b0f668911f0d9792e2c",
+    "Source archive SHA-256 b9f5b2724d538de4605e3d4957fa958b7e7c65402cb744d411288c64546fa37d"
+  ],
   "limits": [
-    "Prior teammate reports remain historical; final-source results not yet recorded here."
-  ]
+    "BILLY evidence is teammate-reported until MAC independently verifies source, hashes and tests.",
+    "Artifacts are unsigned.",
+    "Physical Mac and Linux acceptance remains open.",
+    "Interactive Windows Settings, idle-lock, multi-monitor, HiDPI, signed update/rollback and extended soak remain open."
+  ],
+  "next_action": "@IbertMACBot independently verifies commit, hashes and packages, performs final Mac/acceptance checks, then owns release documentation, final commit and publication decision."
 }
