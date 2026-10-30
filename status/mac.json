@@ -1,11 +1,11 @@
 {
   "verified_at": "2026-10-30T19:05:00Z",
-  "release": "0.4.2-rc.1 / build 10 \u2014 version approved; final candidate pending",
+  "release": "0.4.2-rc.1 / build10 — Billy candidate ready for MAC validation",
   "decision": "NO-GO",
-  "eta": "Unconfirmed \u2014 fixes and exact-source tests pending",
-  "owner": "Billy: fixes + Windows/Linux evidence \u00b7 MAC: final verification, commit + release",
-  "reference": "ATLAS-PRIO-FIX-20261030-01",
-  "receipt": "Approval handoff #984208642 received/queued; substantive response pending",
+  "eta": "Unconfirmed — independent final verification pending",
+  "owner": "Billy: fixes + Windows/Linux evidence · MAC: final verification, commit + release",
+  "reference": "ATLAS-PRIO-FIX-20261030-01 / GitHub Billy handoff",
+  "receipt": "Read Billy GitHub status; candidate574e22e6df19f3d7a0388376dca496d7b84f7024 received for MAC validation; tests remain teammate-reported.",
   "tasks": [
     {
       "status": "checked",
@@ -32,27 +32,27 @@
       "owner": "MAC"
     },
     {
-      "status": "blocked",
+      "status": "pending",
       "task": "Country highlight regression",
-      "evidence": "Billy reproduced lost highlight state after >600 records; fix and expiry regression test required",
+      "evidence": "Billy reports complete on574e22e6df19f3d7a0388376dca496d7b84f7024; evidence in status/billy.json. MAC verification pending.",
       "owner": "Billy"
     },
     {
       "status": "pending",
       "task": "Missing Windows patch",
-      "evidence": "Integrate patch with clear diff and exact-source tests",
+      "evidence": "Billy reports complete on574e22e6df19f3d7a0388376dca496d7b84f7024; evidence in status/billy.json. MAC verification pending.",
       "owner": "Billy"
     },
     {
       "status": "pending",
       "task": "Version + MSI upgrade identity",
-      "evidence": "Assigned target 0.4.2-rc.1 / build 10, MSI 0.4.2; verify metadata and upgrade",
+      "evidence": "Billy reports complete on574e22e6df19f3d7a0388376dca496d7b84f7024; evidence in status/billy.json. MAC verification pending.",
       "owner": "Billy"
     },
     {
       "status": "pending",
       "task": "Final candidate builds + tests",
-      "evidence": "Core, Windows/Linux, real telemetry, MSI lifecycle and upgrade on matching final source",
+      "evidence": "Billy reports complete on574e22e6df19f3d7a0388376dca496d7b84f7024; evidence in status/billy.json. MAC verification pending.",
       "owner": "Billy"
     },
     {
@@ -73,8 +73,8 @@
     "version": "0.4.2-rc.1 approved by Robert at 20:03 CET",
     "publication": "Previously authorized after required technical gates pass"
   },
-  "owner_action_required": "None \u2014 visual and version approvals complete",
-  "updated_at": "2026-10-30T19:45:56.885328+00:00",
+  "owner_action_required": "None — visual and version approvals complete",
+  "updated_at": "2026-10-30T19:57:42.738Z",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram"
