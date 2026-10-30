@@ -194,7 +194,7 @@ impl State {
             rejected: self.rejected,
             reconnects: self.reconnects,
             counts: self.counts,
-            recent: self.recent.iter().rev().take(180).cloned().collect(),
+            recent: self.recent.iter().rev().cloned().collect(),
             rate,
             last_digest: self.last_digest.clone(),
         }
@@ -385,7 +385,7 @@ mod tests {
         }
         assert_eq!(s.recent.len(), 600);
         assert_eq!(s.rate.len(), 120);
-        assert_eq!(s.snapshot(2_000_000).recent.len(), 180);
+        assert_eq!(s.snapshot(2_000_000).recent.len(), 600);
     }
     #[test]
     fn offline_is_not_live() {

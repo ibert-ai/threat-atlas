@@ -126,3 +126,7 @@ frames and JSON. It needs network access and is not an offline CI test.
 Source: MIT. Bundled JetBrains Mono: SIL OFL; see `assets/FONT-LICENSE.txt`.
 Natural Earth land outlines are public domain. See `assets/ATTRIBUTION.md`.
 Third-party Rust crates retain their own licenses. Provider content is not MIT.
+
+## Country map and Linux development
+
+This branch adds [country borders and observation shading](docs/COUNTRY-MAP.md) and a [Linux application preview](docs/LINUX.md). These changes are pending cross-platform review and approval. Linux is a windowed application, not a native idle/lock-screen integration. Existing release installers are unchanged.
