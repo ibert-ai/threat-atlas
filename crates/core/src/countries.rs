@@ -1,7 +1,8 @@
 //! Cached country polygons and telemetry-driven country highlights.
-use crate::feed::Snapshot;
+use crate::feed::{Record, Snapshot};
 use serde::Deserialize;
 use std::collections::HashMap;
+use std::sync::OnceLock;
 use tiny_skia::{FillRule, Paint, Path, PathBuilder, Pixmap, Stroke, Transform};
 
 pub const HIGHLIGHT_MS: u64 = 6000;
@@ -16,6 +17,38 @@ pub struct CountryMap {
 }
 fn key(name: &str) -> String {
     name.trim().to_lowercase()
+}
+fn country_aliases() -> &'static HashMap<String, usize> {
+    static ALIASES: OnceLock<HashMap<String, usize>> = OnceLock::new();
+    ALIASES.get_or_init(|| CountryMap::new().aliases)
+}
+/// At most three receipt timestamps per bundled country, independent of traffic volume.
+#[derive(Default)]
+pub struct Activity {
+    last_seen: HashMap<usize, [Option<u64>; 3]>,
+}
+impl Activity {
+    pub fn record(&mut self, record: &Record, received_ms: u64) {
+        let class = record.class();
+        if class > 2 {
+            return;
+        }
+        for location in [&record.source, &record.destination] {
+            if let Some(&country) = country_aliases().get(&key(&location.country)) {
+                let times = self.last_seen.entry(country).or_insert([None; 3]);
+                times[class] = Some(times[class].map_or(received_ms, |last| last.max(received_ms)));
+            }
+        }
+    }
+    pub fn snapshot(&self) -> Vec<(usize, [Option<u64>; 3])> {
+        let mut entries: Vec<_> = self
+            .last_seen
+            .iter()
+            .map(|(&id, &times)| (id, times))
+            .collect();
+        entries.sort_by_key(|entry| entry.0);
+        entries
+    }
 }
 impl Default for CountryMap {
     fn default() -> Self {
@@ -71,21 +104,13 @@ impl CountryMap {
     /// Most severe observation still inside the receipt-time window wins.
     pub fn classes(&self, snapshot: &Snapshot) -> Vec<Option<usize>> {
         let mut classes = vec![None; self.paths.len()];
-        for event in &snapshot.recent {
-            if event.received_ms > snapshot.now_ms
-                || snapshot.now_ms.saturating_sub(event.received_ms) >= HIGHLIGHT_MS
-            {
-                continue;
-            }
-            let class = event.record.class();
-            if class > 2 {
-                continue;
-            }
-            for location in [&event.record.source, &event.record.destination] {
-                if let Some(&index) = self.aliases.get(&key(&location.country)) {
-                    classes[index] =
-                        Some(classes[index].map_or(class, |previous: usize| previous.min(class)));
-                }
+        for (index, times) in &snapshot.country_activity {
+            if let Some(result) = classes.get_mut(*index) {
+                *result = times.iter().position(|time| {
+                    time.is_some_and(|received| {
+                        received <= snapshot.now_ms && snapshot.now_ms - received < HIGHLIGHT_MS
+                    })
+                });
             }
         }
         classes
@@ -157,17 +182,40 @@ mod tests {
             .all(Option::is_none));
     }
     #[test]
-    fn highlight_includes_records_beyond_visible_feed_sample() {
+    fn traffic_volume_does_not_expire_country_highlights() {
         let map = CountryMap::new();
         let mut state = State::default();
-        state.ingest(r#"{"source":{"latitude":52,"longitude":5,"country":"NL"},"destination":{"latitude":52,"longitude":5,"country":"NL"},"intention":"malicious"}"#, 1000);
-        for _ in 0..200 {
-            state.ingest(r#"{"source":{"latitude":40,"longitude":-100,"country":"US"},"destination":{"latitude":40,"longitude":-100,"country":"US"},"intention":"benign"}"#, 2000);
+        let row = |source: &str, destination: &str, intention: &str| {
+            serde_json::json!({
+                "source":{"latitude":0,"longitude":0,"country":source},
+                "destination":{"latitude":0,"longitude":0,"country":destination},
+                "intention":intention
+            })
+            .to_string()
+        };
+        state.ingest(&row("NL", "DE", "malicious"), 1000);
+        for _ in 0..1000 {
+            state.ingest(&row("US", "SE", "benign"), 1001);
         }
-        let snapshot = state.snapshot(3000);
-        assert_eq!(snapshot.recent.len(), 201);
+        let snapshot = state.snapshot(2000);
+        assert_eq!(snapshot.recent.len(), 600);
         assert_eq!(map.classes(&snapshot)[map.aliases["nl"]], Some(0));
-        assert_eq!(map.classes(&state.snapshot(7000))[map.aliases["nl"]], None);
+        assert_eq!(map.classes(&snapshot)[map.aliases["de"]], Some(0));
+        state.ingest(&row("NL", "Germany", "suspicious"), 3000);
+        assert_eq!(
+            map.classes(&state.snapshot(6999))[map.aliases["nl"]],
+            Some(0)
+        );
+        assert_eq!(
+            map.classes(&state.snapshot(7000))[map.aliases["nl"]],
+            Some(1)
+        );
+        assert_eq!(map.classes(&state.snapshot(9000))[map.aliases["nl"]], None);
+        let before = state.snapshot(9000).country_activity.len();
+        for index in 0..1000 {
+            state.ingest(&row(&format!("unknown-{index}"), "??", "malicious"), 9000);
+        }
+        assert_eq!(state.snapshot(9000).country_activity.len(), before);
     }
     #[test]
     fn polygon_holes_and_separate_parts_are_preserved() {

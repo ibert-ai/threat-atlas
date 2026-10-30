@@ -78,6 +78,7 @@ pub struct Snapshot {
     pub reconnects: u64,
     pub counts: [u64; 4],
     pub recent: Vec<Received>,
+    pub country_activity: Vec<(usize, [Option<u64>; 3])>,
     pub rate: Vec<u64>,
     pub last_digest: String,
 }
@@ -94,6 +95,7 @@ pub struct State {
     reconnects: u64,
     counts: [u64; 4],
     recent: VecDeque<Received>,
+    country_activity: crate::countries::Activity,
     rate: VecDeque<(u64, u64)>,
     last_digest: String,
 }
@@ -139,6 +141,7 @@ impl State {
             self.records += 1;
             self.counts[record.class()] += 1;
             self.last_record_ms = now;
+            self.country_activity.record(&record, now);
             self.recent.push_back(Received {
                 record,
                 received_ms: now,
@@ -195,6 +198,7 @@ impl State {
             reconnects: self.reconnects,
             counts: self.counts,
             recent: self.recent.iter().rev().cloned().collect(),
+            country_activity: self.country_activity.snapshot(),
             rate,
             last_digest: self.last_digest.clone(),
         }
