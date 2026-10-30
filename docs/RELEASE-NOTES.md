@@ -28,3 +28,9 @@ See docs/QUALITY.md for details and reviewed dependency exceptions.
 
 Install the per-user Windows MSI, or extract the Mac ZIP and install
 ThreatAtlasSOC.saver. Keep the stable 0.4.0 download available if you need it.
+
+## Known bugs
+
+- OS DNS lookup can delay feed-worker shutdown; immediate termination and zero background traffic after stopping are not guaranteed.
+- After upgrading from legacy macOS 0.2, the old saver may remain selected and show a blank preview. Select **Threat Atlas SOC**, back up duplicate legacy bundles and reopen System Settings.
+- See [known bugs and limitations](https://github.com/ibert-ai/threat-atlas/blob/main/docs/KNOWN-BUGS.md) for workarounds and reporting. Unsigned distribution, manual-only updates and incomplete platform acceptance are documented limitations, not newly confirmed runtime bugs.
