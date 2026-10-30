@@ -25,7 +25,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut buffer = vec![0u32; (WIDTH * HEIGHT) as usize];
     let mut frames = 0;
     while window.is_open() && !window.is_key_down(Key::Escape) {
-        for (out, rgba) in buffer.iter_mut().zip(session.frame().chunks_exact(4)) {
+        for (out, rgba) in buffer.iter_mut().zip(session.frame().as_chunks::<4>().0) {
             *out = ((rgba[0] as u32) << 16) | ((rgba[1] as u32) << 8) | rgba[2] as u32;
         }
         window.update_with_buffer(&buffer, WIDTH as usize, HEIGHT as usize)?;
