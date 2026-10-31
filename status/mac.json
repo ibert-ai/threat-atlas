@@ -1,8 +1,8 @@
 {
-  "verified_at": "2026-10-31T00:52:25.256Z",
-  "release": "0.4.2-rc.1 / build10 — published beta",
-  "decision": "PUBLISHED",
-  "eta": "Available now — manual installation",
+  "verified_at": "2026-10-31T01:44:10.553Z",
+  "release": "0.4.2-rc.1 / build10 — Windows MSI withdrawn",
+  "decision": "PUBLISHED — MSI WITHDRAWN",
+  "eta": "Mac/Linux/standalone Windows available; corrected MSI has no verified ETA",
   "owner": "Billy: fixes + Windows/Linux evidence · MAC: final verification, commit + release",
   "reference": "ATLAS-PRIO-FIX-20261030-01 / GitHub Billy handoff",
   "receipt": "Billy handoff independently validated and integrated; release published from684a63bd4c21428d126f04aa4d3156bdcea232c9.",
@@ -62,9 +62,9 @@
       "owner": "@IbertMACBot"
     },
     {
-      "status": "checked",
+      "status": "pending",
       "task": "Final commit + publication",
-      "evidence": "Publishedv0.4.2-rc.1 from684a63b, workflow41151902562 PASS; all6 assets downloaded/hashes matched.",
+      "evidence": "Release remains published; Windows MSI withdrawn after installation issue.5 assets remain; original6-asset verification remains historical.",
       "owner": "@IbertMACBot"
     },
     {
@@ -86,22 +86,17 @@
     "publication": "Previously authorized after required technical gates pass"
   },
   "owner_action_required": "None — approvals and publication complete",
-  "updated_at": "2026-10-31T01:41:25.924Z",
+  "updated_at": "2026-10-31T01:44:10.553Z",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
-  "current_task": "Published beta preserved. Next-release Windows interactive installation/download troubleshooting planned; generic docs PR15 in review/CI. No installer fix claimed.",
+  "current_task": "Windows MSI removed from beta downloads; installation-path/per-user-versus-system integration investigation assigned to Billy. SCR executable defect not established. Remaining5 release assets unchanged.",
   "active_pr": 14,
   "source_commit": "684a63bd4c21428d126f04aa4d3156bdcea232c9",
   "workflow_run": 41151902562,
   "published_at": "2026-10-31T00:51:21Z",
   "release_url": "https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.2-rc.1",
   "downloads": [
-    {
-      "name": "ThreatAtlas-0.4.2-x64.msi",
-      "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.2-rc.1/ThreatAtlas-0.4.2-x64.msi",
-      "sha256": "sha256:25d055648b0b9d371f7fcbda965be58866fe4a439a224cd8969487a42c7feb1a"
-    },
     {
       "name": "ThreatAtlas-Linux-0.4.2-x86_64.tar.gz",
       "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.2-rc.1/ThreatAtlas-Linux-0.4.2-x86_64.tar.gz",
@@ -133,10 +128,18 @@
     "documentation_pr": 15,
     "windows_owner": "@IbertAgentControlBot",
     "mac_owner": "@IbertMACBot",
-    "status": "Reproduction and proposal requested; no fix verified",
+    "status": "Windows installer path hypothesis under investigation; no fix or SCR defect established",
     "items": [
       "Interactive Windows screensaver installation/discovery",
       "Browser-downloaded SCR/ZIP trust handling and clearer installation instructions"
     ]
-  }
+  },
+  "withdrawn_assets": [
+    {
+      "name": "ThreatAtlas-0.4.2-x64.msi",
+      "reason": "Installation-path/integration investigation",
+      "removed_at": "2026-10-31T01:44:10.553Z",
+      "preserved_private_archive": true
+    }
+  ]
 }
