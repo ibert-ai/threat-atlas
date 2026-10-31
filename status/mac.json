@@ -72,6 +72,12 @@
       "task": "Physical acceptance and trusted signing",
       "owner": "Future validation — not owner approval",
       "evidence": "Idle/lock, multiple monitors/HiDPI, Intel hardware, physical Linux desktop, signed update/rollback and soak remain incomplete; disclosed beta limits."
+    },
+    {
+      "status": "pending",
+      "task": "Next release: Windows installer integration",
+      "owner": "@IbertAgentControlBot",
+      "evidence": "Reproduce real Settings discovery and browser-download workflow; generic guidance in PR15. No next-release version or fix claimed."
     }
   ],
   "approvals": {
@@ -80,11 +86,11 @@
     "publication": "Previously authorized after required technical gates pass"
   },
   "owner_action_required": "None — approvals and publication complete",
-  "updated_at": "2026-10-31T00:52:25.256Z",
+  "updated_at": "2026-10-31T01:41:25.924Z",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
-  "current_task": "Release complete: published684a63b; all7 exact-main gates PASS,6 assets downloaded and hashes verified. No owner action required.",
+  "current_task": "Published beta preserved. Next-release Windows interactive installation/download troubleshooting planned; generic docs PR15 in review/CI. No installer fix claimed.",
   "active_pr": 14,
   "source_commit": "684a63bd4c21428d126f04aa4d3156bdcea232c9",
   "workflow_run": 41151902562,
@@ -121,5 +127,16 @@
       "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.2-rc.1/ThreatAtlas-Windows-v0.4.2-rc.1.zip",
       "sha256": "sha256:8607a0c1a1c7dc7fe3ce8dadd06870c8c9f4b1c64bb0e7cb54a363eca637d8ba"
     }
-  ]
+  ],
+  "next_release": {
+    "version": null,
+    "documentation_pr": 15,
+    "windows_owner": "@IbertAgentControlBot",
+    "mac_owner": "@IbertMACBot",
+    "status": "Reproduction and proposal requested; no fix verified",
+    "items": [
+      "Interactive Windows screensaver installation/discovery",
+      "Browser-downloaded SCR/ZIP trust handling and clearer installation instructions"
+    ]
+  }
 }
