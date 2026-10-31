@@ -1,0 +1,10 @@
+[package]
+name = "threat-atlas-linux"
+version.workspace = true
+edition = "2021"
+license = "MIT"
+description = "Linux application preview for Threat Atlas SOC (not a lock-screen replacement)"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+threat-atlas-core = { path = "../core" }
+minifb = { version = "0.29", default-features = false, features = ["x11"] }

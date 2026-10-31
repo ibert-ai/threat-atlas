@@ -37,6 +37,15 @@ pub fn show_error(message: &str) {
     }
 }
 
+fn scaled_frame_layout(width: u32, height: u32) -> (u32, u32, u32, u32) {
+    let scale = (width as f32 / WIDTH as f32).min(height as f32 / HEIGHT as f32);
+    let draw_width = (WIDTH as f32 * scale) as u32;
+    let draw_height = (HEIGHT as f32 * scale) as u32;
+    let offset_x = (width - draw_width) / 2;
+    let offset_y = (height - draw_height) / 2;
+    (draw_width, draw_height, offset_x, offset_y)
+}
+
 pub fn run() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let command = args
@@ -169,12 +178,8 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                 }
                 let rgba = session.frame();
                 if let Ok(mut buffer) = surface.buffer_mut() {
-                    let scale =
-                        (size.width as f32 / WIDTH as f32).min(size.height as f32 / HEIGHT as f32);
-                    let dw = (WIDTH as f32 * scale) as u32;
-                    let dh = (HEIGHT as f32 * scale) as u32;
-                    let ox = (size.width - dw) / 2;
-                    let oy = (size.height - dh) / 2;
+                    let (dw, dh, ox, oy) = scaled_frame_layout(size.width, size.height);
+                    let scale = dw as f32 / WIDTH as f32;
                     buffer.fill(0x00060c14);
                     for y in 0..dh {
                         let sy = ((y as f32 / scale) as u32).min(HEIGHT - 1);
@@ -194,4 +199,41 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             }
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::scaled_frame_layout;
+    use threat_atlas_core::{HEIGHT, WIDTH};
+
+    #[test]
+    fn centers_and_fits_common_display_resolutions() {
+        for (width, height) in [
+            (1024, 768),
+            (1280, 720),
+            (1280, 800),
+            (1920, 1080),
+            (2560, 1440),
+            (3440, 1440),
+            (3840, 2160),
+            (1080, 1920),
+        ] {
+            let (draw_width, draw_height, offset_x, offset_y) = scaled_frame_layout(width, height);
+            assert!(draw_width <= width && draw_height <= height);
+            assert!(width - draw_width - offset_x <= offset_x + 1);
+            assert!(height - draw_height - offset_y <= offset_y + 1);
+            let source_aspect = WIDTH as f64 / HEIGHT as f64;
+            let drawn_aspect = draw_width as f64 / draw_height as f64;
+            assert!((source_aspect - drawn_aspect).abs() < 0.003);
+        }
+    }
+
+    #[test]
+    fn uses_expected_letterboxing_for_representative_displays() {
+        assert_eq!(scaled_frame_layout(1280, 720), (1152, 720, 64, 0));
+        assert_eq!(scaled_frame_layout(1280, 800), (1280, 800, 0, 0));
+        assert_eq!(scaled_frame_layout(1024, 768), (1024, 640, 0, 64));
+        assert_eq!(scaled_frame_layout(3440, 1440), (2304, 1440, 568, 0));
+        assert_eq!(scaled_frame_layout(3840, 2160), (3456, 2160, 192, 0));
+    }
 }

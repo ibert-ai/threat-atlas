@@ -27,10 +27,10 @@ def generated():
     cargo = cargo.replace('[profile.release]', '[workspace.package]\nversion = "' + VERSION + '"\n\n[profile.release]')
     yield ROOT / 'Cargo.toml', cargo.encode()
     lock = (ROOT / 'Cargo.lock').read_text()
-    for name in ('threat-atlas', 'threat-atlas-core'):
+    for name in ('threat-atlas', 'threat-atlas-core', 'threat-atlas-linux'):
         lock, count = re.subn(r'(\[\[package\]\]\nname = "' + name + r'"\nversion = ")[^"]+', r'\g<1>' + VERSION, lock)
         if count != 1: raise ValueError('Missing workspace lockfile entry: ' + name)
-        path = ROOT / 'crates' / ('windows' if name == 'threat-atlas' else 'core') / 'Cargo.toml'
+        path = ROOT / 'crates' / {'threat-atlas': 'windows', 'threat-atlas-core': 'core', 'threat-atlas-linux': 'linux'}[name] / 'Cargo.toml'
         member = re.sub(r'^version = "[^"]+"$', 'version.workspace = true', path.read_text(), flags=re.M)
         if 'version.workspace = true' not in member: raise ValueError('Missing inherited package version')
         yield path, member.encode()

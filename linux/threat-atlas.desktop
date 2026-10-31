@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Threat Atlas SOC
+Comment=Public threat telemetry map (Linux preview)
+Exec=threat-atlas-linux
+Icon=threat-atlas
+Terminal=false
+Categories=Network;Monitor;

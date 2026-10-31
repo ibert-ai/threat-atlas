@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 with tempfile.TemporaryDirectory(prefix='threatatlas-versions-') as folder:
     stage = Path(folder)
     for name in ('version.json', 'Cargo.toml', 'Cargo.lock', 'crates/core/Cargo.toml',
-                 'crates/windows/Cargo.toml', 'macos/Info.plist', 'installer/ThreatAtlas.wxs', 'scripts/version.py'):
+                 'crates/windows/Cargo.toml', 'crates/linux/Cargo.toml', 'macos/Info.plist', 'installer/ThreatAtlas.wxs', 'scripts/version.py'):
         target = stage / name
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(ROOT / name, target)

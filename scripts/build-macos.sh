@@ -8,7 +8,7 @@ product_build=$(python3 scripts/version.py --build)
 stage=$(mktemp -d "${TMPDIR:-/tmp}/threatatlas-build.XXXXXX")
 source_dir="$PWD"
 trap 'rm -rf "$stage"' EXIT
-cp -R Cargo.toml Cargo.lock LICENSE PRIVACY.md THIRD-PARTY-NOTICES.txt .cargo crates assets macos "$stage/"
+cp -R Cargo.toml Cargo.lock version.json LICENSE PRIVACY.md THIRD-PARTY-NOTICES.txt .cargo crates assets macos "$stage/"
 cd "$stage"
 # Build for the current architecture, or pass --universal for both architectures.
 if [[ "${1:-}" == "--universal" ]]; then

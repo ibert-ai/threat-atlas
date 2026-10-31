@@ -3,7 +3,7 @@ use std::collections::{HashMap, VecDeque};
 use tiny_skia::*;
 const CYAN: [u8; 3] = [68, 220, 225];
 const MUTED: [u8; 3] = [100, 139, 159];
-fn color(i: usize) -> [u8; 3] {
+pub(crate) fn color(i: usize) -> [u8; 3] {
     match i {
         0 => [255, 93, 115],
         1 => [255, 190, 82],
@@ -11,7 +11,7 @@ fn color(i: usize) -> [u8; 3] {
         _ => [116, 151, 189],
     }
 }
-fn xy(lon: f64, lat: f64) -> (f32, f32) {
+pub(crate) fn xy(lon: f64, lat: f64) -> (f32, f32) {
     (
         45. + ((lon + 180.) / 360.) as f32 * 940.,
         230. + ((90. - lat) / 180.) as f32 * 470.,
@@ -30,6 +30,9 @@ pub struct Renderer {
     glyphs: HashMap<(char, u16), (fontdue::Metrics, Vec<u8>)>,
     routes: VecDeque<Route>,
     last: u64,
+    countries: crate::countries::CountryMap,
+    country_classes: Vec<Option<usize>>,
+    country_overlay: Pixmap,
 }
 impl Default for Renderer {
     fn default() -> Self {
@@ -52,6 +55,9 @@ impl Renderer {
             glyphs: HashMap::new(),
             routes: VecDeque::new(),
             last: 0,
+            countries: crate::countries::CountryMap::new(),
+            country_classes: Vec::new(),
+            country_overlay: Pixmap::new(WIDTH, HEIGHT).unwrap(),
         };
         r.pix.fill(Color::from_rgba8(5, 12, 21, 255));
         for (x, y, w, h) in [
@@ -124,6 +130,26 @@ impl Renderer {
         r.text(1044, 225, 17, "RECENT OBSERVATIONS", CYAN);
         r.text(45, 750, 14, "RECEIVED RECORDS / SECOND", MUTED);
         r.text(35,875,12,"GREYNOISE PUBLIC THREAT MAP | RECEIPT TIMES UTC | COUNTS ARE RECEIVED RECORDS, NOT UNIQUE ATTACKS",MUTED);
+        let release: serde_json::Value =
+            serde_json::from_str(include_str!("../../../version.json")).unwrap_or_default();
+        let version = release["version"]
+            .as_str()
+            .unwrap_or(env!("CARGO_PKG_VERSION"));
+        let suffix = release["prerelease"]
+            .as_str()
+            .map(|value| format!("-{value}"))
+            .unwrap_or_default();
+        let build = release["build"]
+            .as_u64()
+            .map(|value| value.to_string())
+            .unwrap_or_else(|| "unknown".into());
+        r.text(
+            1120,
+            875,
+            12,
+            &format!("v{version}{suffix} | b{build}"),
+            MUTED,
+        );
         r.base = r.pix.clone();
         r
     }
@@ -196,6 +222,20 @@ impl Renderer {
     }
     pub fn draw(&mut self, s: &Snapshot) -> &[u8] {
         self.pix.data_mut().copy_from_slice(self.base.data());
+        let classes = self.countries.classes(s);
+        if classes != self.country_classes {
+            self.countries
+                .highlights(&mut self.country_overlay, &classes);
+            self.country_classes = classes;
+        }
+        self.pix.draw_pixmap(
+            0,
+            0,
+            self.country_overlay.as_ref(),
+            &PixmapPaint::default(),
+            Transform::identity(),
+            None,
+        );
         let fresh: Vec<_> = s
             .recent
             .iter()

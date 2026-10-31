@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       publish:
-        description: Publish unsigned 0.4.1-rc.1 beta after all checks pass
+        description: Publish unsigned 0.4.2-rc.1 beta after all checks pass
         type: boolean
         default: false
 permissions:
@@ -19,12 +19,25 @@ jobs:
       - run: rustup toolchain install stable --profile minimal --component rustfmt --component clippy
       - run: python3 scripts/version.py --check
       - run: python3 scripts/test-version.py
+      - run: sudo apt-get update && sudo apt-get install -y pkg-config libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev
       - run: cargo +stable fmt --all --check
       - run: cargo +stable test --workspace --locked
       - run: cargo +stable clippy --workspace --all-targets --locked -- -D warnings
       - run: cargo +stable install cargo-audit --version 0.22.2 --locked
       - run: cargo audit --deny warnings
       - run: python3 scripts/check-source.py
+  linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: sudo apt-get update && sudo apt-get install -y pkg-config libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev xvfb
+      - run: rustup toolchain install stable --profile minimal
+      - run: bash scripts/build-linux.sh
+      - run: xvfb-run -a target/release/threat-atlas-linux --smoke-test
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ThreatAtlas-Linux-preview
+          path: dist/ThreatAtlas-Linux-*.tar.gz
   macos:
     runs-on: macos-latest
     steps:
@@ -87,7 +100,7 @@ jobs:
       - run: ./scripts/test-msi.ps1
   publish:
     if: github.event_name == 'workflow_dispatch' && inputs.publish && github.ref == 'refs/heads/main'
-    needs: [quality, macos, windows, msi, updater-tests, msi-install-test]
+    needs: [quality, macos, windows, linux, msi, updater-tests, msi-install-test]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -105,6 +118,10 @@ jobs:
         with:
           name: ThreatAtlas-Windows-binary
           path: release/windows
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ThreatAtlas-Linux-preview
+          path: release
       - name: Publish exact-commit artifacts
         env:
           GH_TOKEN: ${{ github.token }}
@@ -112,12 +129,12 @@ jobs:
           set -euo pipefail
           python3 scripts/version.py --check
           TAG=$(python3 scripts/version.py --tag)
-          test "$TAG" = v0.4.1-rc.1
+          test "$TAG" = v0.4.2-rc.1
           test -f "release/$(python3 scripts/version.py --msi-name)"
           cp README.md LICENSE SECURITY.md PRIVACY.md THIRD-PARTY-NOTICES.txt version.json release/windows/
           (cd release/windows && zip -r "../ThreatAtlas-Windows-$TAG.zip" .)
           rm -rf release/windows
           git archive --format=zip --prefix=ThreatAtlas/ HEAD > "release/ThreatAtlas-source-$TAG.zip"
-          (cd release && sha256sum *.msi *.zip > "ThreatAtlas-$TAG-SHA256SUMS.txt")
+          (cd release && sha256sum *.msi *.zip *.tar.gz > "ThreatAtlas-$TAG-SHA256SUMS.txt")
           printf '\nSource commit: `%s`\nMac build: %s\n' "$GITHUB_SHA" "$(python3 scripts/version.py --build)" >> docs/RELEASE-NOTES.md
-          gh release create "$TAG" release/* --target "$GITHUB_SHA" --title 'Threat Atlas SOC 0.4.1-rc.1 — Beta' --notes-file docs/RELEASE-NOTES.md --prerelease --latest=false
+          gh release create "$TAG" release/* --target "$GITHUB_SHA" --title 'Threat Atlas SOC 0.4.2-rc.1 — Beta' --notes-file docs/RELEASE-NOTES.md --prerelease --latest=false

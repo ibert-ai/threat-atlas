@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.2-rc.1 — beta preparation, 31 October 2026, build 10
+
+- Add country borders and expiring classification shading; preserve country activity independently of the bounded recent-record buffer.
+- Add a native Linux windowed preview and archive packaging/hosted smoke check.
+- Display the embedded installed product/prerelease/build version in the renderer.
+- Integrate Windows scaling/layout coverage and advance MSI ProductVersion to 0.4.2.
+- Keep TLS validation, unsigned-update rejection and earlier releases unchanged.
+
+Physical platform, signing, idle/lock and multi-monitor limits remain disclosed in release notes.
+
 ## 0.4.1-rc.1 — beta, 29 October 2026, build 9
 
 - Start the next patch development version without changing published 0.4.0 assets.
