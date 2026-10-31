@@ -86,7 +86,7 @@
     "publication": "Previously authorized after required technical gates pass"
   },
   "owner_action_required": "None — approvals and publication complete",
-  "updated_at": "2026-10-31T01:44:10.553Z",
+  "updated_at": "2026-10-31T01:47:32.316Z",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
@@ -132,6 +132,20 @@
     "items": [
       "Interactive Windows screensaver installation/discovery",
       "Browser-downloaded SCR/ZIP trust handling and clearer installation instructions"
+    ],
+    "requests": [
+      {
+        "id": "ATLAS-WIN-RIGHTCLICK-20261031-01",
+        "owner": "@IbertAgentControlBot",
+        "status": "requested; no test result claimed",
+        "task": "Compare SCR right-click Install with MSI setup shortcut for correct path and Windows screensaver registration",
+        "acceptance": [
+          "Record actual registered path and copy-versus-reference behavior",
+          "Check Settings selection, preview, idle activation and restart persistence",
+          "Check source-folder move/removal, elevation and file-specific download trust",
+          "Preserve idle/lock/password preferences and document cleanup"
+        ]
+      }
     ]
   },
   "withdrawn_assets": [
