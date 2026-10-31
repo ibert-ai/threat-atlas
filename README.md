@@ -36,7 +36,7 @@ Menu folder. Open **Set up Threat Atlas**, choose the saver, set the wait time,
 and Apply. **Preview Threat Atlas** opens a normal window. No manual copying or
 administrator account is required. Before uninstalling via Settings → Apps,
 select another screen saver. The installer preserves idle, lock and password
-settings. See [Windows setup](installer/INSTALL.txt).
+settings. See [Windows setup](installer/INSTALL.txt) and [Windows installation troubleshooting](docs/WINDOWS-INSTALLATION.md), including missing Settings entries, downloaded-file Unblock and system-directory architecture.
 
 **macOS:** extract the macOS ZIP, double-click `ThreatAtlasSOC.saver`, and install
 for your user account. Quit and reopen System Settings, then open Wallpaper →

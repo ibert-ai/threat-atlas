@@ -5,7 +5,7 @@ Threat Atlas SOC - Windows installation
 3. In Screen Saver Settings, choose ThreatAtlas if needed, set the wait time, and Apply.
 4. Use Preview Threat Atlas for a normal live window.
 
-No manual file copying or administrator account is needed. The MSI does not
+The MSI is designed for per-user installation without manual file copying or an administrator account. If the saver is missing from Screen Saver Settings, see the troubleshooting guide; successful file installation alone does not prove interactive discovery. The MSI does not
 change your password, sign-in requirement, idle timeout or active screensaver.
 An unsigned build may show a Windows security warning. Public distribution
 should use a trusted code-signing identity for both the SCR and MSI.
@@ -14,3 +14,10 @@ Uninstall: first select a different screen saver, then uninstall Threat Atlas SO
 from Windows Settings > Apps. Do not delete the installed SCR manually.
 Windows 10/11 x64. Internet access to GreyNoise's public feed is required.
 This is a visual telemetry viewer, not an endpoint security product.
+
+Downloaded SCR/ZIP: after checking the official source/checksum and choosing to trust that particular file, inspect File Explorer > Properties > General > Unblock (if present). A temporary extraction folder such as C:\Temp does not prove the marker is gone. Do not disable Windows protections or broadly unblock Downloads.
+
+System-wide deployment is separate from this per-user MSI. On 64-bit Windows, System32 is the 64-bit directory and SysWOW64 is 32-bit. This package is x64; dual-directory copying must not be assumed correct without testing. Manually copied files are not cleaned up by this MSI.
+
+Detailed Windows installation/troubleshooting:
+https://github.com/ibert-ai/threat-atlas/blob/main/docs/WINDOWS-INSTALLATION.md

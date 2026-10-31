@@ -1,6 +1,6 @@
 # Known bugs and limitations
 
-Reviewed 30 October 2026. Applies to published 0.4.0 and 0.4.1-rc.1 unless stated otherwise. This is not a claim that no other bugs exist.
+Reviewed 31 October 2026. Applies to published 0.4.0, 0.4.1-rc.1 and 0.4.2-rc.1 unless stated otherwise. This is not a claim that no other bugs exist.
 
 ## Known behavior requiring improvement
 
@@ -14,6 +14,10 @@ Reviewed 30 October 2026. Applies to published 0.4.0 and 0.4.1-rc.1 unless state
 - Windows binaries/MSI are unsigned; macOS bundles are ad-hoc signed and unnotarized. OS installation warnings or blocking are expected. Do not disable security protections.
 - Automatic updates intentionally reject unsigned builds and prereleases. Use manual installation.
 - Published 0.4.0 and 0.4.1-rc.1 have no Linux package. A planned Linux build is not an available download.
+
+## Windows installation troubleshooting
+
+The per-user MSI's hosted lifecycle check establishes file/shortcut installation, preference preservation and uninstall. It does not establish interactive Screen Saver Settings discovery after a browser download. Follow [Windows installation troubleshooting](WINDOWS-INSTALLATION.md) for missing Settings entries, deliberate file-specific Unblock handling, and the System32/SysWOW64 architecture distinction. System-wide deployment and dual-directory copying require separate Windows validation; no installer fix is claimed here.
 
 ## Testing gaps, not confirmed bugs
 
