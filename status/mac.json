@@ -1,11 +1,11 @@
 {
-  "verified_at": "2026-10-30T19:05:00Z",
-  "release": "0.4.2-rc.1 / build10 — Billy candidate ready for MAC validation",
+  "verified_at": "2026-10-31T00:40:33.228Z",
+  "release": "0.4.2-rc.1 / build10 — final release CI running",
   "decision": "NO-GO",
-  "eta": "Unconfirmed — independent final verification pending",
+  "eta": "Final hosted checks and artifact verification running; no confirmed finish time",
   "owner": "Billy: fixes + Windows/Linux evidence · MAC: final verification, commit + release",
   "reference": "ATLAS-PRIO-FIX-20261030-01 / GitHub Billy handoff",
-  "receipt": "Cloned and verified exact574e22e6df19f3d7a0388376dca496d7b84f7024; version drift/bump tests passed.",
+  "receipt": "MAC independently validated candidate574e22e6; publication/docs finalization committed ase4dcdc6 in PR14.",
   "tasks": [
     {
       "status": "checked",
@@ -32,22 +32,22 @@
       "owner": "MAC"
     },
     {
-      "status": "pending",
+      "status": "checked",
       "task": "Country highlight regression",
-      "evidence": "Billy reports complete on574e22e6df19f3d7a0388376dca496d7b84f7024; evidence in status/billy.json. MAC verification pending.",
-      "owner": "Billy"
+      "evidence": "Candidate574e22e6 source reviewed;13 core tests/version checks PASS. Windows final hosted tests running in PR14.",
+      "owner": "@IbertMACBot"
     },
     {
-      "status": "pending",
+      "status": "checked",
       "task": "Missing Windows patch",
-      "evidence": "Billy reports complete on574e22e6df19f3d7a0388376dca496d7b84f7024; evidence in status/billy.json. MAC verification pending.",
-      "owner": "Billy"
+      "evidence": "Candidate574e22e6 source reviewed;13 core tests/version checks PASS. Windows final hosted tests running in PR14.",
+      "owner": "@IbertMACBot"
     },
     {
-      "status": "pending",
+      "status": "checked",
       "task": "Version + MSI upgrade identity",
-      "evidence": "Billy reports complete on574e22e6df19f3d7a0388376dca496d7b84f7024; evidence in status/billy.json. MAC verification pending.",
-      "owner": "Billy"
+      "evidence": "Candidate574e22e6 source reviewed;13 core tests/version checks PASS. Windows final hosted tests running in PR14.",
+      "owner": "@IbertMACBot"
     },
     {
       "status": "pending",
@@ -58,7 +58,7 @@
     {
       "status": "pending",
       "task": "Independent final verification",
-      "evidence": "Independent validation running on574e22e6: isolated Rust1.99.1 installed; format and version checks PASS; workspace tests running, Mac build next.",
+      "evidence": "Final hosted CI running on PR14/e4dcdc6; native candidate13 tests, format/Clippy, version, Mac package/signatures/lifecycle/updater checks PASS. Publication follows final hosted verification.",
       "owner": "@IbertMACBot"
     },
     {
@@ -74,9 +74,11 @@
     "publication": "Previously authorized after required technical gates pass"
   },
   "owner_action_required": "None — visual and version approvals complete",
-  "updated_at": "2026-10-31T00:36:14.843Z",
+  "updated_at": "2026-10-31T00:40:33.228Z",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
-  "current_task": "Independent validation running on574e22e6: isolated Rust1.99.1 installed; format and version checks PASS; workspace tests running, Mac build next."
+  "current_task": "Final hosted CI running on PR14/e4dcdc6; native candidate13 tests, format/Clippy, version, Mac package/signatures/lifecycle/updater checks PASS. Publication follows final hosted verification.",
+  "active_pr": 14,
+  "source_commit": "e4dcdc6adaa23e696aec4cc4210f9217179facb7"
 }
