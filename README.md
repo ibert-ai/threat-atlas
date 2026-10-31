@@ -30,13 +30,13 @@ follow the security policy for security concerns.
 
 ## Install
 
-**Windows:** use the MSI matching the release you downloaded. The per-user installer copies the
+**Windows:** the 0.4.2-rc.1 MSI download is temporarily withdrawn while installation-path/integration behavior is investigated. The standalone Windows ZIP remains available for manual evaluation; a SCR executable defect is not established. See [Windows troubleshooting](docs/WINDOWS-INSTALLATION.md). The following MSI description documents the intended workflow for a corrected installer: use the MSI matching the release you downloaded. The per-user installer copies the
 screensaver to `%LOCALAPPDATA%\ThreatAtlas` and adds a **Threat Atlas SOC** Start
 Menu folder. Open **Set up Threat Atlas**, choose the saver, set the wait time,
 and Apply. **Preview Threat Atlas** opens a normal window. No manual copying or
 administrator account is required. Before uninstalling via Settings → Apps,
 select another screen saver. The installer preserves idle, lock and password
-settings. See [Windows setup](installer/INSTALL.txt).
+settings. See [Windows setup](installer/INSTALL.txt) and [Windows installation troubleshooting](docs/WINDOWS-INSTALLATION.md), including missing Settings entries, downloaded-file Unblock and system-directory architecture.
 
 **macOS:** extract the macOS ZIP, double-click `ThreatAtlasSOC.saver`, and install
 for your user account. Quit and reopen System Settings, then open Wallpaper →
