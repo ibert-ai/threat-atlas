@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "verified_at": "2026-10-31T00:54:12.174Z",
+  "release": "v0.4.2-rc.1",
+  "source_commit": "684a63bd4c21428d126f04aa4d3156bdcea232c9",
+  "release_url": "https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.2-rc.1",
+  "prerelease": true,
+  "workflow_run": 41151902562,
+  "workflow_result": "success",
+  "required_checks": [
+    {
+      "name": "quality",
+      "result": "success"
+    },
+    {
+      "name": "macos",
+      "result": "success"
+    },
+    {
+      "name": "windows",
+      "result": "success"
+    },
+    {
+      "name": "linux",
+      "result": "success"
+    },
+    {
+      "name": "updater-tests",
+      "result": "success"
+    },
+    {
+      "name": "msi",
+      "result": "success"
+    },
+    {
+      "name": "msi-install-test",
+      "result": "success"
+    }
+  ],
+  "independent_mac": {
+    "artifact_id": 13023850771,
+    "artifact_sha256": "b751f09bd18ec91c3b6bfba53f72666397c7be3813ecca9dea16e52c17d27371",
+    "zip_sha256": "ebf7eec641ec2860efa3b1f6fee0d458af7e47000c332fc5ba6f9aa9e1eeda98",
+    "all_three_binaries": "x86_64+arm64",
+    "strict_signatures": "PASS",
+    "native_lifecycle": "PASS",
+    "offline_updater_security": "PASS"
+  },
+  "live_audit": {
+    "source_commit": "574e22e6df19f3d7a0388376dca496d7b84f7024",
+    "elapsed_seconds": 73.217894,
+    "received_records": 79150,
+    "changed_batches": 246,
+    "final_status": "LIVE"
+  },
+  "downloads": [
+    {
+      "name": "ThreatAtlas-0.4.2-x64.msi",
+      "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.2-rc.1/ThreatAtlas-0.4.2-x64.msi",
+      "digest": "sha256:25d055648b0b9d371f7fcbda965be58866fe4a439a224cd8969487a42c7feb1a",
+      "downloaded_digest_matches": true
+    },
+    {
+      "name": "ThreatAtlas-Linux-0.4.2-x86_64.tar.gz",
+      "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.2-rc.1/ThreatAtlas-Linux-0.4.2-x86_64.tar.gz",
+      "digest": "sha256:b526c5b05a92c192179afbf034754ec585e3d866ab62fe98c3bb8ae8fd2f90ce",
+      "downloaded_digest_matches": true
+    },
+    {
+      "name": "ThreatAtlas-macOS.zip",
+      "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.2-rc.1/ThreatAtlas-macOS.zip",
+      "digest": "sha256:ebf7eec641ec2860efa3b1f6fee0d458af7e47000c332fc5ba6f9aa9e1eeda98",
+      "downloaded_digest_matches": true
+    },
+    {
+      "name": "ThreatAtlas-source-v0.4.2-rc.1.zip",
+      "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.2-rc.1/ThreatAtlas-source-v0.4.2-rc.1.zip",
+      "digest": "sha256:65bd1a4688097927d1f7637b9bafc255043b68f782a6a4e5600f1c7cb11c589a",
+      "downloaded_digest_matches": true
+    },
+    {
+      "name": "ThreatAtlas-v0.4.2-rc.1-SHA256SUMS.txt",
+      "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.2-rc.1/ThreatAtlas-v0.4.2-rc.1-SHA256SUMS.txt",
+      "digest": "sha256:f9fcab272a2ceb8d0c1e10b021431f15c35536cefe2c987d21deac6ab67dd618",
+      "downloaded_digest_matches": true
+    },
+    {
+      "name": "ThreatAtlas-Windows-v0.4.2-rc.1.zip",
+      "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.2-rc.1/ThreatAtlas-Windows-v0.4.2-rc.1.zip",
+      "digest": "sha256:8607a0c1a1c7dc7fe3ce8dadd06870c8c9f4b1c64bb0e7cb54a363eca637d8ba",
+      "downloaded_digest_matches": true
+    }
+  ],
+  "checksum_manifest": "All5 package hashes matched published SHA256SUMS",
+  "limits": [
+    "Windows unsigned; Mac ad-hoc signed/unnotarized; manual beta installation",
+    "Physical idle/lock/multi-monitor/HiDPI/Intel/Linux desktop/signed update-rollback/soak remain incomplete",
+    "Billy local MSI upgrade test is teammate-reported; final hosted lifecycle independently passed"
+  ]
+}
