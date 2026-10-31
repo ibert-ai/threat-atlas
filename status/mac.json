@@ -5,7 +5,7 @@
   "eta": "Unconfirmed — independent final verification pending",
   "owner": "Billy: fixes + Windows/Linux evidence · MAC: final verification, commit + release",
   "reference": "ATLAS-PRIO-FIX-20261030-01 / GitHub Billy handoff",
-  "receipt": "Final candidate cloned into isolated temporary checkout; independent validation started.",
+  "receipt": "Cloned and verified exact574e22e6df19f3d7a0388376dca496d7b84f7024; version drift/bump tests passed.",
   "tasks": [
     {
       "status": "checked",
@@ -56,9 +56,9 @@
       "owner": "Billy"
     },
     {
-      "status": "pending",
+      "status": "blocked",
       "task": "Independent final verification",
-      "evidence": "IN PROGRESS: isolated final source checkout; core tests and Mac build next. No final pass claimed.",
+      "evidence": "MAC final validation: exact source and version checks PASS; core tests/Mac build blocked because Rust cargo toolchain is unavailable in this session.",
       "owner": "@IbertMACBot"
     },
     {
@@ -74,9 +74,9 @@
     "publication": "Previously authorized after required technical gates pass"
   },
   "owner_action_required": "None — visual and version approvals complete",
-  "updated_at": "2026-10-31T00:34:00.818Z",
+  "updated_at": "2026-10-31T00:34:24.878Z",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
-  "current_task": "MAC independent validation of exact candidate574e22e6: source checkout verified; core tests starting, Mac build next"
+  "current_task": "MAC final validation: exact source and version checks PASS; core tests/Mac build blocked because Rust cargo toolchain is unavailable in this session."
 }
