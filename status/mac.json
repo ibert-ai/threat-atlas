@@ -1,71 +1,77 @@
 {
-  "verified_at": "2026-10-31T00:40:33.228Z",
-  "release": "0.4.2-rc.1 / build10 — publication checks running",
-  "decision": "PUBLICATION IN PROGRESS",
-  "eta": "Final hosted checks and artifact verification running; no confirmed finish time",
+  "verified_at": "2026-10-31T00:52:25.256Z",
+  "release": "0.4.2-rc.1 / build10 — published beta",
+  "decision": "PUBLISHED",
+  "eta": "Available now — manual installation",
   "owner": "Billy: fixes + Windows/Linux evidence · MAC: final verification, commit + release",
   "reference": "ATLAS-PRIO-FIX-20261030-01 / GitHub Billy handoff",
-  "receipt": "MAC independently validated candidate574e22e6; publication/docs finalization committed ase4dcdc6 in PR14.",
+  "receipt": "Billy handoff independently validated and integrated; release published from684a63bd4c21428d126f04aa4d3156bdcea232c9.",
   "tasks": [
     {
       "status": "checked",
       "task": "Owner visual and version approvals",
       "evidence": "Telegram Desktop verified 20:02 visual and 20:03 version0.4.2-rc.1 approvals",
-      "owner": "Robert"
+      "owner": "@IbertMACBot"
     },
     {
       "status": "checked",
       "task": "Integration CI baseline",
-      "evidence": "7/7 passed on dde50458; does not validate later fixes",
-      "owner": "GitHub / MAC"
+      "evidence": "Final main684a63b: all7 quality/macOS/Windows/Linux/updater/MSI/lifecycle gates PASS.",
+      "owner": "@IbertMACBot"
     },
     {
       "status": "checked",
       "task": "Universal Mac baseline",
-      "evidence": "Downloaded slices, signatures, native smoke and updater verified on dde50458",
-      "owner": "MAC"
+      "evidence": "Exact-main downloaded universal ZIPebf7eec6: Intel+Apple Silicon, signatures/native/updater PASS.",
+      "owner": "@IbertMACBot"
     },
     {
       "status": "checked",
       "task": "Source/evidence handoff received",
-      "evidence": "Billy completed-handoff report read in Telegram Desktop at 19:02; files not independently verified",
-      "owner": "MAC"
+      "evidence": "Candidate574e22e6 independently checked; final commit684a63b tree identical to reviewed PR14e4dcdc6.",
+      "owner": "@IbertMACBot"
     },
     {
       "status": "checked",
       "task": "Country highlight regression",
-      "evidence": "Candidate574e22e6 source reviewed;13 core tests/version checks PASS. Windows final hosted tests running in PR14.",
+      "evidence": "Independent13 core tests PASS including>600-record retention and expiry; final hosted core tests PASS.",
       "owner": "@IbertMACBot"
     },
     {
       "status": "checked",
       "task": "Missing Windows patch",
-      "evidence": "Candidate574e22e6 source reviewed;13 core tests/version checks PASS. Windows final hosted tests running in PR14.",
+      "evidence": "Scaling patch integrated and source reviewed; final hosted Windows Clippy/tests/build PASS.",
       "owner": "@IbertMACBot"
     },
     {
       "status": "checked",
       "task": "Version + MSI upgrade identity",
-      "evidence": "Candidate574e22e6 source reviewed;13 core tests/version checks PASS. Windows final hosted tests running in PR14.",
+      "evidence": "0.4.2-rc.1/build10/MSI0.4.2 version checks PASS; hosted MSI lifecycle PASS; Billy upgrade test remains scoped teammate report.",
       "owner": "@IbertMACBot"
     },
     {
-      "status": "pending",
+      "status": "checked",
       "task": "Final candidate builds + tests",
-      "evidence": "Billy reports complete on574e22e6df19f3d7a0388376dca496d7b84f7024; evidence in status/billy.json. MAC verification pending.",
-      "owner": "Billy"
+      "evidence": "Final main684a63b hosted Windows/Linux/MSI builds and tests PASS. Teammate-only physical limits remain below.",
+      "owner": "@IbertMACBot"
     },
     {
-      "status": "pending",
+      "status": "checked",
       "task": "Independent final verification",
-      "evidence": "Final hosted CI running on PR14/e4dcdc6; native candidate13 tests, format/Clippy, version, Mac package/signatures/lifecycle/updater checks PASS. Publication follows final hosted verification.",
+      "evidence": "Exact-main universal Mac: digest,3 dual-architecture binaries, strict signatures, native lifecycle and updater tests PASS.",
+      "owner": "@IbertMACBot"
+    },
+    {
+      "status": "checked",
+      "task": "Final commit + publication",
+      "evidence": "Publishedv0.4.2-rc.1 from684a63b, workflow41151902562 PASS; all6 assets downloaded/hashes matched.",
       "owner": "@IbertMACBot"
     },
     {
       "status": "pending",
-      "task": "Final commit + publication",
-      "evidence": "Final commit merged684a63b; authorized manual workflow41151902562 will upload only after all7 gates pass.",
-      "owner": "@IbertMACBot"
+      "task": "Physical acceptance and trusted signing",
+      "owner": "Future validation — not owner approval",
+      "evidence": "Idle/lock, multiple monitors/HiDPI, Intel hardware, physical Linux desktop, signed update/rollback and soak remain incomplete; disclosed beta limits."
     }
   ],
   "approvals": {
@@ -73,13 +79,47 @@
     "version": "0.4.2-rc.1 approved by Robert at 20:03 CET",
     "publication": "Previously authorized after required technical gates pass"
   },
-  "owner_action_required": "None — visual and version approvals complete",
-  "updated_at": "2026-10-31T00:46:16.566Z",
+  "owner_action_required": "None — approvals and publication complete",
+  "updated_at": "2026-10-31T00:52:25.256Z",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
-  "current_task": "PR14 merged after7/7 checks; exact main684a63b publication workflow41151902562 running. Downloaded PR universal Mac package independently verified. Waiting for final exact-main gates and automatic upload.",
+  "current_task": "Release complete: published684a63b; all7 exact-main gates PASS,6 assets downloaded and hashes verified. No owner action required.",
   "active_pr": 14,
   "source_commit": "684a63bd4c21428d126f04aa4d3156bdcea232c9",
-  "workflow_run": 41151902562
+  "workflow_run": 41151902562,
+  "published_at": "2026-10-31T00:51:21Z",
+  "release_url": "https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.2-rc.1",
+  "downloads": [
+    {
+      "name": "ThreatAtlas-0.4.2-x64.msi",
+      "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.2-rc.1/ThreatAtlas-0.4.2-x64.msi",
+      "sha256": "sha256:25d055648b0b9d371f7fcbda965be58866fe4a439a224cd8969487a42c7feb1a"
+    },
+    {
+      "name": "ThreatAtlas-Linux-0.4.2-x86_64.tar.gz",
+      "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.2-rc.1/ThreatAtlas-Linux-0.4.2-x86_64.tar.gz",
+      "sha256": "sha256:b526c5b05a92c192179afbf034754ec585e3d866ab62fe98c3bb8ae8fd2f90ce"
+    },
+    {
+      "name": "ThreatAtlas-macOS.zip",
+      "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.2-rc.1/ThreatAtlas-macOS.zip",
+      "sha256": "sha256:ebf7eec641ec2860efa3b1f6fee0d458af7e47000c332fc5ba6f9aa9e1eeda98"
+    },
+    {
+      "name": "ThreatAtlas-source-v0.4.2-rc.1.zip",
+      "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.2-rc.1/ThreatAtlas-source-v0.4.2-rc.1.zip",
+      "sha256": "sha256:65bd1a4688097927d1f7637b9bafc255043b68f782a6a4e5600f1c7cb11c589a"
+    },
+    {
+      "name": "ThreatAtlas-v0.4.2-rc.1-SHA256SUMS.txt",
+      "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.2-rc.1/ThreatAtlas-v0.4.2-rc.1-SHA256SUMS.txt",
+      "sha256": "sha256:f9fcab272a2ceb8d0c1e10b021431f15c35536cefe2c987d21deac6ab67dd618"
+    },
+    {
+      "name": "ThreatAtlas-Windows-v0.4.2-rc.1.zip",
+      "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.2-rc.1/ThreatAtlas-Windows-v0.4.2-rc.1.zip",
+      "sha256": "sha256:8607a0c1a1c7dc7fe3ce8dadd06870c8c9f4b1c64bb0e7cb54a363eca637d8ba"
+    }
+  ]
 }
