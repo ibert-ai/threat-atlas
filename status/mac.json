@@ -1,7 +1,7 @@
 {
   "verified_at": "2026-10-31T00:40:33.228Z",
-  "release": "0.4.2-rc.1 / build10 — final release CI running",
-  "decision": "NO-GO",
+  "release": "0.4.2-rc.1 / build10 — publication checks running",
+  "decision": "PUBLICATION IN PROGRESS",
   "eta": "Final hosted checks and artifact verification running; no confirmed finish time",
   "owner": "Billy: fixes + Windows/Linux evidence · MAC: final verification, commit + release",
   "reference": "ATLAS-PRIO-FIX-20261030-01 / GitHub Billy handoff",
@@ -62,10 +62,10 @@
       "owner": "@IbertMACBot"
     },
     {
-      "status": "blocked",
+      "status": "pending",
       "task": "Final commit + publication",
-      "evidence": "Authorized once required checks pass; preserve prior releases",
-      "owner": "MAC"
+      "evidence": "Final commit merged684a63b; authorized manual workflow41151902562 will upload only after all7 gates pass.",
+      "owner": "@IbertMACBot"
     }
   ],
   "approvals": {
@@ -74,11 +74,12 @@
     "publication": "Previously authorized after required technical gates pass"
   },
   "owner_action_required": "None — visual and version approvals complete",
-  "updated_at": "2026-10-31T00:40:33.228Z",
+  "updated_at": "2026-10-31T00:46:16.566Z",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
-  "current_task": "Final hosted CI running on PR14/e4dcdc6; native candidate13 tests, format/Clippy, version, Mac package/signatures/lifecycle/updater checks PASS. Publication follows final hosted verification.",
+  "current_task": "PR14 merged after7/7 checks; exact main684a63b publication workflow41151902562 running. Downloaded PR universal Mac package independently verified. Waiting for final exact-main gates and automatic upload.",
   "active_pr": 14,
-  "source_commit": "e4dcdc6adaa23e696aec4cc4210f9217179facb7"
+  "source_commit": "684a63bd4c21428d126f04aa4d3156bdcea232c9",
+  "workflow_run": 41151902562
 }
