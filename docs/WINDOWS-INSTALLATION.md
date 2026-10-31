@@ -2,6 +2,8 @@
 
 Applies to the unsigned 0.4.2-rc.1 beta. Windows 10/11 x64 only.
 
+**Windows MSI temporarily withdrawn:** the current beta's MSI download is unavailable while installation-path/integration behavior is investigated. The SCR executable is not established to be defective. The standalone Windows ZIP remains available for manual evaluation. Do not treat the MSI steps below as a currently available download; they document the intended per-user workflow for a corrected installer.
+
 ## Per-user MSI installation
 
 1. Download the MSI from the [published release](https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.2-rc.1). Check its SHA-256 against that release's checksum manifest.

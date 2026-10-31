@@ -17,6 +17,8 @@ Reviewed 31 October 2026. Applies to published 0.4.0, 0.4.1-rc.1 and 0.4.2-rc.1 
 
 ## Windows installation troubleshooting
 
+The 0.4.2-rc.1 Windows MSI download was withdrawn 31 October 2026 pending installation-path/integration validation. The standalone Windows ZIP remains available for manual evaluation; no SCR executable defect is established. Existing published package bytes and source/tag remain unchanged.
+
 The per-user MSI's hosted lifecycle check establishes file/shortcut installation, preference preservation and uninstall. It does not establish interactive Screen Saver Settings discovery after a browser download. Follow [Windows installation troubleshooting](WINDOWS-INSTALLATION.md) for missing Settings entries, deliberate file-specific Unblock handling, and the System32/SysWOW64 architecture distinction. System-wide deployment and dual-directory copying require separate Windows validation; no installer fix is claimed here.
 
 ## Testing gaps, not confirmed bugs

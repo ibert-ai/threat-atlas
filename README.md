@@ -30,7 +30,7 @@ follow the security policy for security concerns.
 
 ## Install
 
-**Windows:** use the MSI matching the release you downloaded. The per-user installer copies the
+**Windows:** the 0.4.2-rc.1 MSI download is temporarily withdrawn while installation-path/integration behavior is investigated. The standalone Windows ZIP remains available for manual evaluation; a SCR executable defect is not established. See [Windows troubleshooting](docs/WINDOWS-INSTALLATION.md). The following MSI description documents the intended workflow for a corrected installer: use the MSI matching the release you downloaded. The per-user installer copies the
 screensaver to `%LOCALAPPDATA%\ThreatAtlas` and adds a **Threat Atlas SOC** Start
 Menu folder. Open **Set up Threat Atlas**, choose the saver, set the wait time,
 and Apply. **Preview Threat Atlas** opens a normal window. No manual copying or

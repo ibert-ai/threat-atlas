@@ -1,5 +1,7 @@
 Threat Atlas SOC - Windows installation
 
+CURRENT 0.4.2-rc.1 MSI DOWNLOAD WITHDRAWN: installation-path/integration behavior is under investigation. The standalone Windows ZIP remains available for manual evaluation. No SCR executable defect is established. MSI steps below describe the intended per-user workflow; a corrected MSI requires a new version and Windows acceptance.
+
 1. Double-click the MSI. It copies the program to your user profile automatically.
 2. Open Start > Threat Atlas SOC > Set up Threat Atlas.
 3. In Screen Saver Settings, choose ThreatAtlas if needed, set the wait time, and Apply.
