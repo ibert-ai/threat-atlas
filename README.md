@@ -6,9 +6,11 @@ GreyNoise public threat-map feed. The header shows both UTC and the computer's l
 
 ## Release status
 
-The **0.4.1-rc.1 beta**, build **9**, is a prerelease for manual testing:
-[beta downloads](https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.1-rc.1).
-It updates version metadata and documentation without runtime feature changes.
+The **0.4.2-rc.1 beta**, build **10**, is prepared for manual testing after exact-source CI and package verification:
+[release downloads](https://github.com/ibert-ai/threat-atlas/releases).
+It adds country borders and expiring classification shading, a Linux windowed preview,
+an installed-version footer, high-volume highlight retention and Windows scaling fixes.
+Windows MSI ProductVersion advances to 0.4.2 for upgrade identity.
 Version **0.4.0** remains the latest stable release.
 
 The official **0.4.0**, build **8**, release ships without trusted code signing.

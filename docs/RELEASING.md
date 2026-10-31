@@ -2,8 +2,8 @@
 
 `version.json` is the authoritative release manifest. The official unsigned
 release is 0.4.0, build 8. Stable status does not imply trusted signatures.
-The current manifest is the 0.4.1-rc.1 beta, build 9. It is published as a
-prerelease; 0.4.0 stays latest stable. Historical 0.4.0 assets remain unchanged.
+The current manifest prepares the 0.4.2-rc.1 beta, build 10. It will be published as a
+prerelease after exact-source automated checks and package validation; 0.4.0 stays latest stable. Historical 0.4.0 assets remain unchanged.
 
 The maintainer authorized unsigned publication on 29 October 2026. For 0.4.0,
 the signing and manual acceptance gates below remain incomplete and must be
@@ -39,7 +39,7 @@ signed 1.0.0 installer will use a newer numeric version than these previews.
 4. Create the derived tag and a GitHub release for that same commit. Mark it as
    a prerelease whenever `prerelease` is non-null. Never relabel a preview as a
    stable update or claim signing approval before it exists.
-5. Upload matching Windows MSI, macOS ZIP, source archive and SHA-256 checksums.
+5. Upload matching Windows MSI, macOS ZIP, Linux preview archive, source archive and SHA-256 checksums.
    Include the source commit, product version, Mac build, signing/notarization
    status and known acceptance limits in the notes. Verify the public links.
 
@@ -49,7 +49,7 @@ Windows ZIP names include the derived tag. See UPDATES.md for signature/key rule
 Do not overwrite old release assets with new payloads under an old tag/version.
 Keep previous downloads available and publish a new preview when the checks pass.
 
-The current manual publication job is deliberately restricted to v0.4.1-rc.1
+The current manual publication job is deliberately restricted to v0.4.2-rc.1
 and sets the GitHub prerelease flag without replacing latest stable.
 Preparing a new version does not authorize that job to publish it. Before the
 next publication, review its version guard, release notes, prerelease flag and

@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-31",
+  "source_commit": "574e22e6df19f3d7a0388376dca496d7b84f7024",
+  "version": "0.4.2-rc.1",
+  "build": 10,
+  "rustc": "1.99.1",
+  "cargo": "1.99.1",
+  "host": "aarch64-apple-darwin",
+  "checks": {
+    "workspace_tests": "13 passed",
+    "format": "passed",
+    "clippy": "passed; warnings denied",
+    "version_tests": "passed",
+    "publishable_source_scan": "passed; pattern scan only",
+    "native_mac_package": "passed; Apple Silicon only",
+    "strict_package_signatures": "passed",
+    "native_lifecycle": "passed; pre-animation/preview/full-screen/restart",
+    "offline_updater_security": "passed; version/archive traversal/root/symlink fixtures"
+  },
+  "local_zip_sha256": "f23f100572312d3d38495d71c479578bbe8def4ec57b97ca98546b4ea2b31e49",
+  "limits": [
+    "Candidate-source local build, not final hosted universal artifact",
+    "Physical idle/lock/multi-monitor/Intel hardware and signing acceptance not established",
+    "Billy Windows/Linux/MSI upgrade results remain teammate-reported until separate evidence verified"
+  ]
+}

@@ -1,36 +1,32 @@
-# Threat Atlas SOC 0.4.1-rc.1 — Beta
+# Threat Atlas SOC 0.4.2-rc.1 — Beta
 
-Beta prerelease, 29 October 2026; product version 0.4.1, Mac build 9.
-Version 0.4.0 remains the latest stable release.
+Beta prerelease, 31 October 2026; product/MSI version 0.4.2, Mac build 10.
+Version 0.4.0 remains the latest stable release. Preserve earlier downloads.
 
-## Changes since stable 0.4.0
+## Changes since 0.4.1-rc.1
 
-- Advance patch development metadata consistently across Rust, MSI and macOS.
-- Refresh release, quality, signing and automatic-update documentation.
-- No runtime feature changes are introduced by this beta.
-- Retains the dual clocks, macOS lifecycle repairs and screenshot thumbnails from 0.4.0.
+- Country borders and classification shading with independent expiry timestamps. High-volume traffic no longer removes an active country highlight when the 600-record recent buffer turns over.
+- Linux x86_64 windowed preview with portable archive packaging and hosted Xvfb smoke checks. This is not an idle screensaver or lock-screen integration.
+- Installed version, prerelease and build displayed in the shared renderer footer.
+- Windows scaling/layout regression coverage and MSI ProductVersion 0.4.2 for a distinct upgrade identity.
+- Retains live GreyNoise telemetry, certificate-validated TLS, clocks, native Mac lifecycle repairs and screenshot thumbnails.
 
 ## Signing and updates
 
-Windows SCR/MSI files are unsigned. macOS universal bundles are ad-hoc signed,
-not Developer ID signed or notarized. Systems may warn or block installation;
-do not disable OS security protections. Automatic updates reject unsigned
-builds and ignore prereleases. Install this beta manually if you choose to test it.
+Windows SCR/MSI are unsigned. Mac bundles contain Intel and Apple Silicon slices and are ad-hoc signed, not Developer ID signed or notarized. OS warnings or blocking may occur; do not disable protections. Automatic updates reject unsigned packages and ignore prereleases. Install manually. Linux is an unsigned application preview.
 
-## Verification and limitations
+## Verification and limits
 
-Publication requires all six quality/platform/installer CI checks to pass for
-the source commit below. SHA-256 checksums accompany all downloadable packages.
-On-device Mac Settings preview, idle/lock transitions, multiple monitors, Intel
-hardware, extended soak, interactive Windows setup and upgrade/rollback
-acceptance remain incomplete. Signed upgrades have not been validated.
-See docs/QUALITY.md for details and reviewed dependency exceptions.
+Publication requires quality/core tests, universal Mac build/native lifecycle/updater checks, Windows tests/build, Linux build/Xvfb smoke, MSI packaging and MSI lifecycle checks on the published source commit. Download checksums accompany all packages. Earlier-commit checks do not establish final-source acceptance.
 
-Install the per-user Windows MSI, or extract the Mac ZIP and install
-ThreatAtlasSOC.saver. Keep the stable 0.4.0 download available if you need it.
+Billy reports Windows and Linux candidate tests and 0.4.1-to-0.4.2 MSI upgrade/replacement/uninstall passed on source574e22e6. MAC independently passed13 core tests, formatting, Clippy, version tests, native Apple Silicon packaging/signatures, native saver lifecycle and offline updater safety on that source. Hosted final-source results must pass before publication.
+
+Physical Intel Mac and Linux desktop acceptance, Windows interactive Settings, idle/lock transitions, multiple monitors/HiDPI, signed upgrade/rollback and extended soak remain incomplete. Visual approval does not imply those unrun tests passed. Linux Xvfb smoke is not physical desktop validation. See docs/QUALITY.md.
 
 ## Known bugs
 
-- OS DNS lookup can delay feed-worker shutdown; immediate termination and zero background traffic after stopping are not guaranteed.
-- After upgrading from legacy macOS 0.2, the old saver may remain selected and show a blank preview. Select **Threat Atlas SOC**, back up duplicate legacy bundles and reopen System Settings.
-- See [known bugs and limitations](https://github.com/ibert-ai/threat-atlas/blob/main/docs/KNOWN-BUGS.md) for workarounds and reporting. Unsigned distribution, manual-only updates and incomplete platform acceptance are documented limitations, not newly confirmed runtime bugs.
+- OS DNS resolution can delay feed-worker shutdown; immediate termination and zero background traffic after stopping are not guaranteed.
+- A legacy Mac0.2 saver may remain selected after upgrade and show a blank preview. Select Threat Atlas SOC, back up duplicate legacy bundles and reopen System Settings.
+- Signing and physical acceptance gaps above remain limitations. No trusted automatic-update support is claimed for this beta.
+
+Use the per-user Windows MSI, universal Mac ZIP or Linux application archive. Keep known-working stable0.4.0 available. Source commit and Mac build are appended by the exact-commit publication job.
