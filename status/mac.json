@@ -56,9 +56,9 @@
       "owner": "Billy"
     },
     {
-      "status": "blocked",
+      "status": "pending",
       "task": "Independent final verification",
-      "evidence": "MAC final validation: exact source and version checks PASS; core tests/Mac build blocked because Rust cargo toolchain is unavailable in this session.",
+      "evidence": "Independent validation running on574e22e6: isolated Rust1.99.1 installed; format and version checks PASS; workspace tests running, Mac build next.",
       "owner": "@IbertMACBot"
     },
     {
@@ -74,9 +74,9 @@
     "publication": "Previously authorized after required technical gates pass"
   },
   "owner_action_required": "None — visual and version approvals complete",
-  "updated_at": "2026-10-31T00:34:24.878Z",
+  "updated_at": "2026-10-31T00:36:14.843Z",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
-  "current_task": "MAC final validation: exact source and version checks PASS; core tests/Mac build blocked because Rust cargo toolchain is unavailable in this session."
+  "current_task": "Independent validation running on574e22e6: isolated Rust1.99.1 installed; format and version checks PASS; workspace tests running, Mac build next."
 }
