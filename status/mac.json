@@ -86,7 +86,7 @@
     "publication": "Previously authorized after required technical gates pass"
   },
   "owner_action_required": "No repeat approval required for assigned standalone implementation. Existing unrelated owner actions remain separately recorded; no go-live approval inferred.",
-  "updated_at": "2026-11-02T20:36:23.768Z",
+  "updated_at": "2026-11-02T20:40:40.841Z",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
@@ -584,5 +584,22 @@
     "snapshot_sha256": "0c999337aa34d80a4385a854fa3d1be57658c39db32bf170c62c1f38e99cedc5",
     "result": "All committed data keys match API. Additional served_at/github/github_error/local_only are runtime metadata, not mismatch.",
     "limits": "Image/reboot/firewall persistence not independently verified"
+  },
+  "node24_actions": {
+    "status": "Shared pipeline upgrade in draft PR22; hosted validation pending",
+    "commit": "0e8e299a1441bb30a4dfec960a0a61768e13bad2",
+    "pr": 22,
+    "owners": {
+      "MAC": "shared build.yml",
+      "Billy": "Windows standalone workflow",
+      "CL": "Mac standalone/task-owned workflows"
+    },
+    "pins": {
+      "checkout": "v7.0.1 /3d3c42e5aac5ba805825da76410c181273ba90b1",
+      "upload": "v7.0.2 /cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+      "download": "v8.0.2 /9000827ccba6bdab643e8b6fd33ac0654aef8333"
+    },
+    "verification": "Official release tags resolved to commit SHAs; all three action.yml files declare node24. Hosted behavior/warning removal not yet verified.",
+    "handoff": "ATLAS-NODE24-20261102-01 posted; acknowledgement/execution pending"
   }
 }
