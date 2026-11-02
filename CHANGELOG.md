@@ -1,3 +1,11 @@
+# AtlasSOC standalone 0.7.0-beta.1 / build10
+
+- Separate Windows x64 and macOS14+ universal standalone SOC on the shared real-data renderer.
+- Provider-classified received records, country focus/inspection, severity filters and Realtime/Calm/Still.
+- Windows persistent controls/mirroring and offline native smoke; macOS optional Radar aggregates, version/build/terms consent before network startup.
+- Sentinel working identity, pinned Node24 CI actions and platform-specific installation/privacy/known limits.
+- Portable Windows beta; final installer/upgrade, physical wall/soak/trusted signing remain incomplete. No Windows Radar or Linux standalone. Existing screensaver release metadata/assets unchanged.
+
 # Changelog
 
 ## 0.4.2-rc.1 — beta preparation, 31 October 2026, build 10

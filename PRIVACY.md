@@ -28,3 +28,7 @@ HTTPS, verifies publisher code signatures locally, and installs them. GitHub/CDN
 operators receive your IP address and normal request metadata. No account/token
 is sent. A local status file records the latest result; it is not uploaded.
 Disable updates from the preview app menu (macOS) or Start Menu (Windows).
+
+## AtlasSOC standalone beta
+
+The standalone beta first requires version/build/terms consent before constructing its GreyNoise worker. Windows stores local settings and consent but has no Radar worker or API token storage. macOS optionally reads a user-supplied Radar Read token from Keychain and, only after Start, retrieves past-day aggregates from api.cloudflare.com. It retains aggregate cache/receipt time and persisted cooldown under Application Support/ThreatAtlasPrivateRadar with one worker lock and a15-minute request floor. Data is aggregated, not individual live events. No added analytics or host probing. Profile/Keychain data is not deleted automatically on bundle/folder removal. The standalone installs no updater/startup task; screensaver updater statements above apply only to that separate product. See docs/ATLAS-SOC-BETA.md for all paths, scope and limitations.

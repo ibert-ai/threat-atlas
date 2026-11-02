@@ -15,7 +15,7 @@ $package = Join-Path $PWD 'dist/windows-soc'
 New-Item -ItemType Directory -Force -Path $package | Out-Null
 $targetRoot = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $PWD 'target' }
 Copy-Item -LiteralPath (Join-Path $targetRoot 'x86_64-pc-windows-msvc/release/threat-atlas-soc.exe') -Destination (Join-Path $package 'AtlasSOC.exe')
-Copy-Item -LiteralPath 'docs/WINDOWS-SOC.md','LICENSE','PRIVACY.md','THIRD-PARTY-NOTICES.txt','docs/CLOUDFLARE-LICENSE.json' -Destination $package
+Copy-Item -LiteralPath 'docs/WINDOWS-SOC.md','docs/ATLAS-SOC-BETA.md','LICENSE','PRIVACY.md','THIRD-PARTY-NOTICES.txt','docs/CLOUDFLARE-LICENSE.json' -Destination $package
 $sourceCommit = (& git rev-parse HEAD).Trim()
 $sourceDirty = [bool](& git status --porcelain --untracked-files=normal)
 $socVersion = Get-Content -Raw -LiteralPath 'windows-soc-version.json' | ConvertFrom-Json

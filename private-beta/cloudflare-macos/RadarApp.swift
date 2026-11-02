@@ -9,7 +9,7 @@ struct RadarView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Threat Atlas SOC").font(.largeTitle.bold())
-            Text("PRIVATE macOS BETA 0.7 · Standalone SOC on the shared screensaver core").foregroundStyle(.orange)
+            Text("AtlasSOC BETA \(radarLicenseTerms.version) · build \(radarLicenseTerms.build) · Ibert Consulting").foregroundStyle(.orange)
             Text("Live: GreyNoise public threat-map records as received (not unique attacks), classified by the provider. Cloudflare Radar: past-day aggregate shares; never turned into routes or individual events.")
             HStack {
                 SecureField("Cloudflare API token · Account / Radar / Read", text: $token)

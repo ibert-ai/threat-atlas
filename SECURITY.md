@@ -19,3 +19,7 @@ The provider's availability and schema are outside this project's control.
 
 See docs/QUALITY.md for checks and explicit dependency-review exceptions.
 A clean audit and code signature do not guarantee absence of bugs or malware.
+
+## Standalone0.7.0 beta scope
+
+See docs/ATLAS-SOC-BETA.md for unsigned/ad-hoc distribution and explicit inherited audit-warning disposition. Existing .cargo/audit.toml exceptions are unchanged, not new warning suppression. Do not treat a passing configured audit as an unfiltered clean bill of health. This beta does not add a Linux binary or user/network-supplied fonts. Report suspected issues using the existing reporting route above; do not disclose credentials or live private telemetry in public issues.
