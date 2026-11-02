@@ -21,6 +21,13 @@ enum Severity: Int, CaseIterable {
          Color(red: 72 / 255, green: 199 / 255, blue: 142 / 255)][rawValue]
     }
 }
+/// Arc motion. Calm is the default for long viewing; Realtime is opt-in and screensaver-like.
+enum Motion: UInt32, CaseIterable {
+    case calm = 0, still = 1, realtime = 2
+    var name: String { ["Calm", "Still", "Realtime"][Int(rawValue)] }
+    /// Seconds between frames: Calm needs slow fades, Realtime moving heads, Still only the clocks.
+    var frameInterval: Double { [0.125, 1, 1.0 / 15][Int(rawValue)] }
+}
 let infoColor = Color(red: 116 / 255, green: 151 / 255, blue: 189 / 255)
 
 /// Country details from the core's hover inspection (counts are received records, not unique attacks).
@@ -44,9 +51,9 @@ final class CoreAtlas {
     private(set) var focused: Int32 = -1
     deinit { ta_soc_drop(session) }
 
-    func setOptions(severities: [Bool], calm: Bool) {
+    func setOptions(severities: [Bool], motion: Motion) {
         let mask = severities.enumerated().reduce(UInt32(0)) { $0 | ($1.element ? 1 << UInt32($1.offset) : 0) }
-        ta_soc_set_options(session, mask, calm ? 0 : 1)
+        ta_soc_set_options(session, mask, motion.rawValue)
     }
     func setRadarLayer(on: Bool, hidden: Set<String>) {
         let codes = Array(hidden.sorted().joined(separator: ",").utf8)
@@ -102,7 +109,7 @@ struct CoreAtlasView: View {
     let received: Date?
     @State private var atlas = CoreAtlas()
     @State private var severities = [true, true, true]
-    @State private var calm = true
+    @State private var motion = Motion.calm
     @State private var paused = false
     @State private var focused = false
     @State private var hover: CountryInfo?
@@ -128,8 +135,8 @@ struct CoreAtlasView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             controls
-            // Calm: 8 frames/s for slow fades. Still or paused: 1 frame/s for clocks only.
-            TimelineView(.periodic(from: .now, by: calm && !paused ? 0.125 : 1)) { _ in
+            // Calm 8 frames/s, Realtime 15 frames/s; Still or paused 1 frame/s for the clocks.
+            TimelineView(.periodic(from: .now, by: paused ? 1 : motion.frameInterval)) { _ in
                 let image = paused ? atlas.last : atlas.frame(result: result, received: received)
                 GeometryReader { geo in
                     let fit = FrameFit(geo.size)
@@ -171,13 +178,13 @@ struct CoreAtlasView: View {
             }
         }
         .onAppear {
-            atlas.setOptions(severities: severities, calm: calm)
+            atlas.setOptions(severities: severities, motion: motion)
             atlas.setRadarLayer(on: radarOn, hidden: hidden)
         }
         .onChange(of: radarOn) { _, value in atlas.setRadarLayer(on: value, hidden: hidden) }
         .onChange(of: hidden) { _, value in atlas.setRadarLayer(on: radarOn, hidden: value) }
-        .onChange(of: severities) { _, value in atlas.setOptions(severities: value, calm: calm) }
-        .onChange(of: calm) { _, value in atlas.setOptions(severities: severities, calm: value) }
+        .onChange(of: severities) { _, value in atlas.setOptions(severities: value, motion: motion) }
+        .onChange(of: motion) { _, value in atlas.setOptions(severities: severities, motion: value) }
     }
 
     private var controls: some View {
@@ -192,11 +199,11 @@ struct CoreAtlasView: View {
                 .toggleStyle(.button)
             }
             Divider().frame(height: 18)
-            Picker("Motion", selection: $calm) {
-                Text("Calm").tag(true)
-                Text("Still").tag(false)
+            Picker("Motion", selection: $motion) {
+                ForEach(Motion.allCases, id: \.rawValue) { Text($0.name).tag($0) }
             }
-            .pickerStyle(.segmented).frame(width: 140).labelsHidden()
+            .pickerStyle(.segmented).frame(width: 230).labelsHidden()
+            .help("Calm: few slow arcs (default). Still: no arcs. Realtime: up to 40 arcs/s as records arrive.")
             Button(paused ? "Resume" : "Pause") { paused.toggle() }
             Divider().frame(height: 18)
             Toggle(isOn: $radarOn) {

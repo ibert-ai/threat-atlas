@@ -223,7 +223,8 @@ pub unsafe extern "C" fn ta_soc_set_radar(
     }))
     .unwrap_or(-1)
 }
-/// `severities`: bit 0 malicious, bit 1 suspicious, bit 2 benign. `motion`: 0 calm, 1 still.
+/// `severities`: bit 0 malicious, bit 1 suspicious, bit 2 benign.
+/// `motion`: 0 calm (default), 1 still, 2 realtime; anything else is calm.
 /// # Safety
 /// `session` must be null or a live pointer from ta_soc_new.
 #[no_mangle]
@@ -239,10 +240,10 @@ pub unsafe extern "C" fn ta_soc_set_options(
             severities & 2 != 0,
             severities & 4 != 0,
         ];
-        options.motion = if motion == 1 {
-            render::soc::Motion::Still
-        } else {
-            render::soc::Motion::Calm
+        options.motion = match motion {
+            1 => render::soc::Motion::Still,
+            2 => render::soc::Motion::Realtime,
+            _ => render::soc::Motion::Calm,
         };
     }
 }

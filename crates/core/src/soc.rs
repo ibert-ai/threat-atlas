@@ -31,6 +31,12 @@ const ARC_FADE_IN_MS: u64 = 1000;
 pub const ARCS_PER_SECOND: f64 = 2.;
 pub const MAX_ARCS: usize = 20;
 const LIST_REFRESH_MS: u64 = 2000;
+/// Realtime mode: bounded so it cannot run away with CPU or memory however fast records arrive.
+pub const REALTIME_ARCS_PER_SECOND: f64 = 40.;
+pub const REALTIME_MAX_ARCS: usize = 160;
+pub const REALTIME_ARC_LIFE_MS: u64 = 3000;
+const REALTIME_FADE_IN_MS: u64 = 250;
+const REALTIME_LIST_REFRESH_MS: u64 = 500;
 /// Country tints and outlines are redrawn at most once a second (or when options change).
 const OVERLAY_REFRESH_MS: u64 = 1000;
 type OverlayKey = (
@@ -48,6 +54,8 @@ const MAP: (f32, f32, f32, f32) = (45., 230., 940., 470.);
 pub enum Motion {
     Calm,
     Still,
+    /// Opt-in, screensaver-like: many short arcs sampled evenly from what arrives.
+    Realtime,
 }
 #[derive(Clone, Debug)]
 pub struct Options {
@@ -84,6 +92,10 @@ struct Arc {
     b: (f32, f32),
     born: u64,
     class: usize,
+    life: u64,
+    fade_in: u64,
+    /// Realtime arcs carry a head dot that travels source to destination once (no looping).
+    travelling: bool,
 }
 struct Line {
     route: String,
@@ -96,6 +108,8 @@ pub struct SocView {
     arcs: VecDeque<Arc>,
     last_sequence: u64,
     tokens: f64,
+    /// xorshift state for realtime sampling (display only, not security-relevant).
+    rng: u64,
     last_ms: u64,
     list: Vec<Line>,
     list_ms: u64,
@@ -156,6 +170,7 @@ impl SocView {
             arcs: VecDeque::new(),
             last_sequence: 0,
             tokens: 1.,
+            rng: 0x9e37_79b9_7f4a_7c15,
             last_ms: 0,
             list: Vec::new(),
             list_ms: 0,
@@ -182,12 +197,28 @@ impl SocView {
                     .any(|c| self.renderer.countries.index(c) == Some(focus))
             })
     }
-    /// Admit a few new arcs from the newest records (most severe first) and expire old ones.
+    fn next_random(&mut self) -> u64 {
+        self.rng ^= self.rng << 13;
+        self.rng ^= self.rng >> 7;
+        self.rng ^= self.rng << 17;
+        self.rng
+    }
+    /// Admit new arcs within the mode's budget and expire old ones. Calm: a few, most severe
+    /// first. Realtime: many, sampled uniformly so the colour mix matches what actually arrived.
     fn update_arcs(&mut self, s: &Snapshot) {
         let now = s.now_ms;
         let elapsed = now.saturating_sub(self.last_ms).min(5000) as f64;
         self.last_ms = now;
-        self.tokens = (self.tokens + elapsed / 1000. * ARCS_PER_SECOND).min(ARCS_PER_SECOND * 1.5);
+        let (rate, cap, life, fade_in) = match self.options.motion {
+            Motion::Realtime => (
+                REALTIME_ARCS_PER_SECOND,
+                REALTIME_MAX_ARCS,
+                REALTIME_ARC_LIFE_MS,
+                REALTIME_FADE_IN_MS,
+            ),
+            _ => (ARCS_PER_SECOND, MAX_ARCS, ARC_LIFE_MS, ARC_FADE_IN_MS),
+        };
+        self.tokens = (self.tokens + elapsed / 1000. * rate).min(rate * 1.5);
         let mut fresh: Vec<_> = s
             .recent
             .iter()
@@ -205,7 +236,22 @@ impl SocView {
             self.arcs.clear();
             return;
         }
-        fresh.sort_by_key(|r| r.record.class()); // stable: newest first within a class
+        if self.options.motion == Motion::Realtime {
+            let take = self.tokens.floor() as usize;
+            if take > 0 && fresh.len() > take {
+                // Reservoir sampling: every arrival has the same chance, whatever the batch pattern.
+                let mut picked: Vec<_> = fresh[..take].to_vec();
+                for (i, record) in fresh.iter().enumerate().skip(take) {
+                    let j = (self.next_random() % (i as u64 + 1)) as usize;
+                    if j < take {
+                        picked[j] = record;
+                    }
+                }
+                fresh = picked;
+            }
+        } else {
+            fresh.sort_by_key(|r| r.record.class()); // stable: newest first within a class
+        }
         for r in fresh {
             if self.tokens < 1. {
                 break;
@@ -219,11 +265,14 @@ impl SocView {
                 ),
                 born: now,
                 class: r.record.class(),
+                life,
+                fade_in,
+                travelling: self.options.motion == Motion::Realtime,
             });
         }
         self.arcs
-            .retain(|a| now.saturating_sub(a.born) < ARC_LIFE_MS && a.class < 3);
-        while self.arcs.len() > MAX_ARCS {
+            .retain(|a| now.saturating_sub(a.born) < a.life && a.class < 3);
+        while self.arcs.len() > cap {
             self.arcs.pop_front();
         }
     }
@@ -333,15 +382,16 @@ impl SocView {
             );
         }
 
-        // Arcs: static curves that fade in over 1 s and out over the rest of their life.
+        // Arcs: one stroked curve each, fading in and then out over the arc's life. Only
+        // realtime arcs carry a head dot, which travels once and never loops.
         for arc in &self.arcs {
             let age = now.saturating_sub(arc.born);
-            let alpha = if age < ARC_FADE_IN_MS {
-                150. * age as f32 / ARC_FADE_IN_MS as f32
+            let alpha = if age < arc.fade_in {
+                150. * age as f32 / arc.fade_in as f32
             } else {
-                150. * (1. - (age - ARC_FADE_IN_MS) as f32 / (ARC_LIFE_MS - ARC_FADE_IN_MS) as f32)
+                150. * (1. - (age - arc.fade_in) as f32 / (arc.life - arc.fade_in) as f32)
             }
-            .clamp(0., 150.) as u8;
+            .clamp(0., 150.);
             let (a, b, c) = (arc.a, arc.b, severity(arc.class));
             let cy = (a.1.min(b.1) - ((b.0 - a.0).abs() * 0.18).min(100.)).max(212.);
             let point = |t: f32| {
@@ -351,13 +401,33 @@ impl SocView {
                     q * q * a.1 + 2. * q * t * cy + t * t * b.1,
                 )
             };
-            let mut prev = a;
+            let mut curve = PathBuilder::new();
+            curve.move_to(a.0, a.1);
             for i in 1..25 {
                 let p = point(i as f32 / 24.);
-                r.line(prev.0, prev.1, p.0, p.1, c, 1.3, alpha);
-                prev = p;
+                curve.line_to(p.0, p.1);
             }
-            r.dot(b.0, b.1, 2.2, c, alpha);
+            if let Some(path) = curve.finish() {
+                let mut paint = Paint::default();
+                paint.set_color_rgba8(c[0], c[1], c[2], alpha as u8);
+                paint.anti_alias = true;
+                let width = if arc.travelling { 1.1 } else { 1.3 };
+                r.pix.stroke_path(
+                    &path,
+                    &paint,
+                    &Stroke {
+                        width,
+                        ..Default::default()
+                    },
+                    Transform::identity(),
+                    None,
+                );
+            }
+            r.dot(b.0, b.1, 2.2, c, alpha as u8);
+            if arc.travelling {
+                let head = point((age as f32 / (arc.life as f32 * 0.6)).min(1.));
+                r.dot(head.0, head.1, 2.6, c, (alpha * 1.5).min(230.) as u8);
+            }
         }
 
         // Header: clocks, sources, five summary boxes.
@@ -384,10 +454,10 @@ impl SocView {
             .focus
             .and_then(|f| r.countries.label(f))
             .map_or("ALL".into(), |(code, _)| code.to_string());
-        let motion = if self.options.motion == Motion::Calm {
-            "CALM"
-        } else {
-            "STILL"
+        let motion = match self.options.motion {
+            Motion::Calm => "CALM",
+            Motion::Still => "STILL",
+            Motion::Realtime => "REALTIME",
         };
         for i in 0..5 {
             let x = 35 + i as i32 * 280;
@@ -417,7 +487,12 @@ impl SocView {
         }
 
         // Right panel: latest selected records, refreshed every 2 s so the list does not scroll.
-        if now.saturating_sub(self.list_ms) >= LIST_REFRESH_MS || self.list.is_empty() {
+        let list_refresh = if self.options.motion == Motion::Realtime {
+            REALTIME_LIST_REFRESH_MS
+        } else {
+            LIST_REFRESH_MS
+        };
+        if now.saturating_sub(self.list_ms) >= list_refresh || self.list.is_empty() {
             self.list_ms = now;
             let focus = self.options.focus;
             let severities = self.options.severities;
@@ -557,9 +632,14 @@ impl SocView {
             draw_icon(&mut r.pix, &icon, 230.);
             r.text(660, y, 11, label, TEXT);
         }
+        let arcs_note = if self.options.motion == Motion::Realtime {
+            "ARCS: UP TO 40/S, 3 S"
+        } else {
+            "ARCS: MAX 2/S, FADE 8 S"
+        };
         for (i, note) in [
             "TINT: TOP CLASS, 5 MIN",
-            "ARCS: MAX 2/S, FADE 8 S",
+            arcs_note,
             "PIE AREA = RADAR SHARE",
             "TARGETS ONLY IF SUPPLIED",
             "CLICK COUNTRY TO FOCUS",
@@ -1122,5 +1202,80 @@ mod tests {
                 "channel {k}: map {map}, marker {marker}, seen {seen}"
             );
         }
+    }
+    #[test]
+    fn realtime_is_busier_but_bounded_and_keeps_the_class_mix() {
+        let mut view = SocView::new();
+        view.options.motion = Motion::Realtime;
+        let mut state = State::default();
+        let mut peak = 0;
+        let mut classes = [0usize; 3];
+        for second in 0..12u64 {
+            let now = 2_000_000 + second * 1000;
+            for i in 0..600 {
+                // Arrivals are 1/6 malicious, 2/6 suspicious, 3/6 benign.
+                let intention = [
+                    "malicious",
+                    "suspicious",
+                    "suspicious",
+                    "benign",
+                    "benign",
+                    "benign",
+                ][i % 6];
+                state.ingest(&row("NL", "US", intention), now);
+            }
+            for frame in 0..15 {
+                let t = now + frame * 66;
+                view.draw(&state.snapshot(t), counts(&state, t), None, 0);
+                peak = peak.max(view.arc_count());
+                for arc in &view.arcs {
+                    if arc.born == t {
+                        classes[arc.class] += 1;
+                    }
+                }
+            }
+        }
+        assert!(
+            (60..=REALTIME_MAX_ARCS).contains(&peak),
+            "realtime peak {peak}"
+        );
+        let total: usize = classes.iter().sum();
+        assert!(
+            total as f64 <= REALTIME_ARCS_PER_SECOND * 12. * 1.1 + 60.,
+            "budget respected: {total}"
+        );
+        // Even sampling keeps roughly the arrival mix instead of only the most severe class.
+        let share = |k: usize| classes[k] as f64 / total as f64;
+        assert!(
+            share(0) > 0.08 && share(1) > 0.2 && share(2) > 0.35,
+            "mix {classes:?}"
+        );
+        let later = 2_000_000 + 12_000 + REALTIME_ARC_LIFE_MS + 100;
+        view.draw(&state.snapshot(later), counts(&state, later), None, 0);
+        assert_eq!(
+            view.arc_count(),
+            0,
+            "realtime arcs expire after {REALTIME_ARC_LIFE_MS} ms"
+        );
+        // Back to calm: the cap drops to MAX_ARCS on the next frame.
+        view.options.motion = Motion::Calm;
+        for i in 0..200 {
+            state.ingest(&row("NL", "US", "benign"), later + 10 + i);
+        }
+        view.options.motion = Motion::Realtime;
+        view.draw(
+            &state.snapshot(later + 500),
+            counts(&state, later + 500),
+            None,
+            0,
+        );
+        view.options.motion = Motion::Calm;
+        view.draw(
+            &state.snapshot(later + 600),
+            counts(&state, later + 600),
+            None,
+            0,
+        );
+        assert!(view.arc_count() <= MAX_ARCS);
     }
 }
