@@ -86,7 +86,7 @@
     "publication": "Previously authorized after required technical gates pass"
   },
   "owner_action_required": "No repeat approval required for assigned standalone implementation. Existing unrelated owner actions remain separately recorded; no go-live approval inferred.",
-  "updated_at": "2026-11-02T20:40:40.841Z",
+  "updated_at": "2026-11-02T20:49:14.701Z",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
@@ -601,5 +601,29 @@
     },
     "verification": "Official release tags resolved to commit SHAs; all three action.yml files declare node24. Hosted behavior/warning removal not yet verified.",
     "handoff": "ATLAS-NODE24-20261102-01 posted; acknowledgement/execution pending"
+  },
+  "handoff_reconciliation": {
+    "cl_reference": "ATLAS-CLAUDE-NODE-20261102-11",
+    "cl_scope": "Read-only Node24 pin verification, no source/build change or new Mac package",
+    "mac_source": "7b1b92d72e531d319e82ba36b576839896ee1480",
+    "billy_head": "c4dcf8aec6e60231857052648a5eff673ca3bdc7",
+    "windows_delta": "Only windows-soc.yml checkout/upload pins upgraded to verified Node24; prior CL report against71d8edcc superseded",
+    "shared_ci": {
+      "run": 41521319811,
+      "result": "PASS"
+    },
+    "windows_ci": {
+      "run": 41522306022,
+      "jobs": [
+        {
+          "name": "windows-soc",
+          "result": null,
+          "status": "in_progress"
+        }
+      ]
+    },
+    "owner_direction": "Proceed with beta; MAC owns final exact-source/package reconciliation, accurate docs and applicable gate verification",
+    "telegram": "ATLAS-HANDOFF-RECONCILE-20261102-01 posted; requested only missing final Mac/package evidence",
+    "publication": "Not yet published"
   }
 }
