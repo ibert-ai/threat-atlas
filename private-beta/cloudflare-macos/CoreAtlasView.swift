@@ -21,7 +21,7 @@ enum Severity: Int, CaseIterable {
          Color(red: 72 / 255, green: 199 / 255, blue: 142 / 255)][rawValue]
     }
 }
-/// Arc motion. Calm is the default for long viewing; Realtime is opt-in and screensaver-like.
+/// Arc motion. Realtime (screensaver-like) is the default per Robert; Calm and Still remain options.
 enum Motion: UInt32, CaseIterable {
     case calm = 0, still = 1, realtime = 2
     var name: String { ["Calm", "Still", "Realtime"][Int(rawValue)] }
@@ -109,7 +109,7 @@ struct CoreAtlasView: View {
     let received: Date?
     @State private var atlas = CoreAtlas()
     @State private var severities = [true, true, true]
-    @State private var motion = Motion.calm
+    @State private var motion = Motion.realtime
     @State private var paused = false
     @State private var focused = false
     @State private var hover: CountryInfo?
@@ -203,7 +203,7 @@ struct CoreAtlasView: View {
                 ForEach(Motion.allCases, id: \.rawValue) { Text($0.name).tag($0) }
             }
             .pickerStyle(.segmented).frame(width: 230).labelsHidden()
-            .help("Calm: few slow arcs (default). Still: no arcs. Realtime: up to 40 arcs/s as records arrive.")
+            .help("Realtime (default): up to 40 arcs/s as records arrive. Calm: few slow arcs. Still: no arcs.")
             Button(paused ? "Resume" : "Pause") { paused.toggle() }
             Divider().frame(height: 18)
             Toggle(isOn: $radarOn) {

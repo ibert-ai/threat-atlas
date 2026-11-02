@@ -54,7 +54,7 @@ const MAP: (f32, f32, f32, f32) = (45., 230., 940., 470.);
 pub enum Motion {
     Calm,
     Still,
-    /// Opt-in, screensaver-like: many short arcs sampled evenly from what arrives.
+    /// Default, screensaver-like: many short arcs sampled uniformly from what arrives.
     Realtime,
 }
 #[derive(Clone, Debug)]
@@ -70,7 +70,8 @@ impl Default for Options {
     fn default() -> Self {
         Self {
             severities: [true; 3],
-            motion: Motion::Calm,
+            // Robert, 2 November 2026: Realtime is the default; Calm and Still stay available.
+            motion: Motion::Realtime,
             focus: None,
             radar_layer: true,
             radar_hidden: Vec::new(),
@@ -908,6 +909,7 @@ mod tests {
     #[test]
     fn arcs_are_rate_limited_capped_and_fade_out() {
         let mut view = SocView::new();
+        view.options.motion = Motion::Calm;
         let mut state = State::default();
         let mut most = 0;
         for second in 0..40u64 {
@@ -1202,6 +1204,11 @@ mod tests {
                 "channel {k}: map {map}, marker {marker}, seen {seen}"
             );
         }
+    }
+    #[test]
+    fn realtime_is_the_default() {
+        assert_eq!(Options::default().motion, Motion::Realtime);
+        assert_eq!(SocView::new().options.motion, Motion::Realtime);
     }
     #[test]
     fn realtime_is_busier_but_bounded_and_keeps_the_class_mix() {
