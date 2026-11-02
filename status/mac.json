@@ -85,12 +85,12 @@
     "version": "0.4.2-rc.1 approved by Robert at 20:03 CET",
     "publication": "Previously authorized after required technical gates pass"
   },
-  "owner_action_required": "For live Radar evaluation: create an Account > Radar > Read token and enter it only in app settings after reviewing licence. Commercial SOC use requires separate rights; no acceptance or commercial authorization inferred.",
-  "updated_at": "2026-11-02T12:45:35.214868+00:00",
+  "owner_action_required": "Complete OAuth client creation confirmation and Google setup; Google login not active. Resolve/test dependency currency reviews before any build/release. Billy must acknowledge Git handover and prioritize public screensaver bugs.",
+  "updated_at": "2026-11-02T13:00:33.793135+00:00",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
-  "current_task": "Windows standalone/SOC wall plan and Git handover published in PR16. macOS-only Cloudflare Radar alpha published as draft PR17; native ARM64 package and local checks pass; no live API validation or production release.",
+  "current_task": "Security and public screensaver bugs first. Dashboard has per-feature/wishlist/bug statuses, descending CVSS vulnerability section, separate /agents page and manual MAC task queue. Google login prepared, not activated; OAuth client creation and supported verifier runtime pending.",
   "active_pr": 14,
   "source_commit": "684a63bd4c21428d126f04aa4d3156bdcea232c9",
   "workflow_run": 41151902562,
@@ -171,16 +171,265 @@
     "radar": {
       "owner": "MAC / Roberts-Air",
       "branch": "codex/macos-cloudflare-radar-alpha",
-      "commit": "8f0f595",
+      "commit": "181cd06",
       "pr": "https://github.com/ibert-ai/threat-atlas/pull/17",
       "scope": "macOS only; outages and traffic trend; Radar disabled by default",
       "checks": "13 core tests, 10 parser/consent assertions, 3 release-gate tests, native syntax/version/source/package signature and lifecycle checks pass locally",
-      "limits": "No live token/API test; no user licence acceptance; no Intel/universal build in this run; not released",
+      "limits": "Native alpha built before security gates; current builds blocked pending dependency reviews. No live token/user acceptance or Intel validation.",
       "license": "CC BY-NC 4.0; mandatory first-start and per-version/build reconfirmation; changed/unreachable published terms block RC/release; all-platform requirement assigned to Billy for Windows"
     },
     "dashboard": {
       "url": "http://roberts-macbook-air.local:8765/",
       "status": "HTTP 200 verified; per-user login service installed; LAN restricted; cached status branch reader each 10 minutes; not an agent-health claim"
+    },
+    "security_dashboard": {
+      "pr": "https://github.com/ibert-ai/threat-atlas/pull/18",
+      "commit": "4d5c54a",
+      "checks": "3 security score tests and 6 isolated dashboard/auth/task tests pass; advisory scan passes but four currency reviews block build gate",
+      "dashboard": "http://roberts-macbook-air.local:8765/",
+      "agent_details": "http://roberts-macbook-air.local:8765/agents"
     }
-  }
+  },
+  "priority_order": [
+    "P0 security vulnerabilities and dependency reviews",
+    "P1 public screensaver bugs and acceptance",
+    "P2 standalone/SOC wall wishlist after screensaver gate"
+  ],
+  "security_scan": {
+    "checked_at": "2026-11-02T12:51:03.622428+00:00",
+    "status": "blocked",
+    "source_commit": "f695e86abd4020c8319ed93167603047f1efb34f",
+    "known_vulnerabilities": [],
+    "tool": "cargo-audit-audit 0.22.2",
+    "database": {
+      "advisory-count": 1402,
+      "last-commit": "263a4d951a0867d4bddc29dddd6d59427c78f9a7",
+      "last-updated": "2026-11-02T12:45:44+01:00"
+    },
+    "warnings": {},
+    "advisory_status": "passed",
+    "lockfile_sha256": "90b8047e1e139b9516a8377412876b1b6e62be0abe90476a7d8186280cb967e6",
+    "dependency_currency": [
+      {
+        "package": "chrono",
+        "locked": [
+          "0.4.45"
+        ],
+        "latest_stable": "0.4.45",
+        "status": "current",
+        "source": "https://crates.io/crates/chrono"
+      },
+      {
+        "package": "fontdue",
+        "locked": [
+          "0.9.5"
+        ],
+        "latest_stable": "0.9.5",
+        "status": "current",
+        "source": "https://crates.io/crates/fontdue"
+      },
+      {
+        "package": "minifb",
+        "locked": [
+          "0.29.0"
+        ],
+        "latest_stable": "0.29.0",
+        "status": "current",
+        "source": "https://crates.io/crates/minifb"
+      },
+      {
+        "package": "rustls",
+        "locked": [
+          "0.23.46"
+        ],
+        "latest_stable": "0.23.46",
+        "status": "current",
+        "source": "https://crates.io/crates/rustls"
+      },
+      {
+        "package": "serde",
+        "locked": [
+          "1.0.229"
+        ],
+        "latest_stable": "1.0.229",
+        "status": "current",
+        "source": "https://crates.io/crates/serde"
+      },
+      {
+        "package": "serde_json",
+        "locked": [
+          "1.0.154"
+        ],
+        "latest_stable": "1.0.154",
+        "status": "current",
+        "source": "https://crates.io/crates/serde_json"
+      },
+      {
+        "package": "sha2",
+        "locked": [
+          "0.10.9"
+        ],
+        "latest_stable": "0.11.1",
+        "status": "Review required \u2014 newer stable release or duplicate old version",
+        "source": "https://crates.io/crates/sha2"
+      },
+      {
+        "package": "softbuffer",
+        "locked": [
+          "0.4.8"
+        ],
+        "latest_stable": "0.4.8",
+        "status": "current",
+        "source": "https://crates.io/crates/softbuffer"
+      },
+      {
+        "package": "tao",
+        "locked": [
+          "0.37.2"
+        ],
+        "latest_stable": "0.37.2",
+        "status": "current",
+        "source": "https://crates.io/crates/tao"
+      },
+      {
+        "package": "tiny-skia",
+        "locked": [
+          "0.11.4"
+        ],
+        "latest_stable": "0.12.0",
+        "status": "Review required \u2014 newer stable release or duplicate old version",
+        "source": "https://crates.io/crates/tiny-skia"
+      },
+      {
+        "package": "tungstenite",
+        "locked": [
+          "0.29.0"
+        ],
+        "latest_stable": "0.30.0",
+        "status": "Review required \u2014 newer stable release or duplicate old version",
+        "source": "https://crates.io/crates/tungstenite"
+      },
+      {
+        "package": "windows-sys",
+        "locked": [
+          "0.45.0",
+          "0.52.0",
+          "0.59.0",
+          "0.61.2"
+        ],
+        "latest_stable": "0.61.2",
+        "status": "Review required \u2014 newer stable release or duplicate old version",
+        "source": "https://crates.io/crates/windows-sys"
+      }
+    ],
+    "source_scan": "passed",
+    "maintenance_review_required": 4
+  },
+  "known_vulnerabilities": [],
+  "features": [
+    {
+      "name": "Public native screensaver",
+      "status": "Published beta; acceptance gaps remain",
+      "detail": "Windows SCR and macOS saver; Windows MSI currently withdrawn"
+    },
+    {
+      "name": "GreyNoise map, received-record counters and clocks",
+      "status": "Implemented / existing published baseline",
+      "detail": "Receipts are not unique attacks; no guarantee of provider event age"
+    },
+    {
+      "name": "Country borders and expiring shading",
+      "status": "Implemented; core regression verified",
+      "detail": "Physical multiscreen/HiDPI acceptance remains incomplete"
+    },
+    {
+      "name": "Cloudflare Radar macOS alpha",
+      "status": "Locally built; blocked from release",
+      "detail": "Outage and traffic layers; token/live validation pending; security maintenance gate blocks further packaging"
+    },
+    {
+      "name": "Per-build licence consent and RC terms recheck",
+      "status": "Implemented on Mac alpha; Windows assigned",
+      "detail": "No user acceptance inferred; commercial permission remains separate"
+    },
+    {
+      "name": "Dashboard navigation, feature and security statuses",
+      "status": "Deployed / local checks pass",
+      "detail": "Main summary plus /agents detail; cached Git status every ten minutes"
+    },
+    {
+      "name": "MAC task form",
+      "status": "Implemented / isolated tests pass",
+      "detail": "Persistent deduplicated manual queue; no arbitrary command execution"
+    },
+    {
+      "name": "Google account sign-in",
+      "status": "Prepared; not active",
+      "detail": "Owner ibert@ibert.se; waiting for OAuth client creation and supported Python verifier setup"
+    }
+  ],
+  "bugs": [
+    {
+      "name": "Dependency currency reviews",
+      "priority": "P0",
+      "status": "Build/release blocked",
+      "detail": "sha2, tiny-skia, tungstenite newer versions; old windows-sys versions in dependency tree. No known RustSec advisory findings in scanned lockfile."
+    },
+    {
+      "name": "Windows screensaver install/discovery",
+      "priority": "P1",
+      "status": "Investigation requested from Billy",
+      "detail": "Reproduce Settings discovery and right-click Install/path behavior; no acknowledgement/fix claimed"
+    },
+    {
+      "name": "Feed-worker DNS shutdown delay",
+      "priority": "P1",
+      "status": "Known issue / open",
+      "detail": "Immediate worker stop and zero background traffic not guaranteed"
+    },
+    {
+      "name": "Idle/lock, mixed-DPI, multiple-display and soak acceptance",
+      "priority": "P1",
+      "status": "Testing gap, not a confirmed defect",
+      "detail": "Exact published-version evidence required before advancing standalone work"
+    },
+    {
+      "name": "Legacy Mac saver selected after upgrade",
+      "priority": "P2",
+      "status": "Known workaround; open improvement",
+      "detail": "Select Threat Atlas SOC; back up obsolete bundles before removing"
+    }
+  ],
+  "wishlist": [
+    {
+      "name": "Windows standalone .exe",
+      "priority": "P2",
+      "status": "Planned \u2014 blocked behind security/screensaver bugs",
+      "detail": "PR16 instructions for Billy; Windows-first native app and persistent options"
+    },
+    {
+      "name": "SOC multiscreen wall roles and layouts",
+      "priority": "P2",
+      "status": "Planned \u2014 not implemented",
+      "detail": "Display selection, mirrored/per-display/spanned views; hotplug and mixed DPI tests"
+    },
+    {
+      "name": "macOS standalone wall port",
+      "priority": "P3",
+      "status": "Deferred until Windows tests reviewed",
+      "detail": "Native app plus saver options; universal packaging and native acceptance"
+    },
+    {
+      "name": "Radar on Windows/Linux",
+      "priority": "Deferred",
+      "status": "Not authorized",
+      "detail": "Requires Robert approval; macOS experiment only"
+    },
+    {
+      "name": "Google HTTPS LAN login",
+      "priority": "P1",
+      "status": "Configuration pending",
+      "detail": "localhost test client being prepared; registered HTTPS domain required for LAN sign-in"
+    }
+  ]
 }
