@@ -1,9 +1,9 @@
 {
   "verified_at": "2026-10-31T01:44:10.553Z",
-  "release": "0.4.2-rc.1 / build10 — Windows MSI withdrawn",
-  "decision": "PUBLISHED — MSI WITHDRAWN",
+  "release": "0.4.2-rc.1 / build10 \u2014 Windows MSI withdrawn",
+  "decision": "PUBLISHED \u2014 MSI WITHDRAWN",
   "eta": "Mac/Linux/standalone Windows available; corrected MSI has no verified ETA",
-  "owner": "Billy: fixes + Windows/Linux evidence · MAC: final verification, commit + release",
+  "owner": "Billy: fixes + Windows/Linux evidence \u00b7 MAC: final verification, commit + release",
   "reference": "ATLAS-PRIO-FIX-20261030-01 / GitHub Billy handoff",
   "receipt": "Billy handoff independently validated and integrated; release published from684a63bd4c21428d126f04aa4d3156bdcea232c9.",
   "tasks": [
@@ -70,7 +70,7 @@
     {
       "status": "pending",
       "task": "Physical acceptance and trusted signing",
-      "owner": "Future validation — not owner approval",
+      "owner": "Future validation \u2014 not owner approval",
       "evidence": "Idle/lock, multiple monitors/HiDPI, Intel hardware, physical Linux desktop, signed update/rollback and soak remain incomplete; disclosed beta limits."
     },
     {
@@ -85,12 +85,12 @@
     "version": "0.4.2-rc.1 approved by Robert at 20:03 CET",
     "publication": "Previously authorized after required technical gates pass"
   },
-  "owner_action_required": "None — approvals and publication complete",
-  "updated_at": "2026-10-31T01:47:32.316Z",
+  "owner_action_required": "For live Radar evaluation: create an Account > Radar > Read token and enter it only in app settings after reviewing licence. Commercial SOC use requires separate rights; no acceptance or commercial authorization inferred.",
+  "updated_at": "2026-11-02T12:45:35.214868+00:00",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
-  "current_task": "Windows MSI removed from beta downloads; installation-path/per-user-versus-system integration investigation assigned to Billy. SCR executable defect not established. Remaining5 release assets unchanged.",
+  "current_task": "Windows standalone/SOC wall plan and Git handover published in PR16. macOS-only Cloudflare Radar alpha published as draft PR17; native ARM64 package and local checks pass; no live API validation or production release.",
   "active_pr": 14,
   "source_commit": "684a63bd4c21428d126f04aa4d3156bdcea232c9",
   "workflow_run": 41151902562,
@@ -155,5 +155,32 @@
       "removed_at": "2026-10-31T01:44:10.553Z",
       "preserved_private_archive": true
     }
-  ]
+  ],
+  "development": {
+    "request_ids": [
+      "ATLAS-STANDALONE-20261102-01",
+      "ATLAS-RADAR-MAC-20261102-01"
+    ],
+    "windows": {
+      "owner": "BILLY-BADASS",
+      "plan_pr": "https://github.com/ibert-ai/threat-atlas/pull/16",
+      "plan_commit": "3a8a02c",
+      "status": "Implementation and Git acknowledgement requested; no receipt claimed",
+      "scope": "Windows EXE first, persistent settings and SOC multiscreen wall; macOS wall port after Windows acceptance; no new Linux work"
+    },
+    "radar": {
+      "owner": "MAC / Roberts-Air",
+      "branch": "codex/macos-cloudflare-radar-alpha",
+      "commit": "8f0f595",
+      "pr": "https://github.com/ibert-ai/threat-atlas/pull/17",
+      "scope": "macOS only; outages and traffic trend; Radar disabled by default",
+      "checks": "13 core tests, 10 parser/consent assertions, 3 release-gate tests, native syntax/version/source/package signature and lifecycle checks pass locally",
+      "limits": "No live token/API test; no user licence acceptance; no Intel/universal build in this run; not released",
+      "license": "CC BY-NC 4.0; mandatory first-start and per-version/build reconfirmation; changed/unreachable published terms block RC/release; all-platform requirement assigned to Billy for Windows"
+    },
+    "dashboard": {
+      "url": "http://roberts-macbook-air.local:8765/",
+      "status": "HTTP 200 verified; per-user login service installed; LAN restricted; cached status branch reader each 10 minutes; not an agent-health claim"
+    }
+  }
 }
