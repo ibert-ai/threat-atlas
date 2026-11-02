@@ -1,0 +1,130 @@
+{
+  "checked_at": "2026-11-02T12:51:03.622428+00:00",
+  "status": "blocked",
+  "source_commit": "f695e86abd4020c8319ed93167603047f1efb34f",
+  "known_vulnerabilities": [],
+  "tool": "cargo-audit-audit 0.22.2",
+  "database": {
+    "advisory-count": 1402,
+    "last-commit": "263a4d951a0867d4bddc29dddd6d59427c78f9a7",
+    "last-updated": "2026-11-02T12:45:44+01:00"
+  },
+  "warnings": {},
+  "advisory_status": "passed",
+  "lockfile_sha256": "90b8047e1e139b9516a8377412876b1b6e62be0abe90476a7d8186280cb967e6",
+  "dependency_currency": [
+    {
+      "package": "chrono",
+      "locked": [
+        "0.4.45"
+      ],
+      "latest_stable": "0.4.45",
+      "status": "current",
+      "source": "https://crates.io/crates/chrono"
+    },
+    {
+      "package": "fontdue",
+      "locked": [
+        "0.9.5"
+      ],
+      "latest_stable": "0.9.5",
+      "status": "current",
+      "source": "https://crates.io/crates/fontdue"
+    },
+    {
+      "package": "minifb",
+      "locked": [
+        "0.29.0"
+      ],
+      "latest_stable": "0.29.0",
+      "status": "current",
+      "source": "https://crates.io/crates/minifb"
+    },
+    {
+      "package": "rustls",
+      "locked": [
+        "0.23.46"
+      ],
+      "latest_stable": "0.23.46",
+      "status": "current",
+      "source": "https://crates.io/crates/rustls"
+    },
+    {
+      "package": "serde",
+      "locked": [
+        "1.0.229"
+      ],
+      "latest_stable": "1.0.229",
+      "status": "current",
+      "source": "https://crates.io/crates/serde"
+    },
+    {
+      "package": "serde_json",
+      "locked": [
+        "1.0.154"
+      ],
+      "latest_stable": "1.0.154",
+      "status": "current",
+      "source": "https://crates.io/crates/serde_json"
+    },
+    {
+      "package": "sha2",
+      "locked": [
+        "0.10.9"
+      ],
+      "latest_stable": "0.11.1",
+      "status": "Review required \u2014 newer stable release or duplicate old version",
+      "source": "https://crates.io/crates/sha2"
+    },
+    {
+      "package": "softbuffer",
+      "locked": [
+        "0.4.8"
+      ],
+      "latest_stable": "0.4.8",
+      "status": "current",
+      "source": "https://crates.io/crates/softbuffer"
+    },
+    {
+      "package": "tao",
+      "locked": [
+        "0.37.2"
+      ],
+      "latest_stable": "0.37.2",
+      "status": "current",
+      "source": "https://crates.io/crates/tao"
+    },
+    {
+      "package": "tiny-skia",
+      "locked": [
+        "0.11.4"
+      ],
+      "latest_stable": "0.12.0",
+      "status": "Review required \u2014 newer stable release or duplicate old version",
+      "source": "https://crates.io/crates/tiny-skia"
+    },
+    {
+      "package": "tungstenite",
+      "locked": [
+        "0.29.0"
+      ],
+      "latest_stable": "0.30.0",
+      "status": "Review required \u2014 newer stable release or duplicate old version",
+      "source": "https://crates.io/crates/tungstenite"
+    },
+    {
+      "package": "windows-sys",
+      "locked": [
+        "0.45.0",
+        "0.52.0",
+        "0.59.0",
+        "0.61.2"
+      ],
+      "latest_stable": "0.61.2",
+      "status": "Review required \u2014 newer stable release or duplicate old version",
+      "source": "https://crates.io/crates/windows-sys"
+    }
+  ],
+  "source_scan": "passed",
+  "maintenance_review_required": 4
+}
