@@ -2261,6 +2261,8 @@ dependencies = [
 name = "threat-atlas"
 version = "0.4.2"
 dependencies = [
+ "serde",
+ "serde_json",
  "softbuffer",
  "tao",
  "threat-atlas-core",

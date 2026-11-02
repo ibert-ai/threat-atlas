@@ -96,6 +96,7 @@ pub struct State {
     counts: [u64; 4],
     recent: VecDeque<Received>,
     country_activity: crate::countries::Activity,
+    country_counts: crate::countries::Counts,
     rate: VecDeque<(u64, u64)>,
     last_digest: String,
 }
@@ -142,6 +143,7 @@ impl State {
             self.counts[record.class()] += 1;
             self.last_record_ms = now;
             self.country_activity.record(&record, now);
+            self.country_counts.record(&record, now);
             self.recent.push_back(Received {
                 record,
                 received_ms: now,
@@ -241,6 +243,15 @@ impl Feed {
     }
     pub fn snapshot(&self) -> Snapshot {
         self.state.lock().unwrap().snapshot(now_ms())
+    }
+    /// Per-country and overall malicious/suspicious/benign counts for the last few minutes.
+    pub fn counts(&self) -> (Vec<(usize, [u64; 3])>, [u64; 3]) {
+        self.state.lock().unwrap().counts(now_ms())
+    }
+}
+impl State {
+    pub fn counts(&self, now: u64) -> (Vec<(usize, [u64; 3])>, [u64; 3]) {
+        self.country_counts.summary(now)
     }
 }
 fn connect() -> Result<tungstenite::WebSocket<MaybeTlsStream<TcpStream>>, String> {

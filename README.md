@@ -1,3 +1,5 @@
+> **AtlasSOC standalone beta:** Windows x64 and universal macOS14+ packages are documented in [docs/ATLAS-SOC-BETA.md](docs/ATLAS-SOC-BETA.md). This is separate from the screensaver below; Windows is portable and both platforms have signing/hardware limits.
+
 # Threat Atlas SOC
 
 Native Rust SOC screensaver for macOS 12+ and Windows 10/11 x64. It draws a world

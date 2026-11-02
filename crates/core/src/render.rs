@@ -1,6 +1,9 @@
 use crate::{feed::Snapshot, HEIGHT, WIDTH};
 use std::collections::{HashMap, VecDeque};
 use tiny_skia::*;
+/// Calm interactive SOC view; a child module so it shares the renderer's map and helpers.
+#[path = "soc.rs"]
+pub mod soc;
 const CYAN: [u8; 3] = [68, 220, 225];
 const MUTED: [u8; 3] = [100, 139, 159];
 pub(crate) fn color(i: usize) -> [u8; 3] {
@@ -41,6 +44,37 @@ impl Default for Renderer {
 }
 impl Renderer {
     pub fn new() -> Self {
+        let mut r = Self::blank();
+        r.base_map();
+        r.text(35, 28, 30, "THREAT ATLAS", [223, 241, 249]);
+        r.text(36, 70, 14, "SECURITY OPERATIONS / GLOBAL TELEMETRY", MUTED);
+        r.text(1044, 225, 17, "RECENT OBSERVATIONS", CYAN);
+        r.text(45, 750, 14, "RECEIVED RECORDS / SECOND", MUTED);
+        r.text(35,875,12,"GREYNOISE PUBLIC THREAT MAP | RECEIPT TIMES UTC | COUNTS ARE RECEIVED RECORDS, NOT UNIQUE ATTACKS",MUTED);
+        r.version_label();
+        r.base = r.pix.clone();
+        r
+    }
+    /// Standalone SOC view: the same map, panels and font, labelled for Cloudflare Radar aggregates.
+    pub fn new_radar() -> Self {
+        let mut r = Self::blank();
+        r.base_map();
+        r.text(35, 28, 30, "THREAT ATLAS", [223, 241, 249]);
+        r.text(
+            36,
+            70,
+            14,
+            "SECURITY OPERATIONS / CLOUDFLARE RADAR AGGREGATES",
+            MUTED,
+        );
+        r.text(1044, 225, 17, "TOP ROWS / ORIGIN -> TARGET", CYAN);
+        r.text(45, 750, 14, "PROVIDER WINDOW / FRESHNESS", MUTED);
+        r.text(35,875,12,"CLOUDFLARE RADAR | LAYER 3 TOP ATTACKS | AGGREGATE SHARES, NOT INDIVIDUAL ATTACKS | NO ROUTES DRAWN",MUTED);
+        r.version_label();
+        r.base = r.pix.clone();
+        r
+    }
+    fn blank() -> Self {
         let pix = Pixmap::new(WIDTH, HEIGHT).unwrap();
         let base = pix.clone();
         let font = fontdue::Font::from_bytes(
@@ -48,7 +82,7 @@ impl Renderer {
             fontdue::FontSettings::default(),
         )
         .unwrap();
-        let mut r = Self {
+        Self {
             pix,
             base,
             font,
@@ -58,24 +92,49 @@ impl Renderer {
             countries: crate::countries::CountryMap::new(),
             country_classes: Vec::new(),
             country_overlay: Pixmap::new(WIDTH, HEIGHT).unwrap(),
-        };
-        r.pix.fill(Color::from_rgba8(5, 12, 21, 255));
+        }
+    }
+    fn version_label(&mut self) {
+        let release: serde_json::Value =
+            serde_json::from_str(include_str!("../../../version.json")).unwrap_or_default();
+        let version = release["version"]
+            .as_str()
+            .unwrap_or(env!("CARGO_PKG_VERSION"));
+        let suffix = release["prerelease"]
+            .as_str()
+            .map(|value| format!("-{value}"))
+            .unwrap_or_default();
+        let build = release["build"]
+            .as_u64()
+            .map(|value| value.to_string())
+            .unwrap_or_else(|| "unknown".into());
+        self.text(
+            1120,
+            875,
+            12,
+            &format!("v{version}{suffix} | b{build}"),
+            MUTED,
+        );
+    }
+    /// Background, panels, graticule and land shared by the screensaver and the standalone SOC view.
+    fn base_map(&mut self) {
+        self.pix.fill(Color::from_rgba8(5, 12, 21, 255));
         for (x, y, w, h) in [
             (25., 205., 980., 510.),
             (1025., 205., 390., 650.),
             (25., 735., 980., 120.),
         ] {
-            r.rect(x, y, w, h, [10, 23, 36], 255);
+            self.rect(x, y, w, h, [10, 23, 36], 255);
         }
         for lon in (-180..=180).step_by(30) {
             let (a, b) = xy(lon as f64, 90.);
             let (c, d) = xy(lon as f64, -90.);
-            r.line(a, b, c, d, [22, 43, 57], 1., 180);
+            self.line(a, b, c, d, [22, 43, 57], 1., 180);
         }
         for lat in (-90..=90).step_by(30) {
             let (a, b) = xy(-180., lat as f64);
             let (c, d) = xy(180., lat as f64);
-            r.line(a, b, c, d, [22, 43, 57], 1., 180);
+            self.line(a, b, c, d, [22, 43, 57], 1., 180);
         }
         let land: serde_json::Value =
             serde_json::from_str(include_str!("../../../assets/land.json")).unwrap();
@@ -103,7 +162,7 @@ impl Renderer {
                     if let Some(path) = pb.finish() {
                         let mut paint = Paint::default();
                         paint.set_color_rgba8(22, 49, 63, 255);
-                        r.pix.fill_path(
+                        self.pix.fill_path(
                             &path,
                             &paint,
                             FillRule::EvenOdd,
@@ -111,7 +170,7 @@ impl Renderer {
                             None,
                         );
                         paint.set_color_rgba8(48, 90, 106, 220);
-                        r.pix.stroke_path(
+                        self.pix.stroke_path(
                             &path,
                             &paint,
                             &Stroke {
@@ -125,33 +184,183 @@ impl Renderer {
                 }
             }
         }
-        r.text(35, 28, 30, "THREAT ATLAS", [223, 241, 249]);
-        r.text(36, 70, 14, "SECURITY OPERATIONS / GLOBAL TELEMETRY", MUTED);
-        r.text(1044, 225, 17, "RECENT OBSERVATIONS", CYAN);
-        r.text(45, 750, 14, "RECEIVED RECORDS / SECOND", MUTED);
-        r.text(35,875,12,"GREYNOISE PUBLIC THREAT MAP | RECEIPT TIMES UTC | COUNTS ARE RECEIVED RECORDS, NOT UNIQUE ATTACKS",MUTED);
-        let release: serde_json::Value =
-            serde_json::from_str(include_str!("../../../version.json")).unwrap_or_default();
-        let version = release["version"]
-            .as_str()
-            .unwrap_or(env!("CARGO_PKG_VERSION"));
-        let suffix = release["prerelease"]
-            .as_str()
-            .map(|value| format!("-{value}"))
-            .unwrap_or_default();
-        let build = release["build"]
-            .as_u64()
-            .map(|value| value.to_string())
-            .unwrap_or_else(|| "unknown".into());
-        r.text(
-            1120,
-            875,
-            12,
-            &format!("v{version}{suffix} | b{build}"),
-            MUTED,
+    }
+    /// Standalone SOC frame for Cloudflare Radar aggregates: whole countries shaded by each
+    /// origin's largest provider row, small places as rings, ranked rows listed as supplied.
+    /// No routes, events or summed totals; stale snapshots are dimmed and labelled.
+    pub fn draw_radar(
+        &mut self,
+        data: Option<&crate::radar::Aggregate>,
+        received_ms: u64,
+        now_ms: u64,
+    ) -> &[u8] {
+        use crate::radar::{freshness, small_place, Freshness};
+        const AMBER: [u8; 3] = [255, 190, 82];
+        self.pix.data_mut().copy_from_slice(self.base.data());
+        let state = freshness(data, received_ms, now_ms);
+        let dim = if state == Freshness::Stale { 0.5 } else { 1. };
+        let largest = data.map_or(0., |d| d.largest());
+        let share = |value: f64| {
+            if largest > 0. {
+                (value / largest).sqrt()
+            } else {
+                0.
+            }
+        };
+        let origins = data.map(|d| d.origins()).unwrap_or_default();
+        let mut shades = Vec::new();
+        let mut rings = Vec::new();
+        let mut unplaced = Vec::new();
+        for origin in &origins {
+            let alpha = ((40. + 130. * share(origin.largest)) * dim) as u8;
+            match (
+                self.countries.index(&origin.code),
+                small_place(&origin.code),
+            ) {
+                (Some(index), _) => shades.push((index, alpha)),
+                (None, Some((lon, lat))) => {
+                    rings.push((xy(lon, lat), share(origin.largest), alpha))
+                }
+                (None, None) => unplaced.push(origin.code.chars().take(8).collect::<String>()),
+            }
+        }
+        self.countries
+            .shade(&mut self.country_overlay, &shades, AMBER);
+        self.pix.draw_pixmap(
+            0,
+            0,
+            self.country_overlay.as_ref(),
+            &PixmapPaint::default(),
+            Transform::identity(),
+            None,
         );
-        r.base = r.pix.clone();
-        r
+        for ((x, y), share, alpha) in rings {
+            let r = 3. + 9. * share as f32;
+            self.dot(x, y, r, AMBER, alpha);
+            if let Some(path) = PathBuilder::from_circle(x, y, r) {
+                let mut p = Paint::default();
+                p.set_color_rgba8(AMBER[0], AMBER[1], AMBER[2], (230. * dim) as u8);
+                self.pix.stroke_path(
+                    &path,
+                    &p,
+                    &Stroke {
+                        width: 1.2,
+                        ..Default::default()
+                    },
+                    Transform::identity(),
+                    None,
+                );
+            }
+        }
+        let (utc, local) = crate::clock::labels(now_ms);
+        self.text(1044, 24, 18, &utc, [218, 236, 242]);
+        self.text(1044, 50, 18, &local, [218, 236, 242]);
+        let (status, status_color) = match state {
+            Freshness::NoData => ("NO DATA", MUTED),
+            Freshness::Empty => ("EMPTY RESPONSE", MUTED),
+            Freshness::Current => ("CURRENT SNAPSHOT", color(2)),
+            Freshness::Stale => ("STALE SNAPSHOT", AMBER),
+        };
+        self.text(
+            1044,
+            80,
+            14,
+            &format!("CLOUDFLARE / {status}"),
+            status_color,
+        );
+        let received = i64::try_from(received_ms)
+            .ok()
+            .and_then(chrono::DateTime::<chrono::Utc>::from_timestamp_millis)
+            .filter(|_| data.is_some())
+            .map_or("-".into(), |t| t.format("%H:%M UTC").to_string());
+        let boxes = [
+            (
+                "ROWS",
+                data.map_or("-".into(), |d| d.rows.len().to_string()),
+            ),
+            (
+                "ORIGINS",
+                data.map_or("-".into(), |_| origins.len().to_string()),
+            ),
+            (
+                "NORMALIZATION",
+                data.map_or("-".into(), |d| d.normalization.clone()),
+            ),
+            (
+                "PROVIDER UPDATED",
+                data.map_or("-".into(), |d| d.last_updated.clone()),
+            ),
+            ("RECEIVED", received),
+        ];
+        for (i, (label, value)) in boxes.iter().enumerate() {
+            let x = 35 + i as i32 * 280;
+            self.rect(x as f32, 112., 265., 70., [12, 28, 42], 255);
+            self.text(x + 12, 119, 12, label, MUTED);
+            let value: String = value.chars().take(22).collect();
+            self.text(
+                x + 12,
+                145,
+                17,
+                &value,
+                if i < 2 { CYAN } else { [203, 222, 235] },
+            );
+        }
+        if let Some(data) = data {
+            for (i, (row, &value)) in data.rows.iter().zip(&data.values).take(20).enumerate() {
+                let y = 258 + i as i32 * 29;
+                let origin: String = row.origin_country_alpha2.trim().chars().take(8).collect();
+                let target: String = row
+                    .target_country_alpha2
+                    .as_deref()
+                    .map_or("target not supplied".into(), |t| {
+                        t.trim().chars().take(8).collect()
+                    });
+                self.text(
+                    1044,
+                    y,
+                    13,
+                    &format!("{:>2}. {origin} -> {target}", i + 1),
+                    [203, 222, 235],
+                );
+                let label: String = data.value_label(i).chars().take(16).collect();
+                self.text(1300, y, 13, &label, AMBER);
+                let width = if largest > 0. {
+                    (340. * value / largest) as f32
+                } else {
+                    0.
+                };
+                self.rect(1044., (y + 18) as f32, width, 3., AMBER, (180. * dim) as u8);
+            }
+            if let Some(window) = data.windows.first() {
+                let line = format!("WINDOW {} - {}", window.start_time, window.end_time);
+                self.text(45, 778, 13, &line, [203, 222, 235]);
+            }
+            let line = format!(
+                "EACH VALUE IS ONE ROW'S SHARE OF ALL LAYER 3 ATTACKS | ROWS NOT SUMMED | {status}"
+            );
+            self.text(45, 802, 13, &line, status_color);
+            if !unplaced.is_empty() {
+                self.text(
+                    45,
+                    826,
+                    13,
+                    &format!("NOT ON MAP: {}", unplaced.join(", ")),
+                    MUTED,
+                );
+            }
+        } else {
+            self.text(
+                270,
+                450,
+                16,
+                "NO CLOUDFLARE DATA RECEIVED | NO SAMPLE TELEMETRY SHOWN",
+                MUTED,
+            );
+        }
+        if state == Freshness::Empty {
+            self.text(330, 450, 16, "PROVIDER RETURNED NO COUNTRY ROWS", MUTED);
+        }
+        self.pix.data()
     }
     fn rect(&mut self, x: f32, y: f32, w: f32, h: f32, c: [u8; 3], a: u8) {
         let mut p = Paint::default();
