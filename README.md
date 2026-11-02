@@ -138,3 +138,7 @@ Third-party Rust crates retain their own licenses. Provider content is not MIT.
 ## Country map and Linux development
 
 This branch adds [country borders and observation shading](docs/COUNTRY-MAP.md) and a [Linux application preview](docs/LINUX.md). These changes are pending cross-platform review and approval. Linux is a windowed application, not a native idle/lock-screen integration. Existing release installers are unchanged.
+
+## Security and development priorities
+
+[Security first; public screensaver bugs before standalone work](docs/SECURITY-FIRST.md). [Known Vulnerabilities](docs/KNOWN-VULNERABILITIES.md) records verified findings and sources. Builds require cargo-audit 0.22.2 and a fresh passing security sanity check.
