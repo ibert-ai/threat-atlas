@@ -86,7 +86,7 @@
     "publication": "Previously authorized after required technical gates pass"
   },
   "owner_action_required": "No repeat approval required for assigned standalone implementation. Existing unrelated owner actions remain separately recorded; no go-live approval inferred.",
-  "updated_at": "2026-11-02T19:31:07.395Z",
+  "updated_at": "2026-11-02T20:15:21.527Z",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
@@ -553,5 +553,14 @@
       "status": "Configuration pending",
       "detail": "localhost test client being prepared; registered HTTPS domain required for LAN sign-in"
     }
-  ]
+  ],
+  "release_handoff_policy": {
+    "status": "Waiting for Billy exact-candidate handoff; no duplicate checks",
+    "owner": "MAC coordinates final review/docs/publication; Billy Windows checks and dashboard deployment; CL Mac implementation/status handoff",
+    "verification": "Light risk-based final review on exact source; reuse applicable evidence, focused checks for deltas/failures; publish only after applicable gates and documents pass",
+    "status_delivery": "MAC updates public status/mac.json and private dashboard snapshot; Billy deploys exact data revision; MAC verifies LAN health/API/rendered freshness",
+    "cl_protocol": "README.md#cl-status-handoff-and-docker-dashboard-verification",
+    "acknowledgement": "Protocol instructions prepared; CL acknowledgement and structured handoff not yet verified",
+    "limits": "No new receiver, schedule or polling loop; no publication inferred"
+  }
 }
