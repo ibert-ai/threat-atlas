@@ -1,0 +1,7 @@
+{
+  "enabled": false,
+  "client_id": "SET_WEB_CLIENT_ID.apps.googleusercontent.com",
+  "origin": "http://localhost:8765",
+  "owner_email": "ibert@ibert.se",
+  "planned_external_origin": "https://atlasstatus.ibert.se"
+}
