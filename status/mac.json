@@ -85,12 +85,12 @@
     "version": "0.4.2-rc.1 approved by Robert at 20:03 CET",
     "publication": "Previously authorized after required technical gates pass"
   },
-  "owner_action_required": "Confirm or personally create the prepared localhost-only OAuth web client in Google Cloud Gmail AI. Google login remains inactive until configured and tested. Registered HTTPS origin needed for LAN Google login. Dependency currency reviews block application builds; Billy Git acknowledgement/Windows screensaver evidence pending.",
-  "updated_at": "2026-11-02T13:04:05.923314+00:00",
+  "owner_action_required": "Complete Google sign-in at http://localhost:8765/login for live owner verification. Future HTTPS domain is registered only, not deployed. Dependency currency reviews still block application builds; Billy handover acknowledgement pending.",
+  "updated_at": "2026-11-02T13:14:17.152365+00:00",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
-  "current_task": "Security and public screensaver bugs first. Main project/security dashboard and /agents deployed; manual MAC task queue tests pass. Google login backend and supported Python verifier are ready but inactive; localhost OAuth form awaits final creation confirmation.",
+  "current_task": "Google OAuth web client created with approved localhost and future https://atlasstatus.ibert.se origins. Local owner-restricted login configured; real owner sign-in callback remains pending. No DNS/internet publication. Security and public screensaver bugs remain ahead of standalone work.",
   "active_pr": 14,
   "source_commit": "684a63bd4c21428d126f04aa4d3156bdcea232c9",
   "workflow_run": 41151902562,
@@ -184,12 +184,20 @@
     },
     "security_dashboard": {
       "pr": "https://github.com/ibert-ai/threat-atlas/pull/18",
-      "commit": "c76fa82",
+      "commit": "b7c4c2f",
       "checks": "3 security score tests and 6 isolated dashboard/auth/task tests pass; advisory scan passes but four currency reviews block build gate",
       "dashboard": "http://roberts-macbook-air.local:8765/",
       "agent_details": "http://roberts-macbook-air.local:8765/agents",
       "python": "CPython 3.14.10; google-auth 2.62.0; requests 2.34.2; all 34 installed packages audited, zero known findings; six isolated dashboard/auth/task tests pass",
-      "ci": "Mac alpha quality gate correctly blocks on dependency currency reviews; platform packaging skipped. No new release."
+      "ci": "Mac alpha quality gate correctly blocks on dependency currency reviews; platform packaging skipped. No new release.",
+      "google_login": {
+        "owner": "ibert@ibert.se",
+        "status": "Configured locally; real owner sign-in pending",
+        "active_origin": "http://localhost:8765",
+        "planned_origin": "https://atlasstatus.ibert.se",
+        "external_access": "Not deployed; no DNS/tunnel/firewall changes",
+        "verification": "Google client creation and saved origins verified; login page HTTP200; unauthenticated task API HTTP401; 6 isolated runtime tests pass"
+      }
     }
   },
   "priority_order": [
@@ -366,8 +374,8 @@
     },
     {
       "name": "Google account sign-in",
-      "status": "Prepared; not active",
-      "detail": "Owner ibert@ibert.se; audited supported Python verifier ready; waiting for final OAuth creation and real sign-in test"
+      "status": "Configured on localhost; owner sign-in pending",
+      "detail": "Primary account ibert@ibert.se; future HTTPS origin registered but not internet-accessible"
     }
   ],
   "bugs": [
