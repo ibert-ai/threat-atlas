@@ -76,6 +76,8 @@ struct Icon {
     at: (f32, f32),
     size: f32,
     label: String,
+    /// Pie slices (fractions of the pie) for an origin's ranked rows; empty or one = full disc.
+    slices: Vec<f32>,
 }
 struct Arc {
     a: (f32, f32),
@@ -310,7 +312,10 @@ impl SocView {
                 None,
             );
             let alpha = 230. * radar_dim;
-            for icon in &self.icons {
+            // Larger markers first so smaller neighbours (e.g. HK next to CN) stay on top.
+            let mut order: Vec<&Icon> = self.icons.iter().collect();
+            order.sort_by(|a, b| b.size.total_cmp(&a.size));
+            for icon in order {
                 draw_icon(&mut composed, icon, alpha);
             }
             self.composed = composed;
@@ -545,8 +550,9 @@ impl SocView {
             let icon = Icon {
                 target,
                 at: (646., y as f32 + 8.),
-                size: 5.,
+                size: 6.,
                 label: String::new(),
+                slices: if target { Vec::new() } else { vec![0.65, 0.35] },
             };
             draw_icon(&mut r.pix, &icon, 230.);
             r.text(660, y, 11, label, TEXT);
@@ -554,7 +560,7 @@ impl SocView {
         for (i, note) in [
             "TINT: TOP CLASS, 5 MIN",
             "ARCS: MAX 2/S, FADE 8 S",
-            "ICON SIZE = RADAR SHARE",
+            "PIE AREA = RADAR SHARE",
             "TARGETS ONLY IF SUPPLIED",
             "CLICK COUNTRY TO FOCUS",
         ]
@@ -618,6 +624,39 @@ impl SocView {
 
 /// Lighter slate for target diamonds, still informational rather than severity.
 const TARGET: [u8; 3] = [170, 192, 216];
+/// Pie marker blues: brighter than the slate text so markers stand out, but never a severity colour.
+const PIE: [u8; 3] = [110, 168, 232];
+const PIE_ALT: [u8; 3] = [64, 118, 190];
+/// Marker fill opacity (50%) so the map and tints stay visible underneath.
+const MARKER_FILL: f32 = 128.;
+/// Each of an origin's ranked rows as a fraction of that pie (provider order). These are the
+/// rows' relative sizes within one marker, not a new total shown anywhere.
+fn origin_slices(data: &Aggregate, code: &str) -> Vec<f32> {
+    let values: Vec<f64> = data
+        .rows
+        .iter()
+        .zip(&data.values)
+        .filter(|(row, _)| row.origin_country_alpha2.trim().eq_ignore_ascii_case(code))
+        .map(|(_, &value)| value)
+        .collect();
+    let whole: f64 = values.iter().sum();
+    if values.len() < 2 || whole <= 0. {
+        return Vec::new();
+    }
+    values.iter().map(|v| (v / whole) as f32).collect()
+}
+/// Closed wedge from angle `a0` to `a1` (radians, clockwise from 12 o'clock).
+fn wedge(x: f32, y: f32, r: f32, a0: f32, a1: f32) -> Option<Path> {
+    let mut b = PathBuilder::new();
+    b.move_to(x, y);
+    let steps = (((a1 - a0) / 0.08).ceil() as usize).max(2);
+    for i in 0..=steps {
+        let a = a0 + (a1 - a0) * i as f32 / steps as f32;
+        b.line_to(x + r * a.sin(), y - r * a.cos());
+    }
+    b.close();
+    b.finish()
+}
 /// Origin badges (size by each origin's largest share; rows are never summed) and target
 /// diamonds for provider-supplied targets of visible rows. Hidden origins hide their targets too.
 fn radar_icons(
@@ -665,7 +704,9 @@ fn radar_icons(
         icons.push(Icon {
             target: false,
             at,
-            size: 6. + 10. * share(origin.largest),
+            // Pie area is proportional to the listed value: radius scales with its square root.
+            size: 9. + 21. * share(origin.largest),
+            slices: origin_slices(data, &origin.code),
             // Label the eight largest origins only, to keep the map quiet.
             label: if n < 8 {
                 format!(
@@ -703,8 +744,9 @@ fn radar_icons(
         icons.push(Icon {
             target: true,
             at,
-            size: 4. + 7. * share(value),
+            size: 6. + 9. * share(value),
             label: format!("T {}", code.chars().take(8).collect::<String>()),
+            slices: Vec::new(),
         });
     }
     icons
@@ -741,17 +783,31 @@ fn draw_icon(pixmap: &mut Pixmap, icon: &Icon, alpha: f32) {
         b.line_to(x - s, y);
         b.close();
         if let Some(path) = b.finish() {
-            fill(pixmap, &path, TARGET, alpha * 0.18);
+            fill(pixmap, &path, TARGET, MARKER_FILL * alpha / 230.);
             stroke(pixmap, &path, TARGET, alpha, 1.5);
         }
+        return;
+    }
+    // Pie: one slice per ranked row of this origin (a full disc for a single row), 50% opacity.
+    let r = icon.size;
+    if icon.slices.len() < 2 {
+        if let Some(disc) = PathBuilder::from_circle(x, y, r) {
+            fill(pixmap, &disc, PIE, MARKER_FILL * alpha / 230.);
+        }
     } else {
-        if let Some(ring) = PathBuilder::from_circle(x, y, icon.size) {
-            fill(pixmap, &ring, INFO, alpha * 0.22);
-            stroke(pixmap, &ring, INFO, alpha, 1.6);
+        let mut start = 0f32;
+        for (i, fraction) in icon.slices.iter().enumerate() {
+            let end = start + fraction * std::f32::consts::TAU;
+            if let Some(path) = wedge(x, y, r, start, end) {
+                let colour = if i % 2 == 0 { PIE } else { PIE_ALT };
+                fill(pixmap, &path, colour, MARKER_FILL * alpha / 230.);
+                stroke(pixmap, &path, [10, 23, 36], alpha * 0.6, 1.);
+            }
+            start = end;
         }
-        if let Some(dot) = PathBuilder::from_circle(x, y, 2.6) {
-            fill(pixmap, &dot, INFO, alpha);
-        }
+    }
+    if let Some(ring) = PathBuilder::from_circle(x, y, r) {
+        stroke(pixmap, &ring, PIE, alpha, 1.4);
     }
 }
 #[cfg(test)]
@@ -1010,6 +1066,61 @@ mod tests {
             let index = map.index(code).unwrap();
             let (lon, lat) = map.anchor(index).unwrap();
             assert_eq!(map.at(lon, lat), Some(index), "{code} anchor {lon},{lat}");
+        }
+    }
+    #[test]
+    fn origins_are_half_opaque_pies_sized_by_value() {
+        let body = ICON_BODY.replace(
+            r#"{"originCountryAlpha2":"CN""#,
+            r#"{"originCountryAlpha2":"BR","originCountryName":"Brazil","value":"2.5"},{"originCountryAlpha2":"CN""#,
+        );
+        let data = radar::parse(body.as_bytes()).unwrap();
+        let view = SocView::new();
+        let icons = radar_icons(&data, &view.renderer.countries, &[]);
+        let icon = |code: &str| {
+            icons
+                .iter()
+                .find(|i| !i.target && i.label.starts_with(code))
+                .unwrap()
+        };
+        // Brazil has two ranked rows (7.4 and 2.5): two slices in provider order.
+        let br = &icon("BR").slices;
+        assert_eq!(br.len(), 2);
+        assert!((br[0] - 7.4 / 9.9).abs() < 1e-4 && (br[1] - 2.5 / 9.9).abs() < 1e-4);
+        assert!(icon("CN").slices.is_empty(), "single row draws a full disc");
+        // Area follows the listed value: (r - 9)^2 is proportional to value / largest.
+        let (rb, rc) = (icon("BR").size - 9., icon("CN").size - 9.);
+        assert!(((rc * rc) / (rb * rb) - 4.0 / 7.4).abs() < 0.01);
+        // 50% fill: the centre of China's disc lies between the bare map and the marker colour.
+        let state = State::default();
+        let mut on = SocView::new();
+        let frame = on
+            .draw(
+                &state.snapshot(1000),
+                counts(&state, 1000),
+                Some(&data),
+                1000,
+            )
+            .to_vec();
+        let mut off = SocView::new();
+        off.options.radar_layer = false;
+        let bare = off
+            .draw(
+                &state.snapshot(1000),
+                counts(&state, 1000),
+                Some(&data),
+                1000,
+            )
+            .to_vec();
+        let (x, y) = icon("CN").at;
+        let i = ((y - 4.) as usize * crate::WIDTH as usize + (x + 4.) as usize) * 4;
+        for k in 0..3 {
+            let (map, marker, seen) = (bare[i + k] as f32, PIE[k] as f32, frame[i + k] as f32);
+            let expected = map + (marker - map) * 0.5;
+            assert!(
+                (seen - expected).abs() <= 6.,
+                "channel {k}: map {map}, marker {marker}, seen {seen}"
+            );
         }
     }
 }
