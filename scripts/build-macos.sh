@@ -3,6 +3,8 @@ set -euo pipefail
 export MACOSX_DEPLOYMENT_TARGET=12.0
 cd "$(dirname "$0")/.."
 python3 scripts/version.py --check
+python3 scripts/check-cloudflare-license.py --header
+python3 scripts/security-sanity.py
 product_version=$(python3 scripts/version.py --version)
 product_build=$(python3 scripts/version.py --build)
 stage=$(mktemp -d "${TMPDIR:-/tmp}/threatatlas-build.XXXXXX")
@@ -31,8 +33,8 @@ for target in "${targets[@]}"; do
   cargo build --locked --release -p threat-atlas-core --target "$target"
   case "$target" in aarch64*) arch=arm64;; *) arch=x86_64;; esac
   clang -arch "$arch" -mmacosx-version-min=12.0 -fobjc-arc -bundle \
-    macos/ThreatAtlasView.m "${CARGO_TARGET_DIR:-target}/$target/release/libthreat_atlas_core.a" \
-    -framework ScreenSaver -framework Cocoa -framework CoreGraphics -framework CoreFoundation -framework Security \
+    macos/ThreatAtlasView.m macos/Radar.m "${CARGO_TARGET_DIR:-target}/$target/release/libthreat_atlas_core.a" \
+    -framework LocalAuthentication -framework ScreenSaver -framework Cocoa -framework CoreGraphics -framework CoreFoundation -framework Security \
     -framework SystemConfiguration -liconv -o "dist/ThreatAtlas-$arch"
   binaries+=("dist/ThreatAtlas-$arch")
   swiftc -target "$arch-apple-macos12" macos/Updater.swift -o "dist/Updater-$arch"

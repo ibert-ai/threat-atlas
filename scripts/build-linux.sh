@@ -5,6 +5,7 @@ if [[ $(uname -s) != Linux ]]; then
   echo 'Build the Linux preview on Linux.' >&2
   exit 1
 fi
+python3 scripts/security-sanity.py
 cargo build --release --locked -p threat-atlas-linux
 version=$(python3 scripts/version.py --version)
 arch=$(uname -m)

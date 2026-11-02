@@ -1,0 +1,9 @@
+{
+  "notice": "Data available via Radar API endpoints is made available under the CC BY-NC 4.0 \u2197\ufe0e license.",
+  "notice_sha256": "5bdcfb4e1a7bbe44427db41146d042edf9211eaa05626a4af135dfeb4025fd41",
+  "legal_sha256": "213381fd1c8848bef72a57327c1822ccaa928fbb74fc22a75946c3e829297af8",
+  "reviewed_at": "2026-11-02T12:40:20.609209+00:00",
+  "notice_url": "https://developers.cloudflare.com/radar/",
+  "license_url": "https://creativecommons.org/licenses/by-nc/4.0/legalcode.en",
+  "scope": "Noncommercial alpha only; commercial use requires separate authorization"
+}
