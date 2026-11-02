@@ -9,7 +9,7 @@ struct RadarView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Threat Atlas SOC").font(.largeTitle.bold())
-            Text("PRIVATE macOS BETA 0.6.1 · Standalone SOC on the shared screensaver core").foregroundStyle(.orange)
+            Text("PRIVATE macOS BETA 0.7 · Standalone SOC on the shared screensaver core").foregroundStyle(.orange)
             Text("Live: GreyNoise public threat-map records as received (not unique attacks), classified by the provider. Cloudflare Radar: past-day aggregate shares; never turned into routes or individual events.")
             HStack {
                 SecureField("Cloudflare API token · Account / Radar / Read", text: $token)
@@ -46,10 +46,16 @@ struct RadarView: View {
                 Spacer(); Text("No authenticated Cloudflare data has been received. No sample telemetry is displayed.").foregroundStyle(.secondary); Spacer()
             }
             Text("Network: threat-map-api.greynoise.io (live feed) · api.cloudflare.com (Radar, only after Start) · TLS verified · no browser cookies · token stays in this Mac’s Keychain").font(.caption).foregroundStyle(.secondary)
+            HStack(spacing: 4) {
+                Text("Cloudflare Radar data: CC BY-NC 4.0, non-commercial use only · attribution: Cloudflare Radar ·")
+                Link("licence", destination: radarLicenseTerms.licenseURL)
+            }
+            .font(.caption).foregroundStyle(.secondary)
         }.padding(24).frame(minWidth: 1000, minHeight: 760)
         .onReceive(timer) { _ in Task { await model.refresh() } }
     }
 }
 @main struct PrivateRadarApp: App {
-    var body: some Scene { WindowGroup { RadarView() } }
+    // The licence gate wraps everything: no feed, worker or Keychain access before acceptance.
+    var body: some Scene { WindowGroup { ConsentGate(terms: radarLicenseTerms) { RadarView() } } }
 }
