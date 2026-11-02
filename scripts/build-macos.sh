@@ -4,6 +4,7 @@ export MACOSX_DEPLOYMENT_TARGET=12.0
 cd "$(dirname "$0")/.."
 python3 scripts/version.py --check
 python3 scripts/check-cloudflare-license.py --header
+python3 scripts/security-sanity.py
 product_version=$(python3 scripts/version.py --version)
 product_build=$(python3 scripts/version.py --build)
 stage=$(mktemp -d "${TMPDIR:-/tmp}/threatatlas-build.XXXXXX")

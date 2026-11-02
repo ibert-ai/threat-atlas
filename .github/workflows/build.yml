@@ -27,14 +27,22 @@ jobs:
       - run: cargo +stable test --workspace --locked
       - run: cargo +stable clippy --workspace --all-targets --locked -- -D warnings
       - run: cargo +stable install cargo-audit --version 0.22.2 --locked
-      - run: cargo audit --deny warnings
+      - run: python3 scripts/test-security-sanity.py
+      - run: python3 scripts/security-sanity.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: ThreatAtlas-security-evidence
+          path: evidence/security/latest.json
       - run: python3 scripts/check-source.py
   linux:
+    needs: quality
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - run: sudo apt-get update && sudo apt-get install -y pkg-config libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev xvfb
       - run: rustup toolchain install stable --profile minimal
+      - run: cargo install cargo-audit --version 0.22.2 --locked
       - run: bash scripts/build-linux.sh
       - run: xvfb-run -a target/release/threat-atlas-linux --smoke-test
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -42,6 +50,7 @@ jobs:
           name: ThreatAtlas-Linux-preview
           path: dist/ThreatAtlas-Linux-*.tar.gz
   macos:
+    needs: quality
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -49,6 +58,7 @@ jobs:
         run: |
           clang -fobjc-arc -Werror macos/Radar.m macos/TestRadar.m -framework Cocoa -framework Security -framework LocalAuthentication -o /tmp/RadarTests
           /tmp/RadarTests
+      - run: cargo install cargo-audit --version 0.22.2 --locked
       - run: bash scripts/build-macos.sh --universal
       - run: python3 scripts/test-updater.py "dist/Threat Atlas SOC.app/Contents/MacOS/ThreatAtlasUpdater"
       - run: |
@@ -59,6 +69,7 @@ jobs:
           name: ThreatAtlas-macOS
           path: dist/ThreatAtlas-macOS.zip
   windows:
+    needs: quality
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -69,6 +80,7 @@ jobs:
           $errors = $null
           [void][System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD 'updater/Update-ThreatAtlas.ps1'), [ref]$null, [ref]$errors)
           if ($errors.Count) { throw ($errors | Out-String) }
+      - run: cargo install cargo-audit --version 0.22.2 --locked
       - run: ./scripts/build-windows.ps1
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:

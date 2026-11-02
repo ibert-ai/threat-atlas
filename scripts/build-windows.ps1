@@ -1,5 +1,7 @@
 $ErrorActionPreference = "Stop"
 Set-Location (Join-Path $PSScriptRoot "..")
+python scripts/security-sanity.py
+if ($LASTEXITCODE -ne 0) { throw "Security sanity check failed or could not be verified" }
 python scripts/version.py --check
 if ($LASTEXITCODE -ne 0) { throw "Version metadata is inconsistent" }
 cargo build --locked --release --target x86_64-pc-windows-msvc -p threat-atlas

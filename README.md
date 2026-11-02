@@ -142,3 +142,6 @@ This branch adds [country borders and observation shading](docs/COUNTRY-MAP.md) 
 ## macOS Radar alpha (experimental branch)
 
 See [Radar research, layers and mandatory per-build licence acceptance](docs/CLOUDFLARE-RADAR-ALPHA.md). Disabled by default; requires a Radar Read token and noncommercial-use compliance. No Windows or Linux Radar implementation is included.
+## Security and development priorities
+
+[Security first; public screensaver bugs before standalone work](docs/SECURITY-FIRST.md). [Known Vulnerabilities](docs/KNOWN-VULNERABILITIES.md) records verified findings and sources. Builds require cargo-audit 0.22.2 and a fresh passing security sanity check.
