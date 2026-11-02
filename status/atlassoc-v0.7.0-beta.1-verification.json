@@ -1,0 +1,68 @@
+{
+  "product": "AtlasSOC",
+  "release": "0.7.0-beta.1",
+  "build": 10,
+  "source_commit": "2260a27c0fa103227626387d2c3ca88b2b4a5c6d",
+  "verified_at": "2026-11-02T21:05:33.618206+00:00",
+  "windows": {
+    "ci_run": 41523890988,
+    "result": "PASS Node24 checkout/fmt/Clippy/workspace tests/licence check/optimized native build/offline window-smoke/upload",
+    "artifact_id": 13180310045,
+    "outer_sha256": "672456e7b602472576bfafa80eba437d968b00d2cc2976760a9abfb6868e2567",
+    "manifest": {
+      "product": "AtlasSOC",
+      "publisher": "Ibert Consulting",
+      "version": "0.7.0",
+      "build": 10,
+      "platform": "windows-x64",
+      "source_commit": "ffef9b2cf8ba83bd4ac19a2517b3f90a9d2c5b1f",
+      "source_dirty": false,
+      "signature": "unsigned",
+      "package": "portable standalone beta; not a screensaver or MSI",
+      "radar_network": "not implemented on Windows",
+      "sentinel_ico_sha256": "82952fc476bdf1569367ffc15a01b03cfc1ae69c2e594acad875f6936993462e",
+      "sha256": "0154d12f987db38864e673e88bd0e4313f64bcf6672f1149c25e3edc94df1a30"
+    },
+    "source_identity": "CI synthetic merge has no file changes vs release commit",
+    "independent_checks": "PASS archive digest,nested ZIP integrity,version/build,clean manifest,x64 PE,EXE/manifest hash,Sentinel hash",
+    "limits": "No native Windows execution by MAC; final native smoke is hosted CI, not physical hardware/live acceptance"
+  },
+  "mac": {
+    "result": "PASS final universal Swift host compile,8 consent assertions on each architecture,strict ad-hoc signature,arm64+x86_64,icon/metadata,ZIP integrity",
+    "core_archive_provenance": {
+      "product": "AtlasSOC",
+      "version": "0.7.0",
+      "build": 10,
+      "platform": "macOS14+ universal arm64+x86_64",
+      "source_commit": "2260a27c0fa103227626387d2c3ca88b2b4a5c6d",
+      "signature": "ad-hoc; not Developer ID or notarised",
+      "core_build": "Reused independently tested static archives; crates/core byte-identical to reviewed b468dfa3 and PR19; Swift host compiled from release source",
+      "core_archive_sha256": {
+        "aarch64-apple-darwin": "a6ede7049749fed222dda0abdedfb70e3eb81bff69a72ea45b15ec63b01a1f07",
+        "x86_64-apple-darwin": "75691c7c9d86aa47fc57c6958d44f7a780951ba78eedc414e7a75f7f9a2302b2"
+      },
+      "consent_tests": "8 assertions PASS per architecture; Intel via Rosetta",
+      "app_runtime": "Not launched to avoid duplicate live worker/user terms acceptance"
+    },
+    "limits": "Intel via Rosetta,not physical Intel; no new live worker/app launch/soak/sleep-wake acceptance; not Developer ID/notarised"
+  },
+  "baseline": "Exact release candidate quality/Linux/Windows/updater/MSI jobs checked separately; hosted Mac baseline queued at publication preparation. Prior reviewed identical core fixture/test evidence and final local universal host verification retained; no hosted Mac pass fabricated.",
+  "security": "Existing reviewed audit exceptions unchanged;3 unfiltered inherited warnings disclosed. Linux-only GTK branches and bundled immutable-font parser path; not a clean unfiltered audit.",
+  "beta_limits": [
+    "Windows portable unsigned ZIP,no final installer/upgrade",
+    "macOS14+ ad-hoc/unnotarised",
+    "No Windows Radar or Linux standalone",
+    "Physical mixed-DPI/hotplug/Intel hardware/extended soak incomplete",
+    "No trusted standalone auto-updater"
+  ],
+  "files": {
+    "AtlasSOC-Windows-x64-v0.7.0-build10.zip": {
+      "bytes": 2009650,
+      "sha256": "866da4052e30eafe7530593d9613db910a6252c59e003b3c886cfc627f2ed0cb"
+    },
+    "AtlasSOC-macOS-universal-v0.7.0-build10.zip": {
+      "bytes": 7100623,
+      "sha256": "665af1efd546cdbab9d53265ddd5f7523e1000e479cdb295b1413558d1f86d8c"
+    }
+  }
+}
