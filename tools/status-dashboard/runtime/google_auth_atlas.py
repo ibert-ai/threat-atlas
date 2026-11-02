@@ -34,6 +34,11 @@ def reply_page(h):
     if not c:
         page='<h1>Google sign-in setup pending</h1><p>Owner: ibert@ibert.se. Google Cloud web client registration and localhost/HTTPS origin configuration are required. Login is not active yet.</p><a href="/">Back to dashboard</a>'
     else:
+        expected=urlsplit(c['origin']).netloc
+        if h.headers.get('Host','').lower()!=expected.lower():
+            if h.client_address[0] in ('127.0.0.1','::1','10.0.88.189'):
+                h.send_response(302);h.send_header('Location',c['origin']+'/login');h.end_headers();return
+            h.reply({'error':'Google login currently available on the Mac at localhost only. The planned HTTPS domain is not live yet.'},503);return
         # Official google-auth is required; missing verifier must never bypass auth.
         try:from google.oauth2 import id_token
         except ImportError:h.reply({'error':'Google verifier is not installed; sign-in unavailable'},503);return

@@ -7,7 +7,7 @@ class DashboardTests(unittest.TestCase):
   cls.tmp=tempfile.TemporaryDirectory();cls.root=Path(cls.tmp.name)
   for name in ('server.py','google_auth_atlas.py','index.html','agents.html'):shutil.copy2(RUNTIME/name,cls.root/name)
   for name in ('releases.py','github_status.py'):(cls.root/name).write_text('def start():pass\ndef read_cache():return {}\ndef read():return {}\n')
-  cls.process=subprocess.Popen(['/usr/bin/python3',str(cls.root/'server.py')],env=dict(os.environ,MONITOR_PORT='8767'),stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+  cls.process=subprocess.Popen([__import__('sys').executable,str(cls.root/'server.py')],env=dict(os.environ,MONITOR_PORT='8767'),stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
   for _ in range(50):
    try:urllib.request.urlopen('http://localhost:8767/',timeout=1);break
    except Exception:time.sleep(.1)
