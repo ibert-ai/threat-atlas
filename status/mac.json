@@ -49,7 +49,7 @@
     "scope": "Portable Windows + universal Mac beta; known trust/hardware/installer limits disclosed"
   },
   "owner_action_required": "No new owner action for publication; beta is published. Follow documented platform trust policy and limitations.",
-  "updated_at": "2026-11-02T21:14:35.543Z",
+  "updated_at": "2026-11-02T21:15:51.380Z",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
@@ -543,11 +543,12 @@
     "limits": "No new receiver, schedule or polling loop; no publication inferred"
   },
   "docker_deployment_verification": {
-    "status": "PASS LAN health/API content",
-    "data_commit": "5916cd842ab291bf709acb52f08c98b9a5a267f0",
-    "snapshot_sha256": "0c999337aa34d80a4385a854fa3d1be57658c39db32bf170c62c1f38e99cedc5",
-    "result": "All committed data keys match API. Additional served_at/github/github_error/local_only are runtime metadata, not mismatch.",
-    "limits": "Image/reboot/firewall persistence not independently verified"
+    "status": "PASS published-beta snapshot independently verified over LAN",
+    "data_commit": "8e82e069f5124bbdb6c8d81eddb2ffc6dd8451cb",
+    "snapshot_sha256": "ebde6639b41189705da2dd4f89d3bd44c789b4165155e1279a2006f8d0b124c9",
+    "result": "Health200; all committed snapshot keys equal /api/status; page state PUBLISHED AtlasSOC0.7.0 beta1/build10, updated_at2026-11-02T21:07:23.826Z",
+    "receipt": "Desktop-verified Billy STATUS-DATA-8E82-BILLY-20261102-01; MAC acknowledgement ATLAS-BETA-MERGED-20261102-01 posted",
+    "limits": "Docker image/reboot/firewall persistence not independently verified; final main merge/CI status is newer public status data"
   },
   "node24_actions": {
     "status": "Shared pipeline upgrade in draft PR22; hosted validation pending",
