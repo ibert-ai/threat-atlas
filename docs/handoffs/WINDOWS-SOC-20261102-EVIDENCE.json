@@ -1,0 +1,32 @@
+{
+  "owner": "@IbertAgentControlBot",
+  "host": "BILLY-BADASS",
+  "source_branch": "codex/windows-standalone-soc",
+  "artifact_source_commit": "9c9dbfc0f13b22d8a84f76815e6d6afae68604d9",
+  "version": "0.7.0",
+  "build": 9,
+  "package": "AtlasSOC-Windows-x64-v0.7.0-build9.zip",
+  "package_sha256": "36f76a7fd49f95a5ddce6bbe3de9eed3cb96eeffc41723f7da7dd98de34c6c88",
+  "exe_sha256": "d8bf700a847b8b1fe40b8f3e256280e214932056699f4354ca111ca8ac1a2da7",
+  "checks": {
+    "native_windows_soc_unit_tests": "PASS: 5",
+    "native_windows_saver_layout_tests": "PASS: 2; saver source unchanged",
+    "core_tests": "PASS: 32 before Windows-only final resource changes; core source unchanged",
+    "clippy_workspace_all_targets_deny_warnings": "PASS",
+    "rustfmt": "PASS",
+    "source_pattern_scan": "PASS; limited scan",
+    "screensaver_version_consistency": "PASS; screensaver version unchanged",
+    "live_terms_fingerprints": "PASS; reviewed record unchanged",
+    "release_build": "PASS: native MSVC optimized, clean source tree",
+    "final_package_offline_native_smoke": "PASS: 27 presented frames, one window, Sentinel icon loaded, no feed constructed, no consent changed",
+    "debug_interactive_live_controls": "PASS: changing received records, Calm/Realtime, fullscreen/Escape, persistence; historical debug evidence, not final-package interactive acceptance",
+    "fresh_unfiltered_audit": "0 vulnerability entries; 3 inherited informational/unsoundness warnings remain; not full security clearance",
+    "standalone_installer_and_upgrade": "NOT RUN: portable package only",
+    "physical_multimonitor_mixed_dpi_hotplug": "NOT RUN",
+    "eight_hour_soak": "NOT RUN",
+    "windows_trusted_signing": "NOT RUN: unsigned review build",
+    "hosted_windows_soc_ci": "PENDING: requires review PR"
+  },
+  "publication": "NO-GO until applicable release gates and MAC review pass",
+  "next_action": "MAC risk-based review/integration; retain physical/installer/security limits explicitly. No Linux or Windows Radar expansion."
+}

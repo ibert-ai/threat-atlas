@@ -1,0 +1,23 @@
+{
+  "identity": "AtlasSOC / Sentinel",
+  "status": "current working layout; final design decision remains open",
+  "palette": {
+    "navy": "#0A1828",
+    "navy_light": "#17334A",
+    "foreground": "#EAF4F8",
+    "cyan": "#40DBDC",
+    "amber": "#F1B76B"
+  },
+  "files": {
+    "AtlasSOC.icns": "1be15cb54836f8658d962c727db641c9f9bb38a6d7261ff8010c7d1dd3b13bd9",
+    "AtlasSOC.ico": "82952fc476bdf1569367ffc15a01b03cfc1ae69c2e594acad875f6936993462e",
+    "sentinel-1024.png": "85bdfb25c953f552bf65afa0581bd1fbd4ec20e35b65f491f5b1bbd72e8ef328",
+    "sentinel-mono.svg": "f30283cf4c04b481cb1050bf3c0a09b15393ea66193c1a5f38d76ef3c654ead4",
+    "sentinel.svg": "89450ed62722c280a2ce84995d0179a72f76c6439c5d4667ee96bc314bcd7137"
+  },
+  "limits": [
+    "Draft optical sizes; native Windows/Linux shell acceptance pending",
+    "No corporate source logo included",
+    "Not a release package or publication approval"
+  ]
+}
