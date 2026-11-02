@@ -86,7 +86,7 @@
     "publication": "Previously authorized after required technical gates pass"
   },
   "owner_action_required": "No repeat approval required for assigned standalone implementation. Existing unrelated owner actions remain separately recorded; no go-live approval inferred.",
-  "updated_at": "2026-11-02T19:04:05.961Z",
+  "updated_at": "2026-11-02T19:25:56.549Z",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
@@ -214,12 +214,12 @@
         "phase1": "fa079c0f",
         "phase2": "719683c9"
       },
-      "version": "0.6.1 / build8",
-      "status": "Local Mac+baseline CI PASS; public beta NO-GO pending implementation",
-      "evidence": "32 core tests per architecture; both-architecture Swift parser/lifecycle/FFI; universal rebuild/signature; ZIP hash; byte-identical baseline fixtures PASS.",
-      "next_action": "CL remediation requested via ATLAS-PUBLIC-BETA-20261102-01; draft PR19 and release/marketing docs prepared.",
-      "limits": "Windows SOC package/native evidence and licence-consent/terms gate absent. Final public metadata/docs not ready. No release published.",
-      "reported_head": "b468dfa3be96abd6ff4aa25f48daaecf86946e17",
+      "version": "0.7.0 / build9",
+      "status": "Mac consent delta verified; combined Windows+Mac beta NO-GO",
+      "evidence": "MAC independent: 8 consent assertions PASS per architecture (Intel via Rosetta); current terms fingerprints match; offline checks reject changed notice, changed legal code and unreachable terms; review record unchanged. crates/ byte-identical to earlier b468dfa3 review.",
+      "next_action": "CL: Windows consent/core spec to Billy and standalone CI coverage. Billy: exact Windows SOC source/package/native/consent evidence. MAC: final integration, independent acceptance and release docs.",
+      "limits": "PR19 draft/unmerged. CI41508477399 has six baseline jobs PASS, macos queued; baseline jobs do not build Windows SOC. Current universal package/live UI/socket claims remain CL-reported. Windows standalone evidence, standalone CI, final public metadata/docs and final-source acceptance pending.",
+      "reported_head": "7b1b92d72e531d319e82ba36b576839896ee1480",
       "pr": "https://github.com/ibert-ai/threat-atlas/pull/19",
       "independent_verification": {
         "source_commit": "b468dfa3be96abd6ff4aa25f48daaecf86946e17",
@@ -292,6 +292,18 @@
           "result": "PASS: seven baseline jobs; publish skipped",
           "scope": "Shared/screensaver baseline; NOT standalone Windows delivery"
         }
+      },
+      "latest_review": {
+        "source_commit": "7b1b92d72e531d319e82ba36b576839896ee1480",
+        "checked_at": "2026-11-02T19:25:56.549Z",
+        "consent_arm64": "PASS 8 assertions",
+        "consent_x86_64": "PASS 8 assertions under Rosetta",
+        "terms_live": "PASS fingerprints unchanged",
+        "terms_fail_closed": "PASS changed notice/legal/unreachable; record unchanged",
+        "decision": "NO-GO",
+        "coordination_reference": "ATLAS-REVIEW19-20261102-03",
+        "receipt": "Desktop-verified CL handoff read and coordinator reply posted; teammate acknowledgement/execution not yet verified",
+        "reported_owner_direction": "CL relays wait-for-Windows; consistent with already recorded combined Windows+Mac publication scope; no new owner authorization inferred"
       }
     }
   },
