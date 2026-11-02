@@ -86,7 +86,7 @@
     "publication": "Previously authorized after required technical gates pass"
   },
   "owner_action_required": "No repeat approval required for assigned standalone implementation. Existing unrelated owner actions remain separately recorded; no go-live approval inferred.",
-  "updated_at": "2026-11-02T19:25:56.549Z",
+  "updated_at": "2026-11-02T19:31:07.395Z",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
@@ -218,7 +218,7 @@
       "status": "Mac consent delta verified; combined Windows+Mac beta NO-GO",
       "evidence": "MAC independent: 8 consent assertions PASS per architecture (Intel via Rosetta); current terms fingerprints match; offline checks reject changed notice, changed legal code and unreachable terms; review record unchanged. crates/ byte-identical to earlier b468dfa3 review.",
       "next_action": "CL: Windows consent/core spec to Billy and standalone CI coverage. Billy: exact Windows SOC source/package/native/consent evidence. MAC: final integration, independent acceptance and release docs.",
-      "limits": "PR19 draft/unmerged. CI41508477399 has six baseline jobs PASS, macos queued; baseline jobs do not build Windows SOC. Current universal package/live UI/socket claims remain CL-reported. Windows standalone evidence, standalone CI, final public metadata/docs and final-source acceptance pending.",
+      "limits": "PR19 draft/unmerged. CI41508477399 all seven baseline jobs PASS, publish skipped; baseline jobs do not build Windows SOC. Current universal package/live UI/socket claims remain CL-reported. Windows standalone evidence, standalone CI, final public metadata/docs and final-source acceptance pending.",
       "reported_head": "7b1b92d72e531d319e82ba36b576839896ee1480",
       "pr": "https://github.com/ibert-ai/threat-atlas/pull/19",
       "independent_verification": {
@@ -303,7 +303,12 @@
         "decision": "NO-GO",
         "coordination_reference": "ATLAS-REVIEW19-20261102-03",
         "receipt": "Desktop-verified CL handoff read and coordinator reply posted; teammate acknowledgement/execution not yet verified",
-        "reported_owner_direction": "CL relays wait-for-Windows; consistent with already recorded combined Windows+Mac publication scope; no new owner authorization inferred"
+        "reported_owner_direction": "CL relays wait-for-Windows; consistent with already recorded combined Windows+Mac publication scope; no new owner authorization inferred",
+        "ci": {
+          "run_id": 41508477399,
+          "result": "PASS seven baseline jobs; publish skipped",
+          "scope": "Screensaver regression baseline only; standalone licence/consent CI and Windows SOC delivery not covered"
+        }
       }
     }
   },
