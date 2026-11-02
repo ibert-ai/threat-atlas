@@ -83,7 +83,7 @@ def login(h):
         stage='google_token_verification'
         transport=BoundedRequest(session=CacheControl(http_requests.Session()))
         claims=id_token.verify_oauth2_token(data['credential'],transport,c['client_id'])
-        stage='owner_and_nonce' 
+        stage='owner_and_nonce'
         sub=verify_claims(claims,challenge['nonce'],c)
         p=ROOT/'google-owner-sub.json'
         if not p.exists():p.write_text(json.dumps({'sub':sub}));p.chmod(0o600)
