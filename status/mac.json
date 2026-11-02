@@ -1,9 +1,9 @@
 {
   "verified_at": "2026-10-31T01:44:10.553Z",
-  "release": "0.4.2-rc.1 / build10 \u2014 Windows MSI withdrawn",
-  "decision": "PUBLISHED \u2014 MSI WITHDRAWN",
+  "release": "0.4.2-rc.1 / build10 — Windows MSI withdrawn",
+  "decision": "PUBLISHED — MSI WITHDRAWN",
   "eta": "Mac/Linux/standalone Windows available; corrected MSI has no verified ETA",
-  "owner": "Billy: fixes + Windows/Linux evidence \u00b7 MAC: final verification, commit + release",
+  "owner": "Billy: fixes + Windows/Linux evidence · MAC: final verification, commit + release",
   "reference": "ATLAS-PRIO-FIX-20261030-01 / GitHub Billy handoff",
   "receipt": "Billy handoff independently validated and integrated; release published from684a63bd4c21428d126f04aa4d3156bdcea232c9.",
   "tasks": [
@@ -70,7 +70,7 @@
     {
       "status": "pending",
       "task": "Physical acceptance and trusted signing",
-      "owner": "Future validation \u2014 not owner approval",
+      "owner": "Future validation — not owner approval",
       "evidence": "Idle/lock, multiple monitors/HiDPI, Intel hardware, physical Linux desktop, signed update/rollback and soak remain incomplete; disclosed beta limits."
     },
     {
@@ -85,12 +85,12 @@
     "version": "0.4.2-rc.1 approved by Robert at 20:03 CET",
     "publication": "Previously authorized after required technical gates pass"
   },
-  "owner_action_required": "Reload http://localhost:8765/login and sign in as ibert@ibert.se after the repair. Do not use the future atlasstatus.ibert.se hostname yet; it has no DNS/deployment. Dependency reviews and Billy screensaver handover remain open.",
-  "updated_at": "2026-11-02T13:25:42.443141+00:00",
+  "owner_action_required": "No repeat approval required for assigned standalone implementation. Existing unrelated owner actions remain separately recorded; no go-live approval inferred.",
+  "updated_at": "2026-11-02T16:56:58.754Z",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
-  "current_task": "Local Google login-loop repair deployed: Google g_state cookie no longer hides the Atlas session; seven regression tests pass. Google verification isolated with bounded workers/timeouts. Fresh owner browser sign-in still pending. External atlasstatus.ibert.se has no DNS/deployment.",
+  "current_task": "CL leads standalone macOS SOC; phase3 country-overlay caching in progress. MAC records each meaningful reported step separately from independent validation.",
   "active_pr": 14,
   "source_commit": "684a63bd4c21428d126f04aa4d3156bdcea232c9",
   "workflow_run": 41151902562,
@@ -205,6 +205,20 @@
         "checks": "Seven isolated runtime tests pass, including both cookie orders, session recognition and duplicate rejection; login HTTP200; unauthenticated API remains rejected",
         "resilience": "16 concurrent request limit, per-thread SQLite, 15s socket and 10s certificate-request timeout"
       }
+    },
+    "claude_standalone": {
+      "owner": "CL / @IbertClaudeBot",
+      "branch": "codex/claude-standalone-soc",
+      "base": "68d136004228",
+      "reported_commits": {
+        "phase1": "fa079c0f",
+        "phase2": "719683c9"
+      },
+      "version": "0.2.0 / build2 (CL-reported phase2)",
+      "status": "Phase3 overlay caching in progress; CL-reported, not independently validated",
+      "evidence": "CL handover reports phases1-2 implemented and phase3 core work with25 core tests passing. Reported optimized frame time about17ms; at8fps arithmetic estimate13.6% of one CPU core, not a measured whole-app CPU result.",
+      "next_action": "CL plans country-layer redraw at most once per second, immediately on filter/focus changes; report exact source and before/after validation. MAC maintains status per step.",
+      "limits": "Latest phase3 source uncommitted in handover; cache completion, CPU improvement, current build/runtime and acceptance not independently verified. No release acceptance."
     }
   },
   "priority_order": [
@@ -287,7 +301,7 @@
           "0.10.9"
         ],
         "latest_stable": "0.11.1",
-        "status": "Review required \u2014 newer stable release or duplicate old version",
+        "status": "Review required — newer stable release or duplicate old version",
         "source": "https://crates.io/crates/sha2"
       },
       {
@@ -314,7 +328,7 @@
           "0.11.4"
         ],
         "latest_stable": "0.12.0",
-        "status": "Review required \u2014 newer stable release or duplicate old version",
+        "status": "Review required — newer stable release or duplicate old version",
         "source": "https://crates.io/crates/tiny-skia"
       },
       {
@@ -323,7 +337,7 @@
           "0.29.0"
         ],
         "latest_stable": "0.30.0",
-        "status": "Review required \u2014 newer stable release or duplicate old version",
+        "status": "Review required — newer stable release or duplicate old version",
         "source": "https://crates.io/crates/tungstenite"
       },
       {
@@ -335,7 +349,7 @@
           "0.61.2"
         ],
         "latest_stable": "0.61.2",
-        "status": "Review required \u2014 newer stable release or duplicate old version",
+        "status": "Review required — newer stable release or duplicate old version",
         "source": "https://crates.io/crates/windows-sys"
       }
     ],
@@ -421,13 +435,13 @@
     {
       "name": "Windows standalone .exe",
       "priority": "P2",
-      "status": "Planned \u2014 blocked behind security/screensaver bugs",
+      "status": "Planned — blocked behind security/screensaver bugs",
       "detail": "PR16 instructions for Billy; Windows-first native app and persistent options"
     },
     {
       "name": "SOC multiscreen wall roles and layouts",
       "priority": "P2",
-      "status": "Planned \u2014 not implemented",
+      "status": "Planned — not implemented",
       "detail": "Display selection, mirrored/per-display/spanned views; hotplug and mixed DPI tests"
     },
     {
