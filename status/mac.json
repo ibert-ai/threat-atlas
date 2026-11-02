@@ -86,11 +86,11 @@
     "publication": "Previously authorized after required technical gates pass"
   },
   "owner_action_required": "No repeat approval required for assigned standalone implementation. Existing unrelated owner actions remain separately recorded; no go-live approval inferred.",
-  "updated_at": "2026-11-02T16:56:58.754Z",
+  "updated_at": "2026-11-02T17:21:54.028Z",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
-  "current_task": "CL leads standalone macOS SOC; phase3 country-overlay caching in progress. MAC records each meaningful reported step separately from independent validation.",
+  "current_task": "CL standalone macOS SOC0.3.0/build3 review handoff6dd93903 received; independent MAC review pending.",
   "active_pr": 14,
   "source_commit": "684a63bd4c21428d126f04aa4d3156bdcea232c9",
   "workflow_run": 41151902562,
@@ -214,11 +214,12 @@
         "phase1": "fa079c0f",
         "phase2": "719683c9"
       },
-      "version": "0.2.0 / build2 (CL-reported phase2)",
-      "status": "Phase3 overlay caching in progress; CL-reported, not independently validated",
-      "evidence": "CL handover reports phases1-2 implemented and phase3 core work with25 core tests passing. Reported optimized frame time about17ms; at8fps arithmetic estimate13.6% of one CPU core, not a measured whole-app CPU result.",
-      "next_action": "CL plans country-layer redraw at most once per second, immediately on filter/focus changes; report exact source and before/after validation. MAC maintains status per step.",
-      "limits": "Latest phase3 source uncommitted in handover; cache completion, CPU improvement, current build/runtime and acceptance not independently verified. No release acceptance."
+      "version": "0.3.0 / build3 (CL-reported)",
+      "status": "Phase3 handoff Desktop-received; independent MAC review pending",
+      "evidence": "CL reports25 core tests and Swift suites passing, clippy clean, byte-identical screensaver fixture frames,4.4ms optimized frame time and about24% live-app CPU.",
+      "next_action": "MAC independent source/evidence review; no release acceptance.",
+      "limits": "Teammate-reported only; source/runtime/performance not independently validated. Visual acceptance and CI/universal build pending.",
+      "reported_head": "6dd93903"
     }
   },
   "priority_order": [
