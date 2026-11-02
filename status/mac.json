@@ -86,11 +86,11 @@
     "publication": "Previously authorized after required technical gates pass"
   },
   "owner_action_required": "No repeat approval required for assigned standalone implementation. Existing unrelated owner actions remain separately recorded; no go-live approval inferred.",
-  "updated_at": "2026-11-02T20:49:14.701Z",
+  "updated_at": "2026-11-02T21:02:58.414Z",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
-  "current_task": "Billy PR21 handover verified: dedicated Windows SOC CI and7 baseline jobs PASS; hosted artifact digest/integrity/x64/manifest verified. Docker snapshot matches committed data. Publication held for security disposition, final integrated Mac+Windows acceptance and release metadata/docs.",
+  "current_task": "Final combined beta PR23 source2260a27c,0.7.0 beta1/build10: universal Mac host/consent/signature/archive PASS; Windows final CI tests PASS and optimized package build running. Draft release saved, not published.",
   "active_pr": 14,
   "source_commit": "684a63bd4c21428d126f04aa4d3156bdcea232c9",
   "workflow_run": 41151902562,
@@ -625,5 +625,19 @@
     "owner_direction": "Proceed with beta; MAC owns final exact-source/package reconciliation, accurate docs and applicable gate verification",
     "telegram": "ATLAS-HANDOFF-RECONCILE-20261102-01 posted; requested only missing final Mac/package evidence",
     "publication": "Not yet published"
+  },
+  "beta_release_candidate": {
+    "source_commit": "2260a27c0fa103227626387d2c3ca88b2b4a5c6d",
+    "pr": 23,
+    "tag": "atlassoc-v0.7.0-beta.1",
+    "version": "0.7.0",
+    "build": 10,
+    "mac_package_sha256": "665af1efd546cdbab9d53265ddd5f7523e1000e479cdb295b1413558d1f86d8c",
+    "mac_validation": "Universal Swift build,8 consent tests per architecture,strict ad-hoc signature,slices,icon/metadata and ZIP PASS; previously tested core archives reused after source identity check",
+    "windows_run": 41523890988,
+    "status": "DRAFT pending final Windows package/smoke/hashes",
+    "limits": "Portable Windows; ad-hoc/unnotarised Mac; installer/physical/soak/trust limits disclosed. Existing audit exceptions unchanged and unfiltered warnings documented.",
+    "docs": "docs/ATLAS-SOC-BETA.md on exact source",
+    "wishlist_commit": "df541205c716370b9abf7d9bb8ebf69ff4bd64c2"
   }
 }
