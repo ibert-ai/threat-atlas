@@ -86,11 +86,11 @@
     "publication": "Previously authorized after required technical gates pass"
   },
   "owner_action_required": "No repeat approval required for assigned standalone implementation. Existing unrelated owner actions remain separately recorded; no go-live approval inferred.",
-  "updated_at": "2026-11-02T17:21:54.028Z",
+  "updated_at": "2026-11-02T18:57:59.197Z",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
-  "current_task": "CL standalone macOS SOC0.3.0/build3 review handoff6dd93903 received; independent MAC review pending.",
+  "current_task": "Public standalone beta review b468dfa3 /0.6.1 build8: independent MAC tests in progress; no publication until Windows SOC and mandatory licence-consent gates are met.",
   "active_pr": 14,
   "source_commit": "684a63bd4c21428d126f04aa4d3156bdcea232c9",
   "workflow_run": 41151902562,
@@ -214,12 +214,13 @@
         "phase1": "fa079c0f",
         "phase2": "719683c9"
       },
-      "version": "0.3.0 / build3 (CL-reported)",
-      "status": "Phase3 handoff Desktop-received; independent MAC review pending",
-      "evidence": "CL reports25 core tests and Swift suites passing, clippy clean, byte-identical screensaver fixture frames,4.4ms optimized frame time and about24% live-app CPU.",
-      "next_action": "MAC independent source/evidence review; no release acceptance.",
-      "limits": "Teammate-reported only; source/runtime/performance not independently validated. Visual acceptance and CI/universal build pending.",
-      "reported_head": "6dd93903"
+      "version": "0.6.1 / build8",
+      "status": "MAC independent release review; publication gated",
+      "evidence": "Independent arm64 core32 tests PASS; Swift parser/lifecycle suites PASS both architectures; supplied universal ZIP hash/archive/strict ad-hoc signature/dual slices verified.",
+      "next_action": "CL/Billy exact-source handoff requested; final docs/release notes/marketing held as drafts.",
+      "limits": "Intel core/universal independent build/CI still in progress. Windows standalone SOC and mandatory licence-consent/terms gate absent from candidate. No release published.",
+      "reported_head": "b468dfa3be96abd6ff4aa25f48daaecf86946e17",
+      "pr": "https://github.com/ibert-ai/threat-atlas/pull/19"
     }
   },
   "priority_order": [
