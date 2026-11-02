@@ -1,10 +1,10 @@
 """Google Identity Services integration. Disabled until explicit owner config exists."""
-import hashlib,hmac,json,secrets,time
-from http.cookies import SimpleCookie
+import hashlib,hmac,json,secrets,time,threading,re
 from pathlib import Path
 from urllib.parse import urlsplit
 ROOT=Path(__file__).parent
 SESSIONS={};CHALLENGES={};ATTEMPTS={}
+AUTH_LOCK=threading.RLock()
 def config():
     p=ROOT/'google-login.json'
     if not p.exists():return None
@@ -17,8 +17,16 @@ def config():
     if c.get('owner_email')!='ibert@ibert.se':raise ValueError('Owner allowlist must be explicitly reviewed')
     return c
 def cookies(handler):
-    try:c=SimpleCookie();c.load(handler.headers.get('Cookie',''));return {k:v.value for k,v in c.items()}
-    except Exception:return {}
+    # GIS g_state can contain unquoted JSON. Parsing the whole header with
+    # SimpleCookie discards later cookies in that case, causing a login loop.
+    # Parse only our own strictly URL-safe random cookie values; reject duplicates.
+    found={}
+    for segment in handler.headers.get('Cookie','').split(';'):
+        name,separator,value=segment.strip().partition('=')
+        if name not in ('atlas_session','atlas_challenge'):continue
+        if not separator or name in found or not re.fullmatch(r'[A-Za-z0-9_-]{20,128}',value):return {}
+        found[name]=value
+    return found
 def session(handler):
     sid=cookies(handler).get('atlas_session','');row=SESSIONS.get(hashlib.sha256(sid.encode()).hexdigest())
     return row if row and row['expires']>time.time() else None
@@ -58,6 +66,7 @@ def login(h):
     now=time.time();peer=h.client_address[0];ATTEMPTS[peer]=[t for t in ATTEMPTS.get(peer,[]) if now-t<60]
     if len(ATTEMPTS[peer])>=8:h.reply({'error':'Too many attempts'},429);return
     ATTEMPTS[peer].append(now)
+    stage='challenge'
     try:
         size=int(h.headers.get('Content-Length','0'))
         if not 0<size<=16384:raise ValueError('Invalid body')
@@ -65,7 +74,16 @@ def login(h):
         if not challenge or challenge['expires']<now:raise ValueError('Challenge expired')
         from google.oauth2 import id_token
         from google.auth.transport import requests
-        claims=id_token.verify_oauth2_token(data['credential'],requests.Request(),c['client_id'])
+        # Bound certificate requests; preserve normal TLS/signature/audience checks.
+        import requests as http_requests
+        from cachecontrol import CacheControl
+        class BoundedRequest(requests.Request):
+            def __call__(self,*args,timeout=10,**kwargs):
+                return super().__call__(*args,timeout=min(timeout or 10,10),**kwargs)
+        stage='google_token_verification'
+        transport=BoundedRequest(session=CacheControl(http_requests.Session()))
+        claims=id_token.verify_oauth2_token(data['credential'],transport,c['client_id'])
+        stage='owner_and_nonce' 
         sub=verify_claims(claims,challenge['nonce'],c)
         p=ROOT/'google-owner-sub.json'
         if not p.exists():p.write_text(json.dumps({'sub':sub}));p.chmod(0o600)
@@ -74,7 +92,9 @@ def login(h):
         if len(SESSIONS)>100:raise ValueError('Session limit')
         sid=secrets.token_urlsafe(32);SESSIONS[hashlib.sha256(sid.encode()).hexdigest()]={'sub':sub,'expires':now+3600}
         payload=b'{"ok":true}';h.send_response(200);h.send_header('Content-Type','application/json');h.send_header('Cache-Control','no-store');h.send_header('Set-Cookie','atlas_session='+sid+'; HttpOnly; SameSite=Lax; Path=/; Max-Age=3600'+('; Secure' if c['origin'].startswith('https:') else ''));h.end_headers();h.wfile.write(payload)
-    except Exception:h.reply({'error':'Sign-in rejected; no token logged'},403)
+    except Exception as error:
+        print('Google sign-in rejected: stage='+stage+' type='+type(error).__name__,flush=True)
+        h.reply({'error':'Google sign-in failed at '+stage+'. Reload the login page and try again. No token was logged.'},503 if stage=='google_token_verification' else 403)
 def authenticated(h):
     return not config() or session(h) is not None
 

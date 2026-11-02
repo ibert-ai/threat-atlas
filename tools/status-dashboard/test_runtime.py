@@ -30,6 +30,16 @@ class DashboardTests(unittest.TestCase):
  def test_google_not_configured(self):
   with self.assertRaises(urllib.error.HTTPError) as e:self.post('/auth/google',{})
   self.assertEqual(e.exception.code,503)
+ def test_google_cookie_does_not_hide_session(self):
+  spec=importlib.util.spec_from_file_location('cookie_auth',self.root/'google_auth_atlas.py');m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
+  from types import SimpleNamespace
+  sid='a'*43
+  for header in ['g_state={"i_l":0}; atlas_session='+sid,'atlas_session='+sid+'; g_state={"i_l":0}']:
+   handler=SimpleNamespace(headers={'Cookie':header})
+   self.assertEqual(m.cookies(handler).get('atlas_session'),sid)
+   m.SESSIONS[__import__('hashlib').sha256(sid.encode()).hexdigest()]={'sub':'test-owner','expires':time.time()+60}
+   self.assertEqual(m.session(handler)['sub'],'test-owner')
+  self.assertEqual(m.cookies(SimpleNamespace(headers={'Cookie':'atlas_session='+sid+'; atlas_session='+sid})),{})
  def test_owner_and_nonce(self):
   spec=importlib.util.spec_from_file_location('auth',self.root/'google_auth_atlas.py');m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
   claims={'email':'ibert@ibert.se','email_verified':True,'hd':'ibert.se','sub':'test-sub','nonce':'one'};c={'owner_email':'ibert@ibert.se'}

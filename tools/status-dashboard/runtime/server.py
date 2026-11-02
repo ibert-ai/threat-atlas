@@ -1,11 +1,21 @@
-import json, socket, sqlite3, time, ipaddress, os
+import json, socket, sqlite3, time, ipaddress, os, threading
 import releases
 import github_status
 import google_auth_atlas
 from pathlib import Path
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 ROOT=Path(__file__).parent
-DB=sqlite3.connect(ROOT/'monitor.sqlite3')
+class RequestDatabase:
+ def __init__(self): self.local=threading.local()
+ def connection(self):
+  if not getattr(self.local,'connection',None): self.local.connection=sqlite3.connect(ROOT/'monitor.sqlite3',timeout=5)
+  return self.local.connection
+ def execute(self,*args): return self.connection().execute(*args)
+ def commit(self): self.connection().commit()
+ def close(self):
+  connection=getattr(self.local,'connection',None)
+  if connection: connection.close();self.local.connection=None
+DB=RequestDatabase()
 DB.execute('CREATE TABLE IF NOT EXISTS commands(id INTEGER PRIMARY KEY, sender TEXT, target TEXT, body TEXT, status TEXT, created REAL)')
 DB.execute('CREATE TABLE IF NOT EXISTS agents(host TEXT PRIMARY KEY, status TEXT, detail TEXT, seen REAL)')
 DB.execute('CREATE TABLE IF NOT EXISTS services(host TEXT, name TEXT, status TEXT, detail TEXT, seen REAL, PRIMARY KEY(host,name))')
@@ -106,4 +116,21 @@ class Handler(BaseHTTPRequestHandler):
 print('Agent monitor port '+str(PORT)+('; LAN 10.0.88.0/24 and loopback' if PORT==8765 else '; loopback preview only'),flush=True)
 releases.start()
 github_status.start()
-HTTPServer(('0.0.0.0' if PORT==8765 else '127.0.0.1',PORT),Handler).serve_forever()
+class DashboardServer(ThreadingHTTPServer):
+ daemon_threads=True
+ allow_reuse_address=True
+ def __init__(self,*args,**kwargs):
+  self.workers=threading.BoundedSemaphore(16)
+  super().__init__(*args,**kwargs)
+ def get_request(self):
+  request,address=super().get_request();request.settimeout(15);return request,address
+ def process_request(self,request,address):
+  if not self.workers.acquire(blocking=False):self.shutdown_request(request);return
+  try:super().process_request(request,address)
+  except Exception:self.workers.release();raise
+ def process_request_thread(self,request,address):
+  try: super().process_request_thread(request,address)
+  finally:
+   try:DB.close()
+   finally:self.workers.release()
+DashboardServer(('0.0.0.0'  if PORT==8765 else '127.0.0.1',PORT),Handler).serve_forever()
