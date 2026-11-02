@@ -86,11 +86,11 @@
     "publication": "Previously authorized after required technical gates pass"
   },
   "owner_action_required": "No repeat approval required for assigned standalone implementation. Existing unrelated owner actions remain separately recorded; no go-live approval inferred.",
-  "updated_at": "2026-11-02T18:57:59.197Z",
+  "updated_at": "2026-11-02T19:03:00.085Z",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
-  "current_task": "Public standalone beta review b468dfa3 /0.6.1 build8: independent MAC tests in progress; no publication until Windows SOC and mandatory licence-consent gates are met.",
+  "current_task": "Standalone beta b468dfa3: independent Mac suites/rebuild/baseline fixtures PASS; NO-GO pending Windows SOC delivery, mandatory licence gates and final public metadata/docs.",
   "active_pr": 14,
   "source_commit": "684a63bd4c21428d126f04aa4d3156bdcea232c9",
   "workflow_run": 41151902562,
@@ -215,12 +215,80 @@
         "phase2": "719683c9"
       },
       "version": "0.6.1 / build8",
-      "status": "MAC independent release review; publication gated",
-      "evidence": "Independent arm64 core32 tests PASS; Swift parser/lifecycle suites PASS both architectures; supplied universal ZIP hash/archive/strict ad-hoc signature/dual slices verified.",
-      "next_action": "CL/Billy exact-source handoff requested; final docs/release notes/marketing held as drafts.",
-      "limits": "Intel core/universal independent build/CI still in progress. Windows standalone SOC and mandatory licence-consent/terms gate absent from candidate. No release published.",
+      "status": "Independent local Mac validation PASS; public Windows+Mac publication gated",
+      "evidence": "32 core tests per architecture; both-architecture Swift parser/lifecycle/FFI; universal rebuild/signature; ZIP hash; byte-identical baseline fixtures PASS.",
+      "next_action": "CL remediation requested via ATLAS-PUBLIC-BETA-20261102-01; draft PR19 and release/marketing docs prepared.",
+      "limits": "No Windows standalone host/package/native evidence. Mandatory licence consent/terms gate missing. CI not yet complete and final product metadata/docs pending. No publication.",
       "reported_head": "b468dfa3be96abd6ff4aa25f48daaecf86946e17",
-      "pr": "https://github.com/ibert-ai/threat-atlas/pull/19"
+      "pr": "https://github.com/ibert-ai/threat-atlas/pull/19",
+      "independent_verification": {
+        "source_commit": "b468dfa3be96abd6ff4aa25f48daaecf86946e17",
+        "app_version": "0.6.1",
+        "build": 8,
+        "verified_at": "2026-11-02T19:01:10.641647+00:00",
+        "verifier": "MAC independent",
+        "checks": {
+          "parser_arm64": {
+            "result": "PASS",
+            "sha256": "c5af89144eacd5e506d42a4d07a9ca797f014069e630e19fb80dbf0e850439b9"
+          },
+          "lifecycle_arm64": {
+            "result": "PASS",
+            "sha256": "d4aca9d8e536092c606f249f814102c8c284ecc1b3252f5f0e7238bb087d30df",
+            "assertions": 22
+          },
+          "coreffi_arm64": {
+            "result": "PASS",
+            "sha256": "ac9a986b150a687d8ea12dbdb5e71775f86e3ededdfc583403f99398b68c5596",
+            "assertions": 10
+          },
+          "parser_x86_64": {
+            "result": "PASS",
+            "sha256": "c5af89144eacd5e506d42a4d07a9ca797f014069e630e19fb80dbf0e850439b9"
+          },
+          "lifecycle_x86_64": {
+            "result": "PASS",
+            "sha256": "d4aca9d8e536092c606f249f814102c8c284ecc1b3252f5f0e7238bb087d30df",
+            "assertions": 22
+          },
+          "coreffi_x86_64": {
+            "result": "PASS",
+            "sha256": "ac9a986b150a687d8ea12dbdb5e71775f86e3ededdfc583403f99398b68c5596",
+            "assertions": 10
+          },
+          "core_arm64": {
+            "result": "PASS",
+            "tests": 32,
+            "sha256": "0a91cf04107b24a96e4f4ab6fc315931cd387849af737443600ffbc610655a18"
+          },
+          "core_x86_64": {
+            "result": "PASS",
+            "tests": 32,
+            "sha256": "f3fdea4be441d15652877f5baf4cfa432000554e7a1dac5444cd6a0951bfe3bb"
+          }
+        },
+        "universal_build": "PASS; strict ad-hoc signature; arm64+x86_64; not launched to avoid competing live worker",
+        "candidate_zip_sha256": "f2756c838eee8c80fe106061f4c813f831e99f8a387b80b958513a226930db7a",
+        "release_decision": "NO-GO pending implementation and final validation",
+        "blockers": [
+          "Windows standalone SOC host/package/native evidence missing",
+          "Mandatory standalone licence consent and terms gate missing",
+          "Final product/version/bundle metadata and documentation not ready"
+        ],
+        "limits": [
+          "Intel run under Rosetta, not physical hardware",
+          "No independent live app/soak/sleep-wake acceptance",
+          "Hosted CI pending at record time"
+        ],
+        "screensaver_baseline": {
+          "source": "68d136004228b09d9fd6fa3208b10c1ff88ef639",
+          "result": "PASS: byte-identical deterministic PNG fixtures",
+          "files": {
+            "neutral.png": "70d7b43e518f98e6ba13fc605065545d1d16ef629b8ad52ff5f6987f763cd311",
+            "categories-test-fixture.png": "829bf8dd78d4b01628b1b8d95274110838f731fd2ed2656d17028454ca1fe3b3"
+          }
+        }
+      }
     }
   },
   "priority_order": [
