@@ -1,8 +1,8 @@
 import Foundation
 // Swift -> shared core boundary tests. Offline: synthetic fixtures, no network, no Keychain.
-// Run (after cargo build --release -p threat-atlas-core):
+// Run (after build.sh, which builds the core per architecture):
 // xcrun swiftc -parse-as-library -import-objc-header RadarCoreFFI.h RadarCore.swift CoreAtlasView.swift CoreFFITests.swift \
-//   ../../target/release/libthreat_atlas_core.a -framework SwiftUI -framework Security -framework CoreFoundation \
+//   ../../target/aarch64-apple-darwin/release/libthreat_atlas_core.a -framework SwiftUI -framework Security -framework CoreFoundation \
 //   -framework SystemConfiguration -liconv -o /private/tmp/radar-core-ffi-tests && /private/tmp/radar-core-ffi-tests
 func check(_ ok: Bool, _ what: String) { precondition(ok, what); print("ok  " + what) }
 
