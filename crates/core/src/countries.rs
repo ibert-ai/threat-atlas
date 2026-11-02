@@ -115,6 +115,24 @@ impl CountryMap {
         }
         classes
     }
+    /// Bundled country index for an ISO alpha-2 code or a known alias.
+    pub fn index(&self, code: &str) -> Option<usize> {
+        self.aliases.get(&key(code)).copied()
+    }
+    /// Shade whole countries in one colour at per-country opacity; borders stay on top.
+    pub fn shade(&self, pixmap: &mut Pixmap, shades: &[(usize, u8)], rgb: [u8; 3]) {
+        pixmap.fill(tiny_skia::Color::TRANSPARENT);
+        for &(index, alpha) in shades {
+            if let Some(paths) = self.paths.get(index) {
+                let mut paint = Paint::default();
+                paint.set_color_rgba8(rgb[0], rgb[1], rgb[2], alpha);
+                for path in paths {
+                    pixmap.fill_path(path, &paint, FillRule::EvenOdd, Transform::identity(), None);
+                }
+            }
+        }
+        self.borders(pixmap);
+    }
     pub fn borders(&self, pixmap: &mut Pixmap) {
         let mut paint = Paint::default();
         paint.set_color_rgba8(70, 108, 124, 190);
