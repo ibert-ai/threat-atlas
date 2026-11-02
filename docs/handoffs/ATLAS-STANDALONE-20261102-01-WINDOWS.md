@@ -23,6 +23,8 @@ Published Cloudflare notice/legal fingerprints matched the reviewed record. Sour
 
 ## Remaining acceptance / ownership
 
+Final review package is built from clean source `9c9dbfc0f13b22d8a84f76815e6d6afae68604d9`. Its release native smoke PASS:27 frames, one window, embedded Sentinel loaded, no feed constructed or real consent changed. Exact EXE/ZIP hashes and PASS/NOT RUN distinctions are in [WINDOWS-SOC-20261102-EVIDENCE.json](WINDOWS-SOC-20261102-EVIDENCE.json). A later evidence-only commit does not change that artifact's source identity. The tested package is retained locally until a remote copy or independently rebuilt package is verified; no public asset was uploaded by Billy.
+
 This is a review increment, **not publication GO**. The full PR16 SOC-wall roadmap remains larger than this host increment: per-display roles, selected-display layouts, spanning, standalone MSI/upgrade, physical1/2/3+ display and mixed-DPI/hotplug acceptance, eight-hour soak and trust/signature acceptance remain pending. No Windows Radar port or Linux expansion is included.
 
 MAC owns independent verification, security findings/currency integration with PR18, final product/version identity, Windows+Mac integration, documentation/notes/privacy/licensing and final publication. Claude owns the Mac implementation and promised cross-platform interface/consent specification and standalone Mac CI. Billy supplies Windows source, package hashes and exact native evidence. Do not infer Windows SOC acceptance from older screensaver CI or claim a Mac-only release is authorized.
