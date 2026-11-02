@@ -152,6 +152,162 @@ pub unsafe extern "C" fn ta_radar_drop(session: *mut RadarSession) {
     }
 }
 
+/// Live SOC session: GreyNoise public threat-map records (the screensaver's shared feed) plus
+/// the latest Cloudflare Radar snapshot handed in by the host app, drawn calmly on one map.
+pub struct SocSession {
+    feed: Arc<Feed>,
+    view: render::soc::SocView,
+    radar: Option<radar::Aggregate>,
+    radar_received_ms: u64,
+}
+impl Default for SocSession {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+impl SocSession {
+    pub fn new() -> Self {
+        Self {
+            feed: Feed::shared(),
+            view: render::soc::SocView::new(),
+            radar: None,
+            radar_received_ms: 0,
+        }
+    }
+    pub fn set_radar(&mut self, body: &[u8], received_ms: u64) -> bool {
+        match radar::parse(body) {
+            Ok(data) => {
+                self.radar = Some(data);
+                self.radar_received_ms = received_ms;
+                true
+            }
+            Err(_) => false,
+        }
+    }
+    pub fn frame(&mut self) -> &[u8] {
+        let snapshot = self.feed.snapshot();
+        let counts = self.feed.counts();
+        self.view.draw(
+            &snapshot,
+            counts,
+            self.radar.as_ref(),
+            self.radar_received_ms,
+        )
+    }
+}
+#[no_mangle]
+pub extern "C" fn ta_soc_new() -> *mut SocSession {
+    std::panic::catch_unwind(|| Box::into_raw(Box::new(SocSession::new())))
+        .unwrap_or(std::ptr::null_mut())
+}
+/// Returns 0 when the Cloudflare response body was accepted, -1 when rejected (prior data kept).
+/// # Safety
+/// `session` must be a live pointer from ta_soc_new; `body` must point to `len` readable bytes.
+#[no_mangle]
+pub unsafe extern "C" fn ta_soc_set_radar(
+    session: *mut SocSession,
+    body: *const u8,
+    len: usize,
+    received_ms: u64,
+) -> i32 {
+    if session.is_null() || body.is_null() || len > radar::MAX_BYTES {
+        return -1;
+    }
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let body = std::slice::from_raw_parts(body, len);
+        if (&mut *session).set_radar(body, received_ms) {
+            0
+        } else {
+            -1
+        }
+    }))
+    .unwrap_or(-1)
+}
+/// `severities`: bit 0 malicious, bit 1 suspicious, bit 2 benign. `motion`: 0 calm, 1 still.
+/// # Safety
+/// `session` must be null or a live pointer from ta_soc_new.
+#[no_mangle]
+pub unsafe extern "C" fn ta_soc_set_options(
+    session: *mut SocSession,
+    severities: u32,
+    motion: u32,
+) {
+    if let Some(session) = session.as_mut() {
+        let options = &mut session.view.options;
+        options.severities = [
+            severities & 1 != 0,
+            severities & 2 != 0,
+            severities & 4 != 0,
+        ];
+        options.motion = if motion == 1 {
+            render::soc::Motion::Still
+        } else {
+            render::soc::Motion::Calm
+        };
+    }
+}
+/// Focus the country under a frame point (1440x900 coordinates); the same country or open
+/// water clears focus. Returns the focused country index or -1.
+/// # Safety
+/// `session` must be null or a live pointer from ta_soc_new.
+#[no_mangle]
+pub unsafe extern "C" fn ta_soc_focus_at(session: *mut SocSession, x: f32, y: f32) -> i32 {
+    let Some(session) = session.as_mut() else {
+        return -1;
+    };
+    let hit = session.view.country_at(x, y);
+    let options = &mut session.view.options;
+    options.focus = if hit == options.focus { None } else { hit };
+    options.focus.map_or(-1, |index| index as i32)
+}
+/// Writes JSON details for the country under a frame point into `out` (UTF-8, no terminator).
+/// Returns the byte length, or 0 when there is no country or `capacity` is too small.
+/// # Safety
+/// `session` must be null or a live pointer from ta_soc_new; `out` must hold `capacity` bytes.
+#[no_mangle]
+pub unsafe extern "C" fn ta_soc_inspect(
+    session: *mut SocSession,
+    x: f32,
+    y: f32,
+    out: *mut u8,
+    capacity: usize,
+) -> usize {
+    let Some(session) = session.as_ref() else {
+        return 0;
+    };
+    if out.is_null() {
+        return 0;
+    }
+    match session.view.inspect(x, y, session.radar.as_ref()) {
+        Some(json) if json.len() <= capacity => {
+            std::ptr::copy_nonoverlapping(json.as_ptr(), out, json.len());
+            json.len()
+        }
+        _ => 0,
+    }
+}
+/// # Safety
+/// `session` must be a live pointer from ta_soc_new, used only on its owning UI thread.
+/// The returned RGBA buffer (ta_width x ta_height) remains valid until the next frame or ta_soc_drop.
+#[no_mangle]
+pub unsafe extern "C" fn ta_soc_frame(session: *mut SocSession) -> *const u8 {
+    if session.is_null() {
+        return std::ptr::null();
+    }
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        (&mut *session).frame().as_ptr()
+    }))
+    .unwrap_or(std::ptr::null())
+}
+/// # Safety
+/// `session` must be null or a pointer returned by ta_soc_new, dropped exactly once.
+#[no_mangle]
+pub unsafe extern "C" fn ta_soc_drop(session: *mut SocSession) {
+    if !session.is_null() {
+        drop(Box::from_raw(session));
+    }
+}
+
 #[cfg(test)]
 mod radar_session_tests {
     use super::*;

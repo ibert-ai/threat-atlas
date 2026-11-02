@@ -1,7 +1,7 @@
 //! Cached country polygons and telemetry-driven country highlights.
 use crate::feed::{Record, Snapshot};
 use serde::Deserialize;
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::sync::OnceLock;
 use tiny_skia::{FillRule, Paint, Path, PathBuilder, Pixmap, Stroke, Transform};
 
@@ -14,6 +14,9 @@ struct Geometry {
 pub struct CountryMap {
     paths: Vec<Vec<Path>>,
     aliases: HashMap<String, usize>,
+    /// Raw lon/lat polygons (outer ring first) for hit testing, plus display code and name.
+    rings: Vec<Vec<Vec<Vec<[f64; 2]>>>>,
+    labels: Vec<(String, String)>,
 }
 fn key(name: &str) -> String {
     name.trim().to_lowercase()
@@ -50,6 +53,87 @@ impl Activity {
         entries
     }
 }
+/// Minutes of per-country severity counts kept for the SOC view's calm summaries.
+pub const COUNT_MINUTES: u64 = 5;
+const TOTAL: usize = usize::MAX;
+/// Per-minute malicious/suspicious/benign receipt counts for each bundled country (as source or
+/// destination, once per record) and overall. Bounded: at most COUNT_MINUTES buckets per country.
+#[derive(Default)]
+pub struct Counts {
+    minutes: HashMap<usize, VecDeque<(u64, [u64; 3])>>,
+}
+impl Counts {
+    pub fn record(&mut self, record: &Record, received_ms: u64) {
+        let class = record.class();
+        if class > 2 {
+            return;
+        }
+        let minute = received_ms / 60_000;
+        let mut keys = vec![TOTAL];
+        for location in [&record.source, &record.destination] {
+            if let Some(&country) = country_aliases().get(&key(&location.country)) {
+                if !keys.contains(&country) {
+                    keys.push(country);
+                }
+            }
+        }
+        for k in keys {
+            let buckets = self.minutes.entry(k).or_default();
+            match buckets.back_mut() {
+                Some(last) if last.0 == minute => last.1[class] += 1,
+                _ => {
+                    let mut counts = [0; 3];
+                    counts[class] = 1;
+                    buckets.push_back((minute, counts));
+                }
+            }
+            while buckets
+                .front()
+                .is_some_and(|b| b.0 + COUNT_MINUTES <= minute)
+            {
+                buckets.pop_front();
+            }
+        }
+    }
+    /// Counts inside the last COUNT_MINUTES minutes: per country (sorted by index) and overall.
+    pub fn summary(&self, now_ms: u64) -> (Vec<(usize, [u64; 3])>, [u64; 3]) {
+        let now = now_ms / 60_000;
+        let sum = |buckets: &VecDeque<(u64, [u64; 3])>| {
+            let mut total = [0; 3];
+            for (minute, counts) in buckets {
+                if *minute <= now && minute + COUNT_MINUTES > now {
+                    for class in 0..3 {
+                        total[class] += counts[class];
+                    }
+                }
+            }
+            total
+        };
+        let mut countries: Vec<_> = self
+            .minutes
+            .iter()
+            .filter(|(&k, _)| k != TOTAL)
+            .map(|(&k, buckets)| (k, sum(buckets)))
+            .filter(|(_, c)| c.iter().any(|&n| n > 0))
+            .collect();
+        countries.sort_by_key(|entry| entry.0);
+        let total = self.minutes.get(&TOTAL).map_or([0; 3], sum);
+        (countries, total)
+    }
+}
+/// Ray-casting point-in-ring test in lon/lat degrees.
+fn contains(ring: &[[f64; 2]], lon: f64, lat: f64) -> bool {
+    let mut inside = false;
+    let mut j = ring.len().wrapping_sub(1);
+    for i in 0..ring.len() {
+        let ([xi, yi], [xj, yj]) = (ring[i], ring[j]);
+        if (yi > lat) != (yj > lat) && lon < (xj - xi) * (lat - yi) / (yj - yi) + xi {
+            inside = !inside;
+        }
+        j = i;
+    }
+    inside
+}
 impl Default for CountryMap {
     fn default() -> Self {
         Self::new()
@@ -62,10 +146,26 @@ impl CountryMap {
                 .expect("bundled country geometry");
         let mut paths = Vec::new();
         let mut aliases = HashMap::new();
+        let mut rings = Vec::new();
+        let mut labels = Vec::new();
         for (index, country) in geometry.into_iter().enumerate() {
+            let code = country
+                .aliases
+                .iter()
+                .find(|a| a.len() == 2)
+                .cloned()
+                .unwrap_or_default();
+            let name = country
+                .aliases
+                .iter()
+                .find(|a| a.len() > 3)
+                .cloned()
+                .unwrap_or_else(|| code.clone());
+            labels.push((code, name));
             for alias in country.aliases {
                 aliases.entry(key(&alias)).or_insert(index);
             }
+            rings.push(country.polygons.clone());
             let mut polygons = Vec::new();
             for polygon in country.polygons {
                 let mut builder = PathBuilder::new();
@@ -98,7 +198,66 @@ impl CountryMap {
                 aliases.insert(key(alias), index);
             }
         }
-        Self { paths, aliases }
+        Self {
+            paths,
+            aliases,
+            rings,
+            labels,
+        }
+    }
+    /// ISO alpha-2 code and display name of a bundled country.
+    pub fn label(&self, index: usize) -> Option<(&str, &str)> {
+        self.labels
+            .get(index)
+            .map(|(code, name)| (code.as_str(), name.as_str()))
+    }
+    /// Country containing a lon/lat point (even-odd across all rings, so holes stay outside).
+    pub fn at(&self, lon: f64, lat: f64) -> Option<usize> {
+        self.rings.iter().position(|polygons| {
+            polygons.iter().any(|polygon| {
+                polygon
+                    .iter()
+                    .filter(|ring| contains(ring, lon, lat))
+                    .count()
+                    % 2
+                    == 1
+            })
+        })
+    }
+    /// Fill whole countries with per-country colour and opacity; borders stay on top.
+    pub fn fill(&self, pixmap: &mut Pixmap, fills: &[(usize, [u8; 3], u8)]) {
+        pixmap.fill(tiny_skia::Color::TRANSPARENT);
+        for &(index, rgb, alpha) in fills {
+            if let Some(paths) = self.paths.get(index) {
+                let mut paint = Paint::default();
+                paint.set_color_rgba8(rgb[0], rgb[1], rgb[2], alpha);
+                for path in paths {
+                    pixmap.fill_path(path, &paint, FillRule::EvenOdd, Transform::identity(), None);
+                }
+            }
+        }
+        self.borders(pixmap);
+    }
+    /// Emphasise country borders (used for informational layers that must not look like severity).
+    pub fn outline(&self, pixmap: &mut Pixmap, outlines: &[(usize, f32, u8)], rgb: [u8; 3]) {
+        for &(index, width, alpha) in outlines {
+            if let Some(paths) = self.paths.get(index) {
+                let mut paint = Paint::default();
+                paint.set_color_rgba8(rgb[0], rgb[1], rgb[2], alpha);
+                for path in paths {
+                    pixmap.stroke_path(
+                        path,
+                        &paint,
+                        &Stroke {
+                            width,
+                            ..Default::default()
+                        },
+                        Transform::identity(),
+                        None,
+                    );
+                }
+            }
+        }
     }
     /// Highlight both reported endpoints. Unknown categories/countries stay neutral.
     /// Most severe observation still inside the receipt-time window wins.

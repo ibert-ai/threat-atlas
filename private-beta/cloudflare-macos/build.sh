@@ -12,7 +12,7 @@ xcrun swiftc -module-cache-path "$OUT/module-cache" -parse-as-library -import-ob
   RadarCore.swift RadarModel.swift CoreAtlasView.swift RadarApp.swift "$CORE" -o "$APP/Contents/MacOS/AtlasRadar" \
   -framework SwiftUI -framework Security -framework CoreFoundation -framework SystemConfiguration -liconv
 cat > "$APP/Contents/Info.plist" <<'PLIST'
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>CFBundleIdentifier</key><string>dev.threatatlas.private.radar</string><key>CFBundleName</key><string>Threat Atlas Radar Private Beta</string><key>CFBundleExecutable</key><string>AtlasRadar</string><key>CFBundleShortVersionString</key><string>0.2.0</string><key>CFBundleVersion</key><string>2</string><key>NSHighResolutionCapable</key><true/></dict></plist>
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>CFBundleIdentifier</key><string>dev.threatatlas.private.radar</string><key>CFBundleName</key><string>Threat Atlas Radar Private Beta</string><key>CFBundleExecutable</key><string>AtlasRadar</string><key>CFBundleShortVersionString</key><string>0.3.0</string><key>CFBundleVersion</key><string>3</string><key>NSHighResolutionCapable</key><true/></dict></plist>
 PLIST
 codesign --force --sign - "$APP"
 printf '%s\n' "$APP"

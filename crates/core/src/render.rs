@@ -1,6 +1,9 @@
 use crate::{feed::Snapshot, HEIGHT, WIDTH};
 use std::collections::{HashMap, VecDeque};
 use tiny_skia::*;
+/// Calm interactive SOC view; a child module so it shares the renderer's map and helpers.
+#[path = "soc.rs"]
+pub mod soc;
 const CYAN: [u8; 3] = [68, 220, 225];
 const MUTED: [u8; 3] = [100, 139, 159];
 pub(crate) fn color(i: usize) -> [u8; 3] {

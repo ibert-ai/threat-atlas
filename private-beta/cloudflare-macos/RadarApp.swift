@@ -8,9 +8,9 @@ struct RadarView: View {
     private let timer = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Threat Atlas · Cloudflare Radar").font(.largeTitle.bold())
-            Text("PRIVATE macOS BETA 0.1 · Separate source preview").foregroundStyle(.orange)
-            Text("Aggregated past-day attack origins, not individual live threats. No source/destination routes or benign/suspicious classifications are inferred.")
+            Text("Threat Atlas SOC").font(.largeTitle.bold())
+            Text("PRIVATE macOS BETA 0.3 · Standalone SOC on the shared screensaver core").foregroundStyle(.orange)
+            Text("Live: GreyNoise public threat-map records as received (not unique attacks), classified by the provider. Cloudflare Radar: past-day aggregate shares; never turned into routes or individual events.")
             HStack {
                 SecureField("Cloudflare API token · Account / Radar / Read", text: $token)
                 Button("Save in Keychain") { model.save(token: token); token = "" }
@@ -26,7 +26,7 @@ struct RadarView: View {
             }
             if model.enabled { Text("Next eligible request: \(model.next.formatted())").font(.caption) }
             Picker("View", selection: $showAtlas) {
-                Text("Atlas (shared core)").tag(true)
+                Text("Live SOC").tag(true)
                 Text("Table").tag(false)
             }.pickerStyle(.segmented).frame(maxWidth: 420)
             if showAtlas {
@@ -45,7 +45,7 @@ struct RadarView: View {
             } else {
                 Spacer(); Text("No authenticated Cloudflare data has been received. No sample telemetry is displayed.").foregroundStyle(.secondary); Spacer()
             }
-            Text("Uses api.cloudflare.com only · TLS verified · no browser cookies · token stays in this Mac’s Keychain").font(.caption).foregroundStyle(.secondary)
+            Text("Network: threat-map-api.greynoise.io (live feed) · api.cloudflare.com (Radar, only after Start) · TLS verified · no browser cookies · token stays in this Mac’s Keychain").font(.caption).foregroundStyle(.secondary)
         }.padding(24).frame(minWidth: 1000, minHeight: 760)
         .onReceive(timer) { _ in Task { await model.refresh() } }
     }
