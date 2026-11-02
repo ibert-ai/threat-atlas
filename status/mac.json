@@ -85,12 +85,12 @@
     "version": "0.4.2-rc.1 approved by Robert at 20:03 CET",
     "publication": "Previously authorized after required technical gates pass"
   },
-  "owner_action_required": "No repeat approval required for assigned standalone implementation. Existing unrelated owner actions remain separately recorded; no go-live approval inferred.",
-  "updated_at": "2026-11-02T21:02:58.414Z",
+  "owner_action_required": "No new owner action for publication; beta is published. Follow documented platform trust policy and limitations.",
+  "updated_at": "2026-11-02T21:07:00.891Z",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
-  "current_task": "Final combined beta PR23 source2260a27c,0.7.0 beta1/build10: universal Mac host/consent/signature/archive PASS; Windows final CI tests PASS and optimized package build running. Draft release saved, not published.",
+  "current_task": "PUBLISHED AtlasSOC0.7.0-beta.1/build10 for Windows x64 portable and universal macOS14+. Exact source2260a27c,5 assets/digests/tag verified. Beta signing/hardware/installer limits disclosed; stable screensaver releases preserved.",
   "active_pr": 14,
   "source_commit": "684a63bd4c21428d126f04aa4d3156bdcea232c9",
   "workflow_run": 41151902562,
@@ -165,7 +165,7 @@
       "owner": "@IbertAgentControlBot",
       "plan_pr": "https://github.com/ibert-ai/threat-atlas/pull/16",
       "plan_commit": "3a8a02c",
-      "status": "PR21 source and hosted Windows SOC build/smoke independently verified; not publication GO",
+      "status": "Delivered in published AtlasSOC0.7.0 beta1/build10",
       "scope": "Windows EXE first, persistent settings and SOC multiscreen wall; macOS wall port after Windows acceptance; no new Linux work",
       "head": "71d8edcc3f7da62b270026550fec034390cd3690",
       "artifact_source": "9c9dbfc0f13b22d8a84f76815e6d6afae68604d9",
@@ -230,7 +230,7 @@
         "phase2": "719683c9"
       },
       "version": "0.7.0 / build9",
-      "status": "Mac consent delta verified; combined Windows+Mac beta NO-GO",
+      "status": "Integrated in published AtlasSOC0.7.0 beta1/build10",
       "evidence": "MAC independent: 8 consent assertions PASS per architecture (Intel via Rosetta); current terms fingerprints match; offline checks reject changed notice, changed legal code and unreachable terms; review record unchanged. crates/ byte-identical to earlier b468dfa3 review.",
       "next_action": "CL: Windows consent/core spec to Billy and standalone CI coverage. Billy: exact Windows SOC source/package/native/consent evidence. MAC: final integration, independent acceptance and release docs.",
       "limits": "PR19 draft/unmerged. CI41508477399 all seven baseline jobs PASS, publish skipped; baseline jobs do not build Windows SOC. Current universal package/live UI/socket claims remain CL-reported. Windows standalone evidence, standalone CI, final public metadata/docs and final-source acceptance pending.",
@@ -323,7 +323,8 @@
           "run_id": 41508477399,
           "result": "PASS seven baseline jobs; publish skipped",
           "scope": "Screensaver regression baseline only; standalone licence/consent CI and Windows SOC delivery not covered"
-        }
+        },
+        "superseded_by": "Published beta tag atlassoc-v0.7.0-beta.1; earlier NO-GO is historical"
       }
     }
   },
@@ -570,7 +571,7 @@
     }
   ],
   "release_handoff_policy": {
-    "status": "Billy handover received and independently reviewed; publication conditions remain open",
+    "status": "Beta published after final candidate validation; routine maintenance/known limits remain",
     "owner": "MAC coordinates final review/docs/publication; Billy Windows checks and dashboard deployment; CL Mac implementation/status handoff",
     "verification": "Light risk-based final review on exact source; reuse applicable evidence, focused checks for deltas/failures; publish only after applicable gates and documents pass",
     "status_delivery": "MAC updates public status/mac.json and private dashboard snapshot; Billy deploys exact data revision; MAC verifies LAN health/API/rendered freshness",
@@ -635,9 +636,45 @@
     "mac_package_sha256": "665af1efd546cdbab9d53265ddd5f7523e1000e479cdb295b1413558d1f86d8c",
     "mac_validation": "Universal Swift build,8 consent tests per architecture,strict ad-hoc signature,slices,icon/metadata and ZIP PASS; previously tested core archives reused after source identity check",
     "windows_run": 41523890988,
-    "status": "DRAFT pending final Windows package/smoke/hashes",
+    "status": "PUBLISHED",
     "limits": "Portable Windows; ad-hoc/unnotarised Mac; installer/physical/soak/trust limits disclosed. Existing audit exceptions unchanged and unfiltered warnings documented.",
     "docs": "docs/ATLAS-SOC-BETA.md on exact source",
-    "wishlist_commit": "df541205c716370b9abf7d9bb8ebf69ff4bd64c2"
+    "wishlist_commit": "df541205c716370b9abf7d9bb8ebf69ff4bd64c2",
+    "url": "https://github.com/ibert-ai/threat-atlas/releases/tag/atlassoc-v0.7.0-beta.1",
+    "published_at": "2026-11-02T21:06:45Z",
+    "windows_run_result": "PASS",
+    "assets": [
+      {
+        "name": "AtlasSOC-macOS-universal-v0.7.0-build10.zip",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/AtlasSOC-macOS-universal-v0.7.0-build10.zip",
+        "sha256": "sha256:665af1efd546cdbab9d53265ddd5f7523e1000e479cdb295b1413558d1f86d8c",
+        "size": 7100623
+      },
+      {
+        "name": "AtlasSOC-VERIFICATION.json",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/AtlasSOC-VERIFICATION.json",
+        "sha256": "sha256:8a62d9804a4e2910fd29f8fbd323444d990d20cfc435bdf9f9b74d6867eb36a0",
+        "size": 3737
+      },
+      {
+        "name": "AtlasSOC-Windows-x64-v0.7.0-build10.zip",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/AtlasSOC-Windows-x64-v0.7.0-build10.zip",
+        "sha256": "sha256:866da4052e30eafe7530593d9613db910a6252c59e003b3c886cfc627f2ed0cb",
+        "size": 2009650
+      },
+      {
+        "name": "INSTALL-PRIVACY-LIMITS.md",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/INSTALL-PRIVACY-LIMITS.md",
+        "sha256": "sha256:1ed35583bede2474e287975ce100af8d330258c0e51cae1ff7817bcf1df6826e",
+        "size": 5341
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/SHA256SUMS.txt",
+        "sha256": "sha256:c6275d06ee1ba2e6a08c7394aa57c2534f94f1a8a8a63acca7fadfbff210b5f8",
+        "size": 401
+      }
+    ],
+    "baseline": "6 jobs PASS; hosted macOS queued at packaging; final independent local Mac universal validation used with unchanged-core prior evidence"
   }
 }
