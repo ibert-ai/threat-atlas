@@ -1,0 +1,6 @@
+google-login.json
+google-owner-sub.json
+*.sqlite3
+*cache.json
+*.log
+__pycache__/
