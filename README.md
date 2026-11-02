@@ -138,3 +138,7 @@ Third-party Rust crates retain their own licenses. Provider content is not MIT.
 ## Country map and Linux development
 
 This branch adds [country borders and observation shading](docs/COUNTRY-MAP.md) and a [Linux application preview](docs/LINUX.md). These changes are pending cross-platform review and approval. Linux is a windowed application, not a native idle/lock-screen integration. Existing release installers are unchanged.
+
+## macOS Radar alpha (experimental branch)
+
+See [Radar research, layers and mandatory per-build licence acceptance](docs/CLOUDFLARE-RADAR-ALPHA.md). Disabled by default; requires a Radar Read token and noncommercial-use compliance. No Windows or Linux Radar implementation is included.

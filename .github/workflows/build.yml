@@ -18,6 +18,9 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - run: rustup toolchain install stable --profile minimal --component rustfmt --component clippy
       - run: python3 scripts/version.py --check
+      - name: Verify Cloudflare licence (required for every release and RC)
+        run: python3 scripts/check-cloudflare-license.py
+      - run: python3 scripts/test-cloudflare-license.py
       - run: python3 scripts/test-version.py
       - run: sudo apt-get update && sudo apt-get install -y pkg-config libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev
       - run: cargo +stable fmt --all --check
@@ -42,6 +45,10 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Radar parser tests
+        run: |
+          clang -fobjc-arc -Werror macos/Radar.m macos/TestRadar.m -framework Cocoa -framework Security -framework LocalAuthentication -o /tmp/RadarTests
+          /tmp/RadarTests
       - run: bash scripts/build-macos.sh --universal
       - run: python3 scripts/test-updater.py "dist/Threat Atlas SOC.app/Contents/MacOS/ThreatAtlasUpdater"
       - run: |
