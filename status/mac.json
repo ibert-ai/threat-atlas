@@ -85,12 +85,12 @@
     "version": "0.4.2-rc.1 approved by Robert at 20:03 CET",
     "publication": "Previously authorized after required technical gates pass"
   },
-  "owner_action_required": "Complete Google sign-in at http://localhost:8765/login for live owner verification. Future HTTPS domain is registered only, not deployed. Dependency currency reviews still block application builds; Billy handover acknowledgement pending.",
-  "updated_at": "2026-11-02T13:14:17.152365+00:00",
+  "owner_action_required": "Reload http://localhost:8765/login and sign in as ibert@ibert.se after the repair. Do not use the future atlasstatus.ibert.se hostname yet; it has no DNS/deployment. Dependency reviews and Billy screensaver handover remain open.",
+  "updated_at": "2026-11-02T13:25:42.443141+00:00",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
-  "current_task": "Google OAuth web client created with approved localhost and future https://atlasstatus.ibert.se origins. Local owner-restricted login configured; real owner sign-in callback remains pending. No DNS/internet publication. Security and public screensaver bugs remain ahead of standalone work.",
+  "current_task": "Local Google login-loop repair deployed: Google g_state cookie no longer hides the Atlas session; seven regression tests pass. Google verification isolated with bounded workers/timeouts. Fresh owner browser sign-in still pending. External atlasstatus.ibert.se has no DNS/deployment.",
   "active_pr": 14,
   "source_commit": "684a63bd4c21428d126f04aa4d3156bdcea232c9",
   "workflow_run": 41151902562,
@@ -197,6 +197,13 @@
         "planned_origin": "https://atlasstatus.ibert.se",
         "external_access": "Not deployed; no DNS/tunnel/firewall changes",
         "verification": "Google client creation and saved origins verified; login page HTTP200; unauthenticated task API HTTP401; 6 isolated runtime tests pass"
+      },
+      "login_repair": {
+        "status": "Deployed; post-repair owner sign-in pending",
+        "source": "PR18 / be7b0f3",
+        "cause": "Google g_state cookie could prevent Atlas session cookie parsing",
+        "checks": "Seven isolated runtime tests pass, including both cookie orders, session recognition and duplicate rejection; login HTTP200; unauthenticated API remains rejected",
+        "resilience": "16 concurrent request limit, per-thread SQLite, 15s socket and 10s certificate-request timeout"
       }
     }
   },
@@ -374,8 +381,8 @@
     },
     {
       "name": "Google account sign-in",
-      "status": "Configured on localhost; owner sign-in pending",
-      "detail": "Primary account ibert@ibert.se; future HTTPS origin registered but not internet-accessible"
+      "status": "Cookie login-loop fixed locally; fresh owner test pending",
+      "detail": "Reload http://localhost:8765/login; future HTTPS domain still undeployed"
     }
   ],
   "bugs": [
