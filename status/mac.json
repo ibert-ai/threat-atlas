@@ -86,11 +86,11 @@
     "publication": "Previously authorized after required technical gates pass"
   },
   "owner_action_required": "No repeat approval required for assigned standalone implementation. Existing unrelated owner actions remain separately recorded; no go-live approval inferred.",
-  "updated_at": "2026-11-02T20:15:21.527Z",
+  "updated_at": "2026-11-02T20:36:23.768Z",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
-  "current_task": "Standalone b468dfa3 Mac independent checks and seven baseline CI jobs PASS; NO-GO for public Windows+Mac beta until missing Windows SOC and consent/terms gates plus final release docs are complete.",
+  "current_task": "Billy PR21 handover verified: dedicated Windows SOC CI and7 baseline jobs PASS; hosted artifact digest/integrity/x64/manifest verified. Docker snapshot matches committed data. Publication held for security disposition, final integrated Mac+Windows acceptance and release metadata/docs.",
   "active_pr": 14,
   "source_commit": "684a63bd4c21428d126f04aa4d3156bdcea232c9",
   "workflow_run": 41151902562,
@@ -162,11 +162,26 @@
       "ATLAS-RADAR-MAC-20261102-01"
     ],
     "windows": {
-      "owner": "BILLY-BADASS",
+      "owner": "@IbertAgentControlBot",
       "plan_pr": "https://github.com/ibert-ai/threat-atlas/pull/16",
       "plan_commit": "3a8a02c",
-      "status": "Implementation and Git acknowledgement requested; no receipt claimed",
-      "scope": "Windows EXE first, persistent settings and SOC multiscreen wall; macOS wall port after Windows acceptance; no new Linux work"
+      "status": "PR21 source and hosted Windows SOC build/smoke independently verified; not publication GO",
+      "scope": "Windows EXE first, persistent settings and SOC multiscreen wall; macOS wall port after Windows acceptance; no new Linux work",
+      "head": "71d8edcc3f7da62b270026550fec034390cd3690",
+      "artifact_source": "9c9dbfc0f13b22d8a84f76815e6d6afae68604d9",
+      "version": "0.7.0",
+      "build": 9,
+      "verification": {
+        "windows_ci": 41519680270,
+        "baseline_ci": 41519680080,
+        "result": "PASS dedicated native build/smoke and7 baseline jobs",
+        "hosted_artifact_sha256": "0e0926ab1a2457b5ba081c25d8306685449d60ffd95d13867e30e0302e4a94ad",
+        "hosted_package_sha256": "2104e4e8b7c7ed5fee9916bbba76191a4b3f67ff0e70ea813e2bfcb70decc8c5",
+        "hosted_exe_sha256": "8e6657ecc18b6b72c5076ecaeecab6182c5bba011dc187af7b6b4c280a983142",
+        "manifest_source": "770f4137e8a07cc6abaee8da9e3b91d703bb34dd",
+        "source_comparison": "Synthetic PR merge has no file changes versus71d8edcc; core unchanged from reviewed PR19; Sentinel hashes PASS",
+        "limits": "Hosted rebuild differs from Billy local package; no local Windows execution by MAC. Native final-package interactive, installer/upgrade and physical/soak/signing limits remain disclosed."
+      }
     },
     "radar": {
       "owner": "MAC / Roberts-Air",
@@ -555,12 +570,19 @@
     }
   ],
   "release_handoff_policy": {
-    "status": "Waiting for Billy exact-candidate handoff; no duplicate checks",
+    "status": "Billy handover received and independently reviewed; publication conditions remain open",
     "owner": "MAC coordinates final review/docs/publication; Billy Windows checks and dashboard deployment; CL Mac implementation/status handoff",
     "verification": "Light risk-based final review on exact source; reuse applicable evidence, focused checks for deltas/failures; publish only after applicable gates and documents pass",
     "status_delivery": "MAC updates public status/mac.json and private dashboard snapshot; Billy deploys exact data revision; MAC verifies LAN health/API/rendered freshness",
     "cl_protocol": "README.md#cl-status-handoff-and-docker-dashboard-verification",
     "acknowledgement": "Protocol instructions prepared; CL acknowledgement and structured handoff not yet verified",
     "limits": "No new receiver, schedule or polling loop; no publication inferred"
+  },
+  "docker_deployment_verification": {
+    "status": "PASS LAN health/API content",
+    "data_commit": "5916cd842ab291bf709acb52f08c98b9a5a267f0",
+    "snapshot_sha256": "0c999337aa34d80a4385a854fa3d1be57658c39db32bf170c62c1f38e99cedc5",
+    "result": "All committed data keys match API. Additional served_at/github/github_error/local_only are runtime metadata, not mismatch.",
+    "limits": "Image/reboot/firewall persistence not independently verified"
   }
 }
