@@ -49,11 +49,11 @@
     "scope": "Portable Windows + universal Mac beta; known trust/hardware/installer limits disclosed"
   },
   "owner_action_required": "No new owner action for publication; beta is published. Follow documented platform trust policy and limitations.",
-  "updated_at": "2026-11-02T21:11:11.344Z",
+  "updated_at": "2026-11-02T21:14:35.543Z",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
-  "current_task": "PUBLISHED AtlasSOC0.7.0-beta.1/build10 for Windows x64 portable and universal macOS14+. Exact source2260a27c,5 assets/digests/tag verified. Beta signing/hardware/installer limits disclosed; stable screensaver releases preserved.",
+  "current_task": "AtlasSOC0.7.0 beta1/build10 published and integrated into main via PR23. All7 required baseline jobs and dedicated Windows SOC CI PASS. Merge b007677e has no file changes versus published release source2260a27c.",
   "active_pr": 23,
   "source_commit": "2260a27c0fa103227626387d2c3ca88b2b4a5c6d",
   "workflow_run": 41523890988,
@@ -638,7 +638,8 @@
         "size": 401
       }
     ],
-    "baseline": "6 jobs PASS; hosted macOS queued at packaging; final independent local Mac universal validation used with unchanged-core prior evidence"
+    "baseline": "All7 required baseline jobs PASS on41523890883; completed after package publication. Earlier packaging-time queued statement is historical.",
+    "main_merge": "b007677eb30f2c336d096b7c98655e8ef8a22b1b"
   },
   "screensaver_release": {
     "release": "0.4.2-rc.1 / build10 — Windows MSI withdrawn",
@@ -755,10 +756,13 @@
   },
   "main_integration": {
     "pr": 23,
-    "state": "Open; exact source already tagged/published from release branch",
-    "required_check": "macos hosted baseline queued/in progress",
-    "auto_merge": "Not enabled; explicit owner approval requested after automatic approval review rejected the future protected-main merge",
-    "rule_bypass": false,
-    "local_package_preservation_commit": "f84d55cb15a1481c629097006fe1efb7f2b1d0c3"
+    "state": "MERGED",
+    "merge_commit": "b007677eb30f2c336d096b7c98655e8ef8a22b1b",
+    "source_commit": "2260a27c0fa103227626387d2c3ca88b2b4a5c6d",
+    "merged_at": "2026-11-02T21:14:15Z",
+    "required_checks": "All7 baseline jobs PASS, dedicated Windows SOC CI PASS",
+    "source_tree_identity": "PASS no changed files between published tag source and main merge",
+    "auto_merge": "Repository feature disabled; after explicit owner authorization and checks passing, normal guarded merge completed without repository setting changes",
+    "rule_bypass": false
   }
 }
