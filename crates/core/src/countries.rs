@@ -17,6 +17,8 @@ pub struct CountryMap {
     /// Raw lon/lat polygons (outer ring first) for hit testing, plus display code and name.
     rings: Vec<Vec<Vec<Vec<[f64; 2]>>>>,
     labels: Vec<(String, String)>,
+    /// Label point per country: area centroid of its largest landmass (lon, lat).
+    anchors: Vec<Option<(f64, f64)>>,
 }
 fn key(name: &str) -> String {
     name.trim().to_lowercase()
@@ -121,6 +123,46 @@ impl Counts {
         (countries, total)
     }
 }
+/// Area-weighted centroid of the outer ring of the largest polygon (shoelace formula).
+fn anchor(polygons: &[Vec<Vec<[f64; 2]>>]) -> Option<(f64, f64)> {
+    let area_centroid = |ring: &[[f64; 2]]| {
+        let (mut area, mut cx, mut cy) = (0., 0., 0.);
+        for i in 0..ring.len() {
+            let ([x0, y0], [x1, y1]) = (ring[i], ring[(i + 1) % ring.len()]);
+            let cross = x0 * y1 - x1 * y0;
+            area += cross;
+            cx += (x0 + x1) * cross;
+            cy += (y0 + y1) * cross;
+        }
+        (area.abs() / 2., cx / (3. * area), cy / (3. * area))
+    };
+    let (_, ring, (x, y)) = polygons
+        .iter()
+        .filter_map(|polygon| polygon.first())
+        .filter(|ring| ring.len() >= 3)
+        .map(|ring| (area_centroid(ring), ring))
+        .filter(|((area, x, y), _)| *area > 0. && x.is_finite() && y.is_finite())
+        .map(|((area, x, y), ring)| (area, ring, (x, y)))
+        .max_by(|a, b| a.0.total_cmp(&b.0))?;
+    if contains(ring, x, y) {
+        return Some((x, y));
+    }
+    // Concave shapes (e.g. Norway): use the middle of the widest inside span at that latitude.
+    let mut crossings: Vec<f64> = (0..ring.len())
+        .filter_map(|i| {
+            let ([x0, y0], [x1, y1]) = (ring[i], ring[(i + 1) % ring.len()]);
+            ((y0 > y) != (y1 > y)).then(|| x0 + (y - y0) * (x1 - x0) / (y1 - y0))
+        })
+        .collect();
+    crossings.sort_by(f64::total_cmp);
+    crossings
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .max_by(|a, b| (a[1] - a[0]).total_cmp(&(b[1] - b[0])))
+        .map(|span| ((span[0] + span[1]) / 2., y))
+        .or(Some((x, y)))
+}
 /// Ray-casting point-in-ring test in lon/lat degrees.
 fn contains(ring: &[[f64; 2]], lon: f64, lat: f64) -> bool {
     let mut inside = false;
@@ -148,6 +190,7 @@ impl CountryMap {
         let mut aliases = HashMap::new();
         let mut rings = Vec::new();
         let mut labels = Vec::new();
+        let mut anchors = Vec::new();
         for (index, country) in geometry.into_iter().enumerate() {
             let code = country
                 .aliases
@@ -165,6 +208,7 @@ impl CountryMap {
             for alias in country.aliases {
                 aliases.entry(key(&alias)).or_insert(index);
             }
+            anchors.push(anchor(&country.polygons));
             rings.push(country.polygons.clone());
             let mut polygons = Vec::new();
             for polygon in country.polygons {
@@ -203,7 +247,12 @@ impl CountryMap {
             aliases,
             rings,
             labels,
+            anchors,
         }
+    }
+    /// Label point (lon, lat) for icons: centroid of the country's largest landmass.
+    pub fn anchor(&self, index: usize) -> Option<(f64, f64)> {
+        self.anchors.get(index).copied().flatten()
     }
     /// ISO alpha-2 code and display name of a bundled country.
     pub fn label(&self, index: usize) -> Option<(&str, &str)> {

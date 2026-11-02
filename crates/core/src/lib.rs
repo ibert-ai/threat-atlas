@@ -246,6 +246,41 @@ pub unsafe extern "C" fn ta_soc_set_options(
         };
     }
 }
+/// Cloudflare Radar icon layer: `enabled` 0/1, plus origin codes to hide as comma-separated ASCII
+/// (e.g. "BR,HK"; empty or null hides none). Invalid or oversized input leaves the hidden list empty.
+/// # Safety
+/// `session` must be null or a live pointer from ta_soc_new; `hidden` must point to `len` bytes.
+#[no_mangle]
+pub unsafe extern "C" fn ta_soc_set_radar_layer(
+    session: *mut SocSession,
+    enabled: u32,
+    hidden: *const u8,
+    len: usize,
+) {
+    let Some(session) = session.as_mut() else {
+        return;
+    };
+    let codes = if hidden.is_null() || len == 0 || len > 4096 {
+        Vec::new()
+    } else {
+        std::str::from_utf8(std::slice::from_raw_parts(hidden, len))
+            .map(radar_codes)
+            .unwrap_or_default()
+    };
+    let options = &mut session.view.options;
+    options.radar_layer = enabled != 0;
+    options.radar_hidden = codes;
+}
+/// Up to 100 trimmed upper-case codes of at most 8 ASCII alphanumerics each.
+fn radar_codes(list: &str) -> Vec<String> {
+    list.split(',')
+        .map(|code| code.trim().to_uppercase())
+        .filter(|code| {
+            !code.is_empty() && code.len() <= 8 && code.chars().all(|c| c.is_ascii_alphanumeric())
+        })
+        .take(100)
+        .collect()
+}
 /// Focus the country under a frame point (1440x900 coordinates); the same country or open
 /// water clears focus. Returns the focused country index or -1.
 /// # Safety
@@ -368,6 +403,18 @@ mod radar_session_tests {
             assert_eq!(ta_radar_set(session, BODY.as_ptr(), BODY.len(), 1000), 0);
             assert!(!ta_radar_frame(session).is_null());
             ta_radar_drop(session);
+        }
+    }
+    #[test]
+    fn radar_layer_codes_are_bounded_and_normalised() {
+        assert_eq!(
+            radar_codes(" br, HK ,,x y,toolongcode,US"),
+            vec!["BR", "HK", "US"]
+        );
+        let mut session = RadarSession::new();
+        assert!(session.set(BODY.as_bytes(), 1));
+        unsafe {
+            ta_soc_set_radar_layer(std::ptr::null_mut(), 1, b"BR".as_ptr(), 2);
         }
     }
 }

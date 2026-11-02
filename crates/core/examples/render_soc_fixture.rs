@@ -1,7 +1,7 @@
 //! Offline visual QA only: deterministic synthetic records and Radar rows, never production telemetry.
 use std::{fs, path::Path};
 use threat_atlas_core::{feed::State, radar, render::soc::SocView, HEIGHT, WIDTH};
-const RADAR: &str = r#"{"success":true,"result":{"meta":{"lastUpdated":"2026-01-01T00:00:00Z","normalization":"PERCENTAGE","dateRange":[{"startTime":"2025-12-31T00:00:00Z","endTime":"2026-01-01T00:00:00Z"}]},"top_0":[{"originCountryAlpha2":"BR","originCountryName":"Brazil","value":"7.4"},{"originCountryAlpha2":"US","originCountryName":"United States","value":"4.5"},{"originCountryAlpha2":"HK","originCountryName":"Hong Kong","value":"2.1"}]}}"#;
+const RADAR: &str = r#"{"success":true,"result":{"meta":{"lastUpdated":"2026-01-01T00:00:00Z","normalization":"PERCENTAGE","dateRange":[{"startTime":"2025-12-31T00:00:00Z","endTime":"2026-01-01T00:00:00Z"}]},"top_0":[{"originCountryAlpha2":"BR","originCountryName":"Brazil","targetCountryAlpha2":"US","targetCountryName":"United States","value":"7.4"},{"originCountryAlpha2":"CN","originCountryName":"China","targetCountryAlpha2":"DE","targetCountryName":"Germany","value":"3.2"},{"originCountryAlpha2":"US","originCountryName":"United States","value":"4.5"},{"originCountryAlpha2":"HK","originCountryName":"Hong Kong","value":"2.1"}]}}"#;
 fn main() {
     let output = std::env::args().nth(1).expect("output directory");
     fs::create_dir_all(&output).unwrap();

@@ -48,6 +48,10 @@ final class CoreAtlas {
         let mask = severities.enumerated().reduce(UInt32(0)) { $0 | ($1.element ? 1 << UInt32($1.offset) : 0) }
         ta_soc_set_options(session, mask, calm ? 0 : 1)
     }
+    func setRadarLayer(on: Bool, hidden: Set<String>) {
+        let codes = Array(hidden.sorted().joined(separator: ",").utf8)
+        codes.withUnsafeBufferPointer { ta_soc_set_radar_layer(session, on ? 1 : 0, $0.baseAddress, $0.count) }
+    }
     func toggleFocus(at point: CGPoint) { focused = ta_soc_focus_at(session, Float(point.x), Float(point.y)) }
     func clearFocus() { focused = ta_soc_focus_at(session, -1, -1) }
     func inspect(at point: CGPoint) -> CountryInfo? {
@@ -103,6 +107,23 @@ struct CoreAtlasView: View {
     @State private var focused = false
     @State private var hover: CountryInfo?
     @State private var hoverAt = CGPoint.zero
+    @State private var radarOn = true
+    @State private var hidden = Set<String>()
+
+    /// Cloudflare origins in provider order: code, name and the value of its largest row (never summed).
+    private var origins: [(code: String, name: String, value: String)] {
+        guard let rows = result?.top_0 else { return [] }
+        var seen: [String: (name: String, best: Double, value: String)] = [:]
+        var order: [String] = []
+        for row in rows {
+            let code = row.originCountryAlpha2.trimmingCharacters(in: .whitespaces).uppercased()
+            let value = Double(row.value) ?? 0
+            if seen[code] == nil { order.append(code) }
+            if value >= (seen[code]?.best ?? -1) { seen[code] = (row.originCountryName, value, row.value) }
+        }
+        let unit = result?.meta.normalization.uppercased() == "PERCENTAGE" ? "%" : ""
+        return order.map { (code: $0, name: seen[$0]!.name, value: seen[$0]!.value + unit) }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -149,7 +170,12 @@ struct CoreAtlasView: View {
                     .font(.caption).foregroundStyle(.orange)
             }
         }
-        .onAppear { atlas.setOptions(severities: severities, calm: calm) }
+        .onAppear {
+            atlas.setOptions(severities: severities, calm: calm)
+            atlas.setRadarLayer(on: radarOn, hidden: hidden)
+        }
+        .onChange(of: radarOn) { _, value in atlas.setRadarLayer(on: value, hidden: hidden) }
+        .onChange(of: hidden) { _, value in atlas.setRadarLayer(on: radarOn, hidden: value) }
         .onChange(of: severities) { _, value in atlas.setOptions(severities: value, calm: calm) }
         .onChange(of: calm) { _, value in atlas.setOptions(severities: severities, calm: value) }
     }
@@ -172,11 +198,33 @@ struct CoreAtlasView: View {
             }
             .pickerStyle(.segmented).frame(width: 140).labelsHidden()
             Button(paused ? "Resume" : "Pause") { paused.toggle() }
+            Divider().frame(height: 18)
+            Toggle(isOn: $radarOn) {
+                HStack(spacing: 5) {
+                    Image(systemName: "circle.circle").foregroundStyle(infoColor)
+                    Text("Cloudflare")
+                }
+            }
+            .toggleStyle(.button)
+            .help("Show or hide the whole Cloudflare Radar icon layer")
+            Menu("Countries (\(origins.count - hidden.intersection(origins.map(\.code)).count)/\(origins.count))") {
+                Button("Show all") { hidden.removeAll() }
+                Button("Hide all") { hidden = Set(origins.map(\.code)) }
+                Divider()
+                ForEach(origins, id: \.code) { origin in
+                    Toggle("\(origin.code)  \(origin.name)  \(origin.value)", isOn: Binding(
+                        get: { !hidden.contains(origin.code) },
+                        set: { visible in if visible { hidden.remove(origin.code) } else { hidden.insert(origin.code) } }))
+                }
+            }
+            .fixedSize()
+            .disabled(!radarOn || origins.isEmpty)
+            .help("Show or hide individual Cloudflare origin countries (their targets follow)")
             if focused {
                 Button("Clear focus") { atlas.clearFocus(); focused = false }
             }
             Spacer()
-            Text(paused ? "PAUSED · live feed keeps running" : "Hover for details · click a country to focus")
+            Text(paused ? "PAUSED · live feed keeps running" : "Hover for details · click a country to focus").lineLimit(1)
                 .font(.caption).foregroundStyle(.secondary)
         }
     }

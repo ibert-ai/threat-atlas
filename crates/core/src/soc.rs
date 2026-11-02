@@ -33,7 +33,15 @@ pub const MAX_ARCS: usize = 20;
 const LIST_REFRESH_MS: u64 = 2000;
 /// Country tints and outlines are redrawn at most once a second (or when options change).
 const OVERLAY_REFRESH_MS: u64 = 1000;
-type OverlayKey = ([bool; 3], Option<usize>, u64, bool, Freshness);
+type OverlayKey = (
+    [bool; 3],
+    Option<usize>,
+    u64,
+    bool,
+    Freshness,
+    bool,
+    Vec<String>,
+);
 const MAP: (f32, f32, f32, f32) = (45., 230., 940., 470.);
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -41,11 +49,14 @@ pub enum Motion {
     Calm,
     Still,
 }
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct Options {
     pub severities: [bool; 3],
     pub motion: Motion,
     pub focus: Option<usize>,
+    /// Cloudflare Radar icon layer on/off, and origin codes (upper case) the viewer has hidden.
+    pub radar_layer: bool,
+    pub radar_hidden: Vec<String>,
 }
 impl Default for Options {
     fn default() -> Self {
@@ -53,8 +64,18 @@ impl Default for Options {
             severities: [true; 3],
             motion: Motion::Calm,
             focus: None,
+            radar_layer: true,
+            radar_hidden: Vec::new(),
         }
     }
+}
+/// A static Cloudflare Radar map icon: an origin badge sized by its largest share, or a target
+/// diamond (only for targets the provider supplied). Never connected by lines.
+struct Icon {
+    target: bool,
+    at: (f32, f32),
+    size: f32,
+    label: String,
 }
 struct Arc {
     a: (f32, f32),
@@ -80,6 +101,7 @@ pub struct SocView {
     overlay_key: Option<OverlayKey>,
     /// Map + tints + outlines + rings, rebuilt with the overlay; each frame starts from a copy.
     composed: Pixmap,
+    icons: Vec<Icon>,
     counts: (Vec<(usize, [u64; 3])>, [u64; 3]),
 }
 impl Default for SocView {
@@ -138,6 +160,7 @@ impl SocView {
             overlay_ms: 0,
             overlay_key: None,
             composed: Pixmap::new(crate::WIDTH, crate::HEIGHT).unwrap(),
+            icons: Vec::new(),
             counts: (Vec::new(), [0; 3]),
         }
     }
@@ -217,7 +240,7 @@ impl SocView {
         let selected = self.options.severities;
         let r = &mut self.renderer;
 
-        // Radar aggregates: subtle informational outlines, never severity fills.
+        // Radar aggregates: informational icon layer (slate), never severity fills or routes.
         let radar_state = radar::freshness(radar_data, radar_received_ms, now);
         let radar_dim = if radar_state == Freshness::Stale {
             0.5
@@ -230,9 +253,11 @@ impl SocView {
             radar_received_ms,
             radar_data.is_some(),
             radar_state,
+            self.options.radar_layer,
+            self.options.radar_hidden.clone(),
         );
         if now.saturating_sub(self.overlay_ms) >= OVERLAY_REFRESH_MS
-            || self.overlay_key != Some(key)
+            || self.overlay_key.as_ref() != Some(&key)
         {
             self.overlay_ms = now;
             self.overlay_key = Some(key);
@@ -265,29 +290,12 @@ impl SocView {
                 .collect();
             r.countries.fill(&mut r.country_overlay, &fills);
 
-            let mut rings = Vec::new();
-            if let Some(data) = radar_data {
-                let largest = data.largest();
-                let mut outlines = Vec::new();
-                for origin in data.origins() {
-                    let share = if largest > 0. {
-                        (origin.largest / largest).sqrt()
-                    } else {
-                        0.
-                    } as f32;
-                    match (
-                        r.countries.index(&origin.code),
-                        radar::small_place(&origin.code),
-                    ) {
-                        (Some(index), _) => {
-                            outlines.push((index, 1.0 + 1.8 * share, (200. * radar_dim) as u8))
-                        }
-                        (None, Some((lon, lat))) => rings.push((xy(lon, lat), share)),
-                        _ => {}
-                    }
+            self.icons = match radar_data {
+                Some(data) if self.options.radar_layer => {
+                    radar_icons(data, &r.countries, &self.options.radar_hidden)
                 }
-                r.countries.outline(&mut r.country_overlay, &outlines, INFO);
-            }
+                _ => Vec::new(),
+            };
             if let Some(focus) = self.options.focus {
                 r.countries
                     .outline(&mut r.country_overlay, &[(focus, 2.2, 230)], FOCUS);
@@ -301,25 +309,24 @@ impl SocView {
                 Transform::identity(),
                 None,
             );
-            for ((x, y), share) in rings {
-                if let Some(path) = PathBuilder::from_circle(x, y, 3. + 7. * share) {
-                    let mut p = Paint::default();
-                    p.set_color_rgba8(INFO[0], INFO[1], INFO[2], (210. * radar_dim) as u8);
-                    composed.stroke_path(
-                        &path,
-                        &p,
-                        &Stroke {
-                            width: 1.4,
-                            ..Default::default()
-                        },
-                        Transform::identity(),
-                        None,
-                    );
-                }
+            let alpha = 230. * radar_dim;
+            for icon in &self.icons {
+                draw_icon(&mut composed, icon, alpha);
             }
             self.composed = composed;
         }
         r.pix.data_mut().copy_from_slice(self.composed.data());
+        for icon in self.icons.iter().filter(|i| !i.label.is_empty()) {
+            let (x, y) = icon.at;
+            let colour = if icon.target { TARGET } else { INFO };
+            r.text(
+                (x + icon.size + 4.) as i32,
+                (y - 7.) as i32,
+                11,
+                &icon.label,
+                colour,
+            );
+        }
 
         // Arcs: static curves that fade in over 1 s and out over the rest of their life.
         for arc in &self.arcs {
@@ -456,7 +463,18 @@ impl SocView {
         }
 
         // Right panel, lower half: Cloudflare Radar rows as supplied (informational).
-        r.text(1044, 560, 15, "CLOUDFLARE RADAR / TOP ROWS", INFO);
+        let layer = if self.options.radar_layer {
+            ""
+        } else {
+            " (LAYER OFF)"
+        };
+        r.text(
+            1044,
+            560,
+            15,
+            &format!("CLOUDFLARE RADAR / TOP ROWS{layer}"),
+            INFO,
+        );
         match radar_data {
             Some(data) => {
                 for (i, row) in data.rows.iter().take(8).enumerate() {
@@ -466,15 +484,22 @@ impl SocView {
                         .target_country_alpha2
                         .as_deref()
                         .map_or("?".into(), |t| t.trim().chars().take(8).collect());
+                    let hidden = !self.options.radar_layer
+                        || self
+                            .options
+                            .radar_hidden
+                            .iter()
+                            .any(|h| h.eq_ignore_ascii_case(&origin));
+                    let note = if hidden { " (HIDDEN)" } else { "" };
                     r.text(
                         1044,
                         y,
                         12,
-                        &format!("{:>2}. {origin} -> {target}", i + 1),
-                        TEXT,
+                        &format!("{:>2}. {origin} -> {target}{note}", i + 1),
+                        if hidden { MUTED } else { TEXT },
                     );
                     let label: String = data.value_label(i).chars().take(16).collect();
-                    r.text(1290, y, 12, &label, INFO);
+                    r.text(1290, y, 12, &label, if hidden { MUTED } else { INFO });
                 }
                 r.text(
                     1044,
@@ -506,17 +531,38 @@ impl SocView {
             ("MALICIOUS", RED),
             ("SUSPICIOUS", YELLOW),
             ("BENIGN", GREEN),
-            ("RADAR OUTLINE", INFO),
         ];
         for (i, (label, colour)) in legend.iter().enumerate() {
-            let y = 772 + i as i32 * 19;
+            let y = 762 + i as i32 * 18;
             r.rect(640., y as f32 + 3., 12., 10., *colour, 200);
             r.text(660, y, 12, label, TEXT);
         }
-        r.text(820, 772, 11, "TINT: MOST FREQUENT", MUTED);
-        r.text(820, 791, 11, "SELECTED CLASS, 5 MIN", MUTED);
-        r.text(820, 810, 11, "ARCS: MAX 2/S, FADE 8 S", MUTED);
-        r.text(820, 829, 11, "CLICK COUNTRY TO FOCUS", MUTED);
+        for (i, (target, label)) in [(false, "RADAR ORIGIN"), (true, "RADAR TARGET")]
+            .into_iter()
+            .enumerate()
+        {
+            let y = 816 + i as i32 * 18;
+            let icon = Icon {
+                target,
+                at: (646., y as f32 + 8.),
+                size: 5.,
+                label: String::new(),
+            };
+            draw_icon(&mut r.pix, &icon, 230.);
+            r.text(660, y, 11, label, TEXT);
+        }
+        for (i, note) in [
+            "TINT: TOP CLASS, 5 MIN",
+            "ARCS: MAX 2/S, FADE 8 S",
+            "ICON SIZE = RADAR SHARE",
+            "TARGETS ONLY IF SUPPLIED",
+            "CLICK COUNTRY TO FOCUS",
+        ]
+        .iter()
+        .enumerate()
+        {
+            r.text(820, 762 + i as i32 * 18, 11, note, MUTED);
+        }
         if s.status != "LIVE" && !s.error.is_empty() {
             r.text(
                 270,
@@ -570,6 +616,144 @@ impl SocView {
     }
 }
 
+/// Lighter slate for target diamonds, still informational rather than severity.
+const TARGET: [u8; 3] = [170, 192, 216];
+/// Origin badges (size by each origin's largest share; rows are never summed) and target
+/// diamonds for provider-supplied targets of visible rows. Hidden origins hide their targets too.
+fn radar_icons(
+    data: &Aggregate,
+    countries: &crate::countries::CountryMap,
+    hidden: &[String],
+) -> Vec<Icon> {
+    let place = |code: &str| {
+        countries
+            .index(code)
+            .and_then(|i| countries.anchor(i))
+            .or_else(|| radar::small_place(code))
+            .map(|(lon, lat)| xy(lon, lat))
+    };
+    let visible = |code: &str| !hidden.iter().any(|h| h.eq_ignore_ascii_case(code.trim()));
+    let largest = data.largest();
+    let share = |value: f64| {
+        if largest > 0. {
+            (value / largest).sqrt() as f32
+        } else {
+            0.
+        }
+    };
+    let mut icons = Vec::new();
+    for (n, origin) in data
+        .origins()
+        .into_iter()
+        .filter(|o| visible(&o.code))
+        .enumerate()
+    {
+        let Some(at) = place(&origin.code) else {
+            continue;
+        };
+        let best = data
+            .rows
+            .iter()
+            .zip(&data.values)
+            .position(|(row, &value)| {
+                row.origin_country_alpha2
+                    .trim()
+                    .eq_ignore_ascii_case(&origin.code)
+                    && value == origin.largest
+            });
+        let value = best.map(|i| data.value_label(i)).unwrap_or_default();
+        icons.push(Icon {
+            target: false,
+            at,
+            size: 6. + 10. * share(origin.largest),
+            // Label the eight largest origins only, to keep the map quiet.
+            label: if n < 8 {
+                format!(
+                    "{} {value}",
+                    origin.code.chars().take(8).collect::<String>()
+                )
+            } else {
+                String::new()
+            },
+        });
+    }
+    let mut targets: Vec<(String, f64)> = Vec::new();
+    for (row, &value) in data.rows.iter().zip(&data.values) {
+        let Some(target) = row
+            .target_country_alpha2
+            .as_deref()
+            .map(|t| t.trim().to_uppercase())
+        else {
+            continue;
+        };
+        if target.is_empty() || !visible(&row.origin_country_alpha2) {
+            continue;
+        }
+        match targets.iter_mut().find(|t| t.0 == target) {
+            Some(t) => t.1 = t.1.max(value),
+            None => targets.push((target, value)),
+        }
+    }
+    for (code, value) in targets {
+        let Some(mut at) = place(&code) else { continue };
+        // A country that is also an origin keeps both icons: the target sits just below.
+        if let Some(origin) = icons.iter().find(|i| !i.target && i.at == at) {
+            at.1 += origin.size + 12.;
+        }
+        icons.push(Icon {
+            target: true,
+            at,
+            size: 4. + 7. * share(value),
+            label: format!("T {}", code.chars().take(8).collect::<String>()),
+        });
+    }
+    icons
+}
+fn draw_icon(pixmap: &mut Pixmap, icon: &Icon, alpha: f32) {
+    let (x, y) = icon.at;
+    let stroke = |pixmap: &mut Pixmap, path: &Path, rgb: [u8; 3], a: f32, width: f32| {
+        let mut p = Paint::default();
+        p.set_color_rgba8(rgb[0], rgb[1], rgb[2], a.clamp(0., 255.) as u8);
+        p.anti_alias = true;
+        pixmap.stroke_path(
+            path,
+            &p,
+            &Stroke {
+                width,
+                ..Default::default()
+            },
+            Transform::identity(),
+            None,
+        );
+    };
+    let fill = |pixmap: &mut Pixmap, path: &Path, rgb: [u8; 3], a: f32| {
+        let mut p = Paint::default();
+        p.set_color_rgba8(rgb[0], rgb[1], rgb[2], a.clamp(0., 255.) as u8);
+        p.anti_alias = true;
+        pixmap.fill_path(path, &p, FillRule::Winding, Transform::identity(), None);
+    };
+    if icon.target {
+        let s = icon.size;
+        let mut b = PathBuilder::new();
+        b.move_to(x, y - s);
+        b.line_to(x + s, y);
+        b.line_to(x, y + s);
+        b.line_to(x - s, y);
+        b.close();
+        if let Some(path) = b.finish() {
+            fill(pixmap, &path, TARGET, alpha * 0.18);
+            stroke(pixmap, &path, TARGET, alpha, 1.5);
+        }
+    } else {
+        if let Some(ring) = PathBuilder::from_circle(x, y, icon.size) {
+            fill(pixmap, &ring, INFO, alpha * 0.22);
+            stroke(pixmap, &ring, INFO, alpha, 1.6);
+        }
+        if let Some(dot) = PathBuilder::from_circle(x, y, 2.6) {
+            fill(pixmap, &dot, INFO, alpha);
+        }
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -734,5 +918,98 @@ mod tests {
         let (countries, total) = state.counts(60_000 * 7);
         assert_eq!(total, [0, 0, 0]);
         assert!(countries.is_empty(), "counts expire after the window");
+    }
+
+    const ICON_BODY: &str = r#"{"success":true,"result":{"meta":{"lastUpdated":"x","normalization":"PERCENTAGE","dateRange":[{"startTime":"a","endTime":"b"}]},"top_0":[{"originCountryAlpha2":"BR","originCountryName":"Brazil","targetCountryAlpha2":"US","targetCountryName":"United States","value":"7.4"},{"originCountryAlpha2":"CN","originCountryName":"China","value":"4.0"},{"originCountryAlpha2":"HK","originCountryName":"Hong Kong","value":"2.1"}]}}"#;
+    #[test]
+    fn icon_layer_marks_origins_and_supplied_targets_only() {
+        let view = SocView::new();
+        let data = radar::parse(ICON_BODY.as_bytes()).unwrap();
+        let icons = radar_icons(&data, &view.renderer.countries, &[]);
+        let origins: Vec<_> = icons
+            .iter()
+            .filter(|i| !i.target)
+            .map(|i| i.label.clone())
+            .collect();
+        assert_eq!(origins, vec!["BR 7.4%", "CN 4.0%", "HK 2.1%"]);
+        let targets: Vec<_> = icons
+            .iter()
+            .filter(|i| i.target)
+            .map(|i| i.label.clone())
+            .collect();
+        assert_eq!(
+            targets,
+            vec!["T US"],
+            "only the provider-supplied target is marked"
+        );
+        let br = icons.iter().find(|i| i.label.starts_with("BR")).unwrap();
+        assert!(
+            br.size
+                > icons
+                    .iter()
+                    .find(|i| i.label.starts_with("CN"))
+                    .unwrap()
+                    .size,
+            "size follows share"
+        );
+        let hidden = radar_icons(&data, &view.renderer.countries, &["br".into()]);
+        assert!(
+            hidden.iter().all(|i| !i.label.starts_with("BR")),
+            "hidden origin removed"
+        );
+        assert!(
+            hidden.iter().all(|i| !i.target),
+            "hidden origin hides its targets"
+        );
+    }
+    #[test]
+    fn layer_toggle_and_no_lines_between_origin_and_target() {
+        let state = State::default();
+        let data = radar::parse(ICON_BODY.as_bytes()).unwrap();
+        let mut view = SocView::new();
+        let on = view
+            .draw(
+                &state.snapshot(1000),
+                counts(&state, 1000),
+                Some(&data),
+                1000,
+            )
+            .to_vec();
+        view.options.radar_layer = false;
+        let off = view
+            .draw(
+                &state.snapshot(1000),
+                counts(&state, 1000),
+                Some(&data),
+                1000,
+            )
+            .to_vec();
+        let pixel = |frame: &[u8], (x, y): (f32, f32)| {
+            let i = (y as usize * crate::WIDTH as usize + x as usize) * 4;
+            [frame[i], frame[i + 1], frame[i + 2]]
+        };
+        let countries = &view.renderer.countries;
+        let at = |code: &str| {
+            let (lon, lat) = countries.anchor(countries.index(code).unwrap()).unwrap();
+            xy(lon, lat)
+        };
+        let (br, us) = (at("BR"), at("US"));
+        assert_ne!(
+            pixel(&on, br),
+            pixel(&off, br),
+            "origin icon drawn when the layer is on"
+        );
+        // Midpoint between Brazil and the US (Caribbean Sea): no route or line is drawn.
+        let mid = ((br.0 + us.0) / 2., (br.1 + us.1) / 2.);
+        assert_eq!(pixel(&on, mid), pixel(&off, mid));
+    }
+    #[test]
+    fn icon_anchors_fall_inside_their_countries() {
+        let map = crate::countries::CountryMap::new();
+        for code in ["US", "BR", "FR", "RU", "CN", "IN", "AU", "CL", "NO", "ID"] {
+            let index = map.index(code).unwrap();
+            let (lon, lat) = map.anchor(index).unwrap();
+            assert_eq!(map.at(lon, lat), Some(index), "{code} anchor {lon},{lat}");
+        }
     }
 }

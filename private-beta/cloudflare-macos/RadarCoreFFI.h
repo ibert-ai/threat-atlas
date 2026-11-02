@@ -17,6 +17,8 @@ void *ta_soc_new(void);
 int32_t ta_soc_set_radar(void *session, const uint8_t *body, size_t len, uint64_t received_ms);
 // severities: bit 0 malicious, bit 1 suspicious, bit 2 benign. motion: 0 calm, 1 still.
 void ta_soc_set_options(void *session, uint32_t severities, uint32_t motion);
+// Cloudflare icon layer: enabled 0/1 and comma-separated origin codes to hide (e.g. "BR,HK").
+void ta_soc_set_radar_layer(void *session, uint32_t enabled, const uint8_t *hidden, size_t len);
 // Frame coordinates (1440x900). Same country or open water clears focus. Returns index or -1.
 int32_t ta_soc_focus_at(void *session, float x, float y);
 // JSON country details into out; returns byte length or 0.
