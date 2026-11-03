@@ -12,19 +12,21 @@ struct RadarView: View {
             Text("AtlasSOC BETA \(radarLicenseTerms.version) · build \(radarLicenseTerms.build) · Ibert Consulting").foregroundStyle(.orange)
             Text("Live: GreyNoise public threat-map records as received (not unique attacks), classified by the provider. Cloudflare Radar: past-day aggregate shares; never turned into routes or individual events.")
             HStack {
-                SecureField("Cloudflare API token · Account / Radar / Read", text: $token)
-                Button("Save in Keychain") { model.save(token: token); token = "" }
+                SecureField(model.hasToken ? "Token saved in Keychain · paste a new one to replace it"
+                                           : "Cloudflare API token · Account / Radar / Read", text: $token)
+                Button(model.hasToken ? "Replace token" : "Save and start") { model.save(token: token); token = "" }
+                    .disabled(token.isEmpty)
             }
             HStack {
-                Button("Start") { model.start() }.disabled(model.enabled)
-                Button("Pause") { model.stop() }.disabled(!model.enabled)
-                Text(model.busy ? "Fetching…" : model.enabled ? "Polling enabled · at most once per 15 minutes" : "Polling paused")
+                Label(statusText, systemImage: statusIcon).font(.headline)
+                Spacer()
+                if model.status == .paused { Button("Start") { model.start() } }
+                if model.enabled { Button("Pause") { model.stop() } }
             }
-            Text(model.message).font(.headline)
+            Text(model.message).foregroundStyle(.secondary)
             if let received = model.received {
                 Text("Received: \(received.formatted()) · \(Date().timeIntervalSince(received) > 1800 ? "STALE CACHE" : "cached snapshot")")
             }
-            if model.enabled { Text("Next eligible request: \(model.next.formatted())").font(.caption) }
             Picker("View", selection: $showAtlas) {
                 Text("Live SOC").tag(true)
                 Text("Table").tag(false)
@@ -53,6 +55,30 @@ struct RadarView: View {
             .font(.caption).foregroundStyle(.secondary)
         }.padding(24).frame(minWidth: 1000, minHeight: 760)
         .onReceive(timer) { _ in Task { await model.refresh() } }
+        // Only reachable after the licence gate; the check is repeated so the worker can never start without it.
+        .onAppear { model.autoStart(consented: ConsentStore().isAccepted(radarLicenseTerms)) }
+    }
+    private var statusText: String {
+        switch model.status {
+        case .otherWorker: return "Radar: another AtlasSOC window is collecting. Use that window."
+        case .needsToken: return "Radar: add a Read token to start (GreyNoise live data is already on)"
+        case .denied: return "Radar: token refused by Cloudflare · save a new token"
+        case .paused: return "Radar: paused"
+        case let .waiting(date): return "Radar: waiting · next request \(date.formatted(date: .omitted, time: .shortened))"
+        case .fetching: return "Radar: fetching…"
+        case .current: return "Radar: current · next request \(model.next.formatted(date: .omitted, time: .shortened))"
+        case .stale: return "Radar: stale cache · next request \(model.next.formatted(date: .omitted, time: .shortened))"
+        case .unavailable: return "Radar: unavailable · retrying \(model.next.formatted(date: .omitted, time: .shortened))"
+        }
+    }
+    private var statusIcon: String {
+        switch model.status {
+        case .current: return "checkmark.circle"
+        case .fetching, .waiting: return "clock"
+        case .paused: return "pause.circle"
+        case .needsToken: return "key"
+        default: return "exclamationmark.triangle"
+        }
     }
 }
 @main struct PrivateRadarApp: App {

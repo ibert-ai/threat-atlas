@@ -2,7 +2,7 @@
 set -eu
 cd "$(dirname "$0")"
 VERSION=0.7.0
-BUILD=10
+BUILD=11
 OUT="${ATLAS_BETA_OUTPUT:-/private/tmp/ThreatAtlas-Radar-PrivateBeta}"
 mkdir -p "$OUT/AtlasSOC.app/Contents/MacOS" "$OUT/AtlasSOC.app/Contents/Resources"
 APP="$OUT/AtlasSOC.app"
