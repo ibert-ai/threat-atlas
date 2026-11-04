@@ -158,7 +158,7 @@ impl Renderer {
             "GREYNOISE: RECEIVED RECORDS, NOT UNIQUE ATTACKS | RADAR: AGGREGATE SHARES | TIMES UTC",
             MUTED,
         );
-        r.version_label();
+        r.desktop_version_label();
         r.base = r.pix.clone();
         r
     }
@@ -893,6 +893,27 @@ fn draw_icon(pixmap: &mut Pixmap, icon: &Icon, alpha: f32) {
 }
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn desktop_footer_shows_the_desktop_identity_not_the_screensaver() {
+        let read = |file: &str| -> serde_json::Value {
+            serde_json::from_str(&std::fs::read_to_string(format!("../../{file}")).unwrap())
+                .unwrap()
+        };
+        let (desktop, windows, saver) = (
+            read("atlassoc-beta-version.json"),
+            read("windows-soc-version.json"),
+            read("version.json"),
+        );
+        assert_eq!(desktop["version"], windows["version"]);
+        assert_eq!(desktop["build"], windows["build"]);
+        let label = crate::render::release_label(&desktop.to_string());
+        let (version, build) = (desktop["version"].as_str().unwrap(), &desktop["build"]);
+        assert!(label.starts_with(&format!("v{version}-")), "{label}");
+        assert!(label.ends_with(&format!("| b{build}")), "{label}");
+        let saver_label = crate::render::release_label(&saver.to_string());
+        assert_ne!(label, saver_label);
+        assert!(saver_label.starts_with(&format!("v{} |", saver["version"].as_str().unwrap())));
+    }
     use super::*;
     use crate::feed::State;
     fn row(source: &str, destination: &str, intention: &str) -> String {

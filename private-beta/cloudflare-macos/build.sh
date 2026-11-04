@@ -1,8 +1,9 @@
 #!/bin/sh
 set -eu
 cd "$(dirname "$0")"
-VERSION=0.7.0
-BUILD=11
+# One Desktop identity: the core footer reads the same file, so title, consent and footer agree.
+VERSION=$(python3 -I -c "import json; print(json.load(open('../../atlassoc-beta-version.json'))['version'])")
+BUILD=$(python3 -I -c "import json; print(json.load(open('../../atlassoc-beta-version.json'))['build'])")
 OUT="${ATLAS_BETA_OUTPUT:-/private/tmp/ThreatAtlas-Radar-PrivateBeta}"
 mkdir -p "$OUT/AtlasSOC.app/Contents/MacOS" "$OUT/AtlasSOC.app/Contents/Resources"
 APP="$OUT/AtlasSOC.app"

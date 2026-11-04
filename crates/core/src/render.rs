@@ -42,6 +42,21 @@ impl Default for Renderer {
         Self::new()
     }
 }
+pub(crate) fn release_label(release: &str) -> String {
+    let release: serde_json::Value = serde_json::from_str(release).unwrap_or_default();
+    let version = release["version"]
+        .as_str()
+        .unwrap_or(env!("CARGO_PKG_VERSION"));
+    let suffix = release["prerelease"]
+        .as_str()
+        .map(|value| format!("-{value}"))
+        .unwrap_or_default();
+    let build = release["build"]
+        .as_u64()
+        .map(|value| value.to_string())
+        .unwrap_or_else(|| "unknown".into());
+    format!("v{version}{suffix} | b{build}")
+}
 impl Renderer {
     pub fn new() -> Self {
         let mut r = Self::blank();
@@ -70,7 +85,7 @@ impl Renderer {
         r.text(1044, 225, 17, "TOP ROWS / ORIGIN -> TARGET", CYAN);
         r.text(45, 750, 14, "PROVIDER WINDOW / FRESHNESS", MUTED);
         r.text(35,875,12,"CLOUDFLARE RADAR | LAYER 3 TOP ATTACKS | AGGREGATE SHARES, NOT INDIVIDUAL ATTACKS | NO ROUTES DRAWN",MUTED);
-        r.version_label();
+        r.desktop_version_label();
         r.base = r.pix.clone();
         r
     }
@@ -95,26 +110,14 @@ impl Renderer {
         }
     }
     fn version_label(&mut self) {
-        let release: serde_json::Value =
-            serde_json::from_str(include_str!("../../../version.json")).unwrap_or_default();
-        let version = release["version"]
-            .as_str()
-            .unwrap_or(env!("CARGO_PKG_VERSION"));
-        let suffix = release["prerelease"]
-            .as_str()
-            .map(|value| format!("-{value}"))
-            .unwrap_or_default();
-        let build = release["build"]
-            .as_u64()
-            .map(|value| value.to_string())
-            .unwrap_or_else(|| "unknown".into());
-        self.text(
-            1120,
-            875,
-            12,
-            &format!("v{version}{suffix} | b{build}"),
-            MUTED,
-        );
+        self.draw_release_label(include_str!("../../../version.json"));
+    }
+    /// The Desktop app has its own identity, independent of the screensaver's version.json.
+    fn desktop_version_label(&mut self) {
+        self.draw_release_label(include_str!("../../../atlassoc-beta-version.json"));
+    }
+    fn draw_release_label(&mut self, release: &str) {
+        self.text(1120, 875, 12, &release_label(release), MUTED);
     }
     /// Background, panels, graticule and land shared by the screensaver and the standalone SOC view.
     fn base_map(&mut self) {
