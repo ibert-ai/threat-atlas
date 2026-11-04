@@ -1,32 +1,13 @@
-# Threat Atlas SOC 0.4.2-rc.1 — Beta
+# Threat Atlas screensaver 0.4.3-rc.1 — macOS beta
 
-Beta prerelease, 31 October 2026; product/MSI version 0.4.2, Mac build 10.
-Version 0.4.0 remains the latest stable release. Preserve earlier downloads.
+OS-by-OS publication authorized4 November2026. This first publication contains macOS only; Windows and Linux assets are not implied available or accepted. Existing releases are preserved.
 
-## Changes since 0.4.1-rc.1
+Product0.4.3,build11. The macOS/core implementation is unchanged from the independently reviewed773a1062d270 source; this release advances package identity and records platform-specific acceptance. MSI proposal source in this branch is not a published Windows installer.
 
-- Country borders and classification shading with independent expiry timestamps. High-volume traffic no longer removes an active country highlight when the 600-record recent buffer turns over.
-- Linux x86_64 windowed preview with portable archive packaging and hosted Xvfb smoke checks. This is not an idle screensaver or lock-screen integration.
-- Installed version, prerelease and build displayed in the shared renderer footer.
-- Windows scaling/layout regression coverage and MSI ProductVersion 0.4.2 for a distinct upgrade identity.
-- Retains live GreyNoise telemetry, certificate-validated TLS, clocks, native Mac lifecycle repairs and screenshot thumbnails.
+## Validation
+Fresh exact-source universal macOS package,strict ad-hoc signatures,arm64/x86_64 slices,native CheckSaver rendering/lifecycle and offline updater security are validated separately for the final commit. Evidence accompanies downloads. Never treat checks for a prior package as a fresh run.
 
-## Signing and updates
+## Known issues and limits
+Ad-hoc signed,not notarized:manual installation;Gatekeeper policy applies. No new physical Intel,System Settings installation,real idle/lock,multi-monitor/HiDPI or extended soak acceptance is claimed. OS DNS resolution may delay feed-worker shutdown. A legacy0.2 saver may remain selected;select Threat Atlas SOC and reopen Settings. Automatic updater signature/prerelease restrictions remain.
 
-Windows SCR/MSI are unsigned. Mac bundles contain Intel and Apple Silicon slices and are ad-hoc signed, not Developer ID signed or notarized. OS warnings or blocking may occur; do not disable protections. Automatic updates reject unsigned packages and ignore prereleases. Install manually. Linux is an unsigned application preview.
-
-## Verification and limits
-
-Publication requires quality/core tests, universal Mac build/native lifecycle/updater checks, Windows tests/build, Linux build/Xvfb smoke, MSI packaging and MSI lifecycle checks on the published source commit. Download checksums accompany all packages. Earlier-commit checks do not establish final-source acceptance.
-
-Billy reports Windows and Linux candidate tests and 0.4.1-to-0.4.2 MSI upgrade/replacement/uninstall passed on source574e22e6. MAC independently passed13 core tests, formatting, Clippy, version tests, native Apple Silicon packaging/signatures, native saver lifecycle and offline updater safety on that source. Hosted final-source results must pass before publication.
-
-Physical Intel Mac and Linux desktop acceptance, Windows interactive Settings, idle/lock transitions, multiple monitors/HiDPI, signed upgrade/rollback and extended soak remain incomplete. Visual approval does not imply those unrun tests passed. Linux Xvfb smoke is not physical desktop validation. See docs/QUALITY.md.
-
-## Known bugs
-
-- OS DNS resolution can delay feed-worker shutdown; immediate termination and zero background traffic after stopping are not guaranteed.
-- A legacy Mac0.2 saver may remain selected after upgrade and show a blank preview. Select Threat Atlas SOC, back up duplicate legacy bundles and reopen System Settings.
-- Signing and physical acceptance gaps above remain limitations. No trusted automatic-update support is claimed for this beta.
-
-Use the per-user Windows MSI, universal Mac ZIP or Linux application archive. Keep known-working stable0.4.0 available. Source commit and Mac build are appended by the exact-commit publication job.
+Linux preview remains at its existing beta while follow-up is tracked in https://github.com/ibert-ai/threat-atlas/issues/25 . No Linux binary is included in this publication. Windows publication requires its own exact-version evidence;no Windows result is inferred from Mac tests.
