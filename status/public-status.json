@@ -1,11 +1,130 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-04T22:24:16.543Z",
-  "source_updated_at": "2026-11-04T22:24:16.543Z",
+  "generated_at": "2026-11-04T22:30:45.620Z",
+  "source_updated_at": "2026-11-04T22:30:45.620Z",
   "title": "Threat Atlas — Status",
-  "state": "Stable 0.4.5 preparation · exact-source checks running",
-  "summary": "Owner approved Windows/Linux stable publication of the tested RC implementation. 0.4.5/build13 creates distinct stable and MSI identity. Exact-source checks and package verification are running. macOS remains excluded; signing and manual test limits stay documented.",
+  "state": "Screensaver 0.4.5 stable · Windows + Linux",
+  "summary": "Owner-approved stable0.4.5/build13 published. All7 exact-source baseline checks and all7 public download verifications PASS. Windows MSI/ZIP and Linux windowed preview included. macOS excluded pending Gatekeeper trust. Signing and accepted manual test limits remain documented.",
   "release": {
+    "name": "Threat Atlas screensaver 0.4.5 stable / build 13",
+    "decision": "PUBLISHED STABLE · Latest",
+    "published_at": "2026-11-04T22:29:58Z",
+    "url": "https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.5",
+    "downloads": [
+      {
+        "name": "ThreatAtlas-0.4.5-x64.msi",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.5/ThreatAtlas-0.4.5-x64.msi",
+        "sha256": "709a6f6467c5ddf2cd58e6d183afcde36a241918ec344ed7f69925ac040ff91a"
+      },
+      {
+        "name": "ThreatAtlas-Linux-0.4.5-x86_64.tar.gz",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.5/ThreatAtlas-Linux-0.4.5-x86_64.tar.gz",
+        "sha256": "388edc530a70109dc695929a6698984980d0f9586050f36036112cf6bba21235"
+      },
+      {
+        "name": "ThreatAtlas-Linux-SHA256SUMS.txt",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.5/ThreatAtlas-Linux-SHA256SUMS.txt",
+        "sha256": "781ce089868f86087ccddfabf63c0d89e469a84c29d63161ea123566a2912803"
+      },
+      {
+        "name": "ThreatAtlas-Linux-VERIFICATION.json",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.5/ThreatAtlas-Linux-VERIFICATION.json",
+        "sha256": "30794c46b4724e07297362b2bf113f23be96492f56206a474fab7be022560a12"
+      },
+      {
+        "name": "ThreatAtlas-Windows-SHA256SUMS.txt",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.5/ThreatAtlas-Windows-SHA256SUMS.txt",
+        "sha256": "064bb6cf9cca283d147e1df8c485a9d83d79e69cafe4d24fd39cd6c6f6a99612"
+      },
+      {
+        "name": "ThreatAtlas-Windows-v0.4.5.zip",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.5/ThreatAtlas-Windows-v0.4.5.zip",
+        "sha256": "bfc2131b359e251ee1f728da8b39379e35f735ad7bfa982883ea8c518b68de1b"
+      },
+      {
+        "name": "ThreatAtlas-Windows-VERIFICATION.json",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.5/ThreatAtlas-Windows-VERIFICATION.json",
+        "sha256": "d8cf4f70ee82083f9218b870561f424986072ca153435fd350ea23b2a880198f"
+      }
+    ]
+  },
+  "screensaver": {
+    "name": "0.4.5/build13 · Windows MSI + Linux preview",
+    "decision": "STABLE · macOS excluded",
+    "published_at": "2026-11-04T22:29:58Z",
+    "url": "https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.5"
+  },
+  "tasks": [
+    {
+      "task": "Stable source and version identity",
+      "status": "checked"
+    },
+    {
+      "task": "All7 exact-source CI gates",
+      "status": "checked"
+    },
+    {
+      "task": "Windows MSI and Linux packages",
+      "status": "checked"
+    },
+    {
+      "task": "Publish stable/latest and verify7 downloads",
+      "status": "checked"
+    },
+    {
+      "task": "Known manual test limits documented and owner accepted",
+      "status": "checked"
+    },
+    {
+      "task": "Mac trusted signing and broader physical acceptance",
+      "status": "pending"
+    }
+  ],
+  "security": {
+    "status": "blocked",
+    "advisory_status": "passed",
+    "known_vulnerabilities": 0,
+    "checked_at": "2026-11-02T12:51:03.622428+00:00"
+  },
+  "wishlist": [],
+  "build": {
+    "name": "Screensaver 0.4.5 stable / build 13",
+    "status": "Stable published · all downloads verified",
+    "commit": "ce986195d57237dc27a77b2d2161a50eb3127346",
+    "url": "https://github.com/ibert-ai/threat-atlas/actions/runs/41924443584",
+    "updated_at": "2026-11-04T22:30:45.620Z",
+    "stages": [
+      {
+        "name": "Source & stable version checks",
+        "status": "checked"
+      },
+      {
+        "name": "Quality · tests & dependency audit",
+        "status": "checked"
+      },
+      {
+        "name": "Linux build & Xvfb smoke",
+        "status": "checked"
+      },
+      {
+        "name": "Windows tests & build",
+        "status": "checked"
+      },
+      {
+        "name": "MSI structure & installer lifecycle",
+        "status": "checked"
+      },
+      {
+        "name": "Verify final packages",
+        "status": "checked"
+      },
+      {
+        "name": "Publish stable & verify downloads",
+        "status": "checked"
+      }
+    ]
+  },
+  "standalone_release": {
     "name": "AtlasSOC 0.7.0 beta 1 / build 10",
     "decision": "PUBLISHED BETA",
     "published_at": "2026-11-02T21:06:45Z",
@@ -70,82 +189,6 @@
         "name": "SHA256SUMS.txt",
         "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/SHA256SUMS.txt",
         "sha256": "c6275d06ee1ba2e6a08c7394aa57c2534f94f1a8a8a63acca7fadfbff210b5f8"
-      }
-    ]
-  },
-  "screensaver": {
-    "name": "0.4.4-rc.1/build12 · Windows MSI + Linux preview",
-    "decision": "PUBLISHED BETA · macOS excluded",
-    "published_at": "2026-11-04T22:07:07Z",
-    "url": "https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.4-rc.1"
-  },
-  "tasks": [
-    {
-      "status": "checked",
-      "task": "Combined source and release identity"
-    },
-    {
-      "status": "checked",
-      "task": "Windows standalone build and native offline smoke"
-    },
-    {
-      "status": "checked",
-      "task": "Universal Mac and consent validation"
-    },
-    {
-      "status": "checked",
-      "task": "Versioned docs, privacy, licensing and known limits"
-    },
-    {
-      "status": "checked",
-      "task": "Publish beta and verify assets"
-    },
-    {
-      "status": "pending",
-      "task": "Final installer, trusted signing and wider physical acceptance"
-    }
-  ],
-  "security": {
-    "status": "blocked",
-    "advisory_status": "passed",
-    "known_vulnerabilities": 0,
-    "checked_at": "2026-11-02T12:51:03.622428+00:00"
-  },
-  "wishlist": [],
-  "build": {
-    "name": "Screensaver 0.4.5 stable / build 13",
-    "status": "Quality and Linux PASS · Windows/MSI running",
-    "commit": "ce986195d57237dc27a77b2d2161a50eb3127346",
-    "url": "https://github.com/ibert-ai/threat-atlas/actions/runs/41924443584",
-    "updated_at": "2026-11-04T22:24:16.543Z",
-    "stages": [
-      {
-        "name": "Source & stable version checks",
-        "status": "checked"
-      },
-      {
-        "name": "Quality · tests & dependency audit",
-        "status": "checked"
-      },
-      {
-        "name": "Linux build & Xvfb smoke",
-        "status": "checked"
-      },
-      {
-        "name": "Windows tests & build",
-        "status": "in_progress"
-      },
-      {
-        "name": "MSI structure & installer lifecycle",
-        "status": "pending"
-      },
-      {
-        "name": "Verify final packages",
-        "status": "pending"
-      },
-      {
-        "name": "Publish stable & verify downloads",
-        "status": "pending"
       }
     ]
   }
