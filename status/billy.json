@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-02T20:30:46.228183+00:00",
+  "updated_at": "2026-11-04T10:32:12.495177+00:00",
   "updated_by": "@IbertAgentControlBot",
   "status": "Windows SOC review delivery; publication gates remain open",
   "summary": "PR21 supplies Windows SOC host, pre-network licence consent, persistent controls, Sentinel resources and dedicated native smoke CI, targeting PR19. Exact-source optimized package built and native offline smoke passed. MAC owns risk-based review/integration and final release decision.",
@@ -25,5 +25,28 @@
     "Fresh unfiltered audit: zero vulnerability entries, three inherited maintenance/unsoundness warnings remain; not full security clearance.",
     "Windows Cloudflare network worker and Linux standalone are not included. Final identity/docs and exact integrated-source CI remain MAC-owned."
   ],
-  "next_action": "MAC reviews PR21 and exact artifact evidence, reconciles applicable acceptance/security gates, integrates with PR19 and owns final documentation/publication. Hosted Windows SOC CI remains pending verification."
+  "next_action": "MAC reviews PR21 and exact artifact evidence, reconciles applicable acceptance/security gates, integrates with PR19 and owns final documentation/publication. Hosted Windows SOC CI remains pending verification.",
+  "linux_desktop_validation": {
+    "reference": "ATLAS-LINUX-VM-20261104-01",
+    "status": "created-boot-held-for-host-memory",
+    "owner": "@IbertAgentControlBot",
+    "source_commit": "684a63bd4c21428d126f04aa4d3156bdcea232c9",
+    "version": "v0.4.2-rc.1",
+    "product_version": "0.4.2",
+    "package_sha256": "b526c5b05a92c192179afbf034754ec585e3d866ab62fe98c3bb8ae8fd2f90ce",
+    "configuration": "x86_64 Ubuntu Desktop24.04 LTS; Hyper-V Gen2;2vCPU;4GiB;40GiB dynamic disk;existing NAT;Secure Boot enabled",
+    "evidence": [
+      "Official Ubuntu Desktop24.04.5.1 ISO SHA256 verified: 4da4a0c9035da8e68a59a838674f403f0a54472c78a83b4fb7f78d03588f85a7",
+      "VM created;pre-install hardware checkpoint created;existing VMs preserved"
+    ],
+    "guest_installed": false,
+    "tests": "NOT RUN: guest anonymous HTTPS clone,package GUI/TLS/telemetry/offline recovery/exit,exact-source tests/build/smoke",
+    "blockers": [
+      "Insufficient free host RAM for4GiB VM startup;boot held",
+      "Guest account credentials require owner entry during installation"
+    ],
+    "next_action": "Free host RAM,boot installer,install guest,take clean desktop checkpoint,execute MAC handover tests",
+    "limits": "Teammate-reported VM setup only;not physical Linux, idle/lock,GPU or multimonitor acceptance"
+  },
+  "current_task": "Linux preview final-desktop VM created; boot held for host memory; guest tests not run"
 }
