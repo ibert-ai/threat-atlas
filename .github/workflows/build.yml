@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       publish:
-        description: Publish unsigned 0.4.2-rc.1 beta after all checks pass
+        description: Publish unsigned beta after all checks pass
         type: boolean
         default: false
 permissions:

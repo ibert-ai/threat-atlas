@@ -1,6 +1,6 @@
 Threat Atlas SOC - Windows installation
 
-The 0.4.2-rc.1 MSI download is withdrawn; the standalone Windows ZIP remains available for manual evaluation. These steps describe the corrected all-users installer, which requires a new version and Windows acceptance.
+The 0.4.2-rc.1 MSI download is withdrawn; the standalone Windows ZIP remains available for manual evaluation. These steps describe the corrected 0.4.4-rc.1 candidate. Use them only when that platform package is published.
 
 1. Double-click the MSI and approve the administrator prompt. It installs one 64-bit ThreatAtlas.scr into System32 and these documents into Program Files\Threat Atlas.
 2. Open Start > Threat Atlas SOC > Set up Threat Atlas.
@@ -23,3 +23,5 @@ On 64-bit Windows, System32 is the 64-bit directory and SysWOW64 is 32-bit. This
 
 Detailed Windows installation/troubleshooting:
 https://github.com/ibert-ai/threat-atlas/blob/main/docs/WINDOWS-INSTALLATION.md
+
+Manual System32 copying requires elevation: open the copying tool or terminal with Run as administrator. The MSI requests administrator approval itself. Do not run the screensaver routinely as administrator. Automatic updates are not included in the all-users MSI; install future verified packages manually.
