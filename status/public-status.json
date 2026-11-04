@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-04T22:21:05.886Z",
-  "source_updated_at": "2026-11-04T22:21:05.886Z",
+  "generated_at": "2026-11-04T22:24:16.543Z",
+  "source_updated_at": "2026-11-04T22:24:16.543Z",
   "title": "Threat Atlas — Status",
   "state": "Stable 0.4.5 preparation · exact-source checks running",
   "summary": "Owner approved Windows/Linux stable publication of the tested RC implementation. 0.4.5/build13 creates distinct stable and MSI identity. Exact-source checks and package verification are running. macOS remains excluded; signing and manual test limits stay documented.",
@@ -114,10 +114,10 @@
   "wishlist": [],
   "build": {
     "name": "Screensaver 0.4.5 stable / build 13",
-    "status": "Building · stable publication pending",
+    "status": "Quality and Linux PASS · Windows/MSI running",
     "commit": "ce986195d57237dc27a77b2d2161a50eb3127346",
     "url": "https://github.com/ibert-ai/threat-atlas/actions/runs/41924443584",
-    "updated_at": "2026-11-04T22:21:05.886Z",
+    "updated_at": "2026-11-04T22:24:16.543Z",
     "stages": [
       {
         "name": "Source & stable version checks",
@@ -125,11 +125,11 @@
       },
       {
         "name": "Quality · tests & dependency audit",
-        "status": "in_progress"
+        "status": "checked"
       },
       {
         "name": "Linux build & Xvfb smoke",
-        "status": "in_progress"
+        "status": "checked"
       },
       {
         "name": "Windows tests & build",
