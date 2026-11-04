@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "author": "@IbertMACBot",
-  "updated_at": "2026-11-04T16:25:05.429Z",
+  "updated_at": "2026-11-04T17:01:06.151Z",
   "handovers": [
     {
       "reference": "ATLAS-GIT-HANDOVERS-20261104-01",
@@ -26,6 +26,62 @@
       ],
       "blockers": [],
       "next_action": "CL and Billy acknowledge in their files; publish meaningful assigned-task handovers here."
+    },
+    {
+      "reference": "ATLAS-MAC-MSI-TESTS-20261104-01",
+      "updated_at": "2026-11-04T17:01:06.151Z",
+      "recipients": [
+        "@IbertClaudeBot",
+        "@IbertAgentControlBot"
+      ],
+      "task": "Independent Mac validation of MSI review candidate",
+      "source": {
+        "repository": "ibert-ai/threat-atlas",
+        "branch": "codex/claude-windows-msi",
+        "commit": "773a1062d2704508a9384e603b5bb6d9f3fcb35c",
+        "product_version": "0.4.2-rc.1",
+        "build": 10
+      },
+      "outcome": "Fresh local universal Mac build and focused regression checks PASS. Mac/core/build sources unchanged versus b007677e. Test package only; published releases untouched.",
+      "checks": [
+        {
+          "name": "Workspace tests",
+          "result": "PASS",
+          "evidence": "37 passed:32 core+5 helper tests on macOS;0 failed"
+        },
+        {
+          "name": "fmt/Clippy/version/source scan",
+          "result": "PASS",
+          "limits": "Pattern scan is not a complete security audit"
+        },
+        {
+          "name": "Fresh universal build,strict signatures,archive verification",
+          "result": "PASS",
+          "evidence": "Saver/updater/preview each arm64+x86_64; ZIP SHA256 9060eab9b13c11994cd6cd85fdc34226ed7649e79792ca8d8bb01cd9c07c72ed"
+        },
+        {
+          "name": "Offline updater version/archive security",
+          "result": "PASS"
+        },
+        {
+          "name": "Native CheckSaver lifecycle",
+          "result": "PASS",
+          "evidence": "Bundle load,initial rendering,preview/full-screen views and stop/restart"
+        },
+        {
+          "name": "Physical Intel,System Settings install,real idle/lock,new live-feed acceptance",
+          "result": "NOT RUN"
+        },
+        {
+          "name": "Native Windows installer acceptance",
+          "result": "NOT RUN",
+          "limits": "Billy-owned; Mac checks cannot validate MSI behavior"
+        }
+      ],
+      "blockers": [
+        "Windows native acceptance remains pending"
+      ],
+      "next_action": "Billy supplies exact-source native Windows T6–T9 results in own handover. MAC reviews installer product changes/version separately; no merge/publication implied."
     }
   ],
   "acknowledgements": [
@@ -35,6 +91,12 @@
       "received_at": "2026-11-04T16:25:05.429Z",
       "state": "received",
       "note": "CL Git write and acknowledgement verified by repository readback. Static findings received; Windows runtime tests remain NOT RUN. Robert's Telegram approval seen at 17:24 CET, corroborated by his approval in MAC chat; covers current handover/investigation workflow, not publication or a system-install design decision."
+    },
+    {
+      "reference": "ATLAS-CL-MSI-20261104-02",
+      "received_at": "2026-11-04T17:01:06.151Z",
+      "state": "completed",
+      "note": "MAC scoped Mac validation complete on exact 773a1062d2704508a9384e603b5bb6d9f3fcb35c. This does not accept native Windows installer behavior or authorize release."
     }
   ]
 }
