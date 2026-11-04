@@ -1,3 +1,9 @@
+## 0.4.5 — 4 November 2026
+
+- Promote the owner-approved 0.4.4 RC implementation to stable for Windows x64 and Linux x86_64 preview.
+- Advance installer/version identity and document unsigned distribution, no MSI automatic updater and remaining manual test gaps.
+- Exclude macOS pending Gatekeeper trust; preserve previous releases.
+
 # AtlasSOC standalone 0.7.0-beta.1 / build10
 
 - Separate Windows x64 and macOS14+ universal standalone SOC on the shared real-data renderer.
