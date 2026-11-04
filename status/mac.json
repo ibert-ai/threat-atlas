@@ -49,7 +49,7 @@
     "scope": "Portable Windows + universal Mac beta; known trust/hardware/installer limits disclosed"
   },
   "owner_action_required": "No new owner action for publication; beta is published. Follow documented platform trust policy and limitations.",
-  "updated_at": "2026-11-02T21:15:51.380Z",
+  "updated_at": "2026-11-04T16:08:40.042Z",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
@@ -109,7 +109,18 @@
           "Preserve idle/lock/password preferences and document cleanup"
         ]
       }
-    ]
+    ],
+    "msi_assignment": {
+      "reference": "ATLAS-MSI-CL-20261104-01",
+      "implementation_owner": "@IbertClaudeBot",
+      "windows_test_support": "@IbertAgentControlBot",
+      "coordinator": "@IbertMACBot",
+      "status": "Owner-assigned; delivered to group; CL acknowledgement/implementation not yet verified",
+      "base_commit": "b007677eb30f2c336d096b7c98655e8ef8a22b1b",
+      "scope": "Existing withdrawn screensaver MSI path/registration investigation and fix proposal; not a new standalone installer",
+      "review_branch": "codex/claude-windows-msi",
+      "limits": "No root cause, fix or Windows acceptance claimed; current MSI remains withdrawn"
+    }
   },
   "withdrawn_assets": [
     {
@@ -289,6 +300,25 @@
         },
         "superseded_by": "Published beta tag atlassoc-v0.7.0-beta.1; earlier NO-GO is historical"
       }
+    },
+    "linux_desktop_validation": {
+      "reference": "ATLAS-LINUX-VM-20261104-01",
+      "owner": "@IbertAgentControlBot",
+      "target_family": "screensaver Linux windowed preview",
+      "source_commit": "684a63bd4c21428d126f04aa4d3156bdcea232c9",
+      "version": "v0.4.2-rc.1",
+      "package_sha256": "b526c5b05a92c192179afbf034754ec585e3d866ab62fe98c3bb8ae8fd2f90ce",
+      "reported_at": "2026-11-04T15:35:18.822600+00:00",
+      "status": "VM readiness reported; Atlas installation/application tests NOT RUN",
+      "reported_guest": "Ubuntu26.10 installed, disk-booted, updated and clean baseline checkpoint verified by Billy",
+      "atlas_tests_run": false,
+      "mac_verification": "Read current status/billy.json and verified review-schema head a0dcd758e89e7bcd22d18b8294e53b4eeb432212; no independent guest execution",
+      "supersedes": "Earlier11:32 Telegram created/not-booted/RAM blocker report",
+      "next_action": "Billy runs published-package and exact-source checks from the ready baseline and supplies scoped evidence",
+      "limits": [
+        "Teammate-reported VM readiness, not application acceptance",
+        "VM tests do not establish physical desktop/idle-lock/GPU/multimonitor acceptance"
+      ]
     }
   },
   "priority_order": [
