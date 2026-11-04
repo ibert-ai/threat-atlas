@@ -1,7 +1,181 @@
 {
   "schema_version": 1,
   "author": "@IbertAgentControlBot",
-  "updated_at": "2026-11-04T16:17:19.640Z",
-  "handovers": [],
-  "acknowledgements": []
+  "updated_at": "2026-11-04T17:23:27.282309+00:00",
+  "handovers": [
+    {
+      "reference": "ATLAS-BILLY-GIT-HANDOVERS-20261104-01",
+      "updated_at": "2026-11-04T17:23:27.282309+00:00",
+      "author": "@IbertAgentControlBot",
+      "recipients": [
+        "@IbertMACBot",
+        "@IbertClaudeBot"
+      ],
+      "task": "Implement the shared Git handover protocol",
+      "source": {
+        "repository": "ibert-ai/threat-atlas",
+        "branch": "codex/release-status",
+        "commit": "9d762ec682cb9be21ad97358f9bd207ef1794b2b",
+        "version": null,
+        "build": null
+      },
+      "outcome": "Shared and Atlas handover guidance updated and validated. Existing maintenance automation reads routine Git handovers; schedule preserved and duplicate remains paused. Billy-owned conditional writer passed five privacy/ownership/conflict tests. Full task registry is kept private; this public entry contains only concise project-safe metadata.",
+      "checks": [
+        {
+          "name": "Four updated skills validated",
+          "result": "PASS"
+        },
+        {
+          "name": "Owned-file and private-task guards, conflict reconciliation and acknowledgement preservation",
+          "result": "PASS",
+          "evidence": "5 behavioral tests passed."
+        },
+        {
+          "name": "No duplicate polling or release operations",
+          "result": "PASS",
+          "limits": "Existing receiver, cursors, schedules and release ownership preserved."
+        }
+      ],
+      "blockers": [],
+      "next_owner": "@IbertMACBot",
+      "next_action": "Acknowledge this reference in handovers/mac.json with observed commit; reconcile meaningful Billy status into the dashboard snapshot. Git receipt remains separate from validation."
+    },
+    {
+      "reference": "ATLAS-BILLY-LINUX-TESTS-20261104-02",
+      "updated_at": "2026-11-04T17:23:27.282309+00:00",
+      "author": "@IbertAgentControlBot",
+      "recipients": [
+        "@IbertMACBot",
+        "@IbertClaudeBot"
+      ],
+      "task": "Report exact-source supplemental Linux checks while keeping Hyper-V acceptance separate",
+      "source": {
+        "repository": "ibert-ai/threat-atlas",
+        "branch": "v0.4.2-rc.1 (detached release source)",
+        "commit": "684a63bd4c21428d126f04aa4d3156bdcea232c9",
+        "version": "v0.4.2-rc.1",
+        "product_version": "0.4.2",
+        "build": 10
+      },
+      "outcome": "Exact-source and published-package supplemental WSL checks passed. Hyper-V Ubuntu26.10 is installed, updated and baseline-verified, but actual guest application acceptance remains NOT RUN. No fixes or new release substituted.",
+      "checks": [
+        {
+          "name": "Exact anonymous public source and published package SHA256",
+          "result": "PASS",
+          "evidence": {
+            "source_commit": "684a63bd4c21428d126f04aa4d3156bdcea232c9",
+            "package_sha256": "b526c5b05a92c192179afbf034754ec585e3d866ab62fe98c3bb8ae8fd2f90ce"
+          },
+          "limits": "Host verification; not a guest anonymous clone."
+        },
+        {
+          "name": "Exact-source WSL workspace tests",
+          "result": "PASS",
+          "evidence": "13 tests passed; fmt, version metadata/regressions, source scan, Clippy with warnings denied, dependency audit and native Linux release build passed.",
+          "limits": "Ubuntu26.04.1 WSL2 / Rust1.99.1; separate from Hyper-V Ubuntu26.10."
+        },
+        {
+          "name": "Published package and rebuilt source Xvfb smoke",
+          "result": "PASS",
+          "evidence": "Both process exits were 0; published --help also passed.",
+          "limits": "Headless smoke only."
+        },
+        {
+          "name": "Exact-source live renderer",
+          "result": "PASS",
+          "evidence": {
+            "elapsed_seconds": 32.422218372,
+            "records": 24895,
+            "changed_batches": 74,
+            "status": "LIVE",
+            "process_exit": 0
+          },
+          "limits": "Initial harness timeout/status-capture issues were resolved by running the same compiled binary directly; source unchanged. Aggregate receipt counts are not unique attacks or proof of upstream freshness."
+        },
+        {
+          "name": "Hyper-V installed/updated rollback baseline",
+          "result": "PASS",
+          "evidence": {
+            "vm": "Atlas-Ubuntu-Stable-Desktop",
+            "vm_id": "a722b0d4-f5cd-44a5-bb04-5443eae4c89b",
+            "baseline_id": "e0b28d11-d6d2-4d8e-89d8-a83d81e59ce1",
+            "iso_detached_before_tests": true,
+            "configuration": "2vCPU,6GiB,40GiB dynamic disk, existing NAT, Ubuntu26.10 x86_64"
+          },
+          "limits": "Host checkpoint and earlier OS proof verified; not application acceptance."
+        },
+        {
+          "name": "Actual Hyper-V package GUI, live/offline recovery, exit/relaunch and source tests",
+          "result": "NOT RUN",
+          "evidence": "Read-only test media prepared and syntax/integrity checked; guest command path not yet established.",
+          "limits": "VM console capture was possible but input was not independently established; virtual-desktop visibility was unresolved. Owner is returning to one desktop."
+        }
+      ],
+      "blockers": [
+        "Supported guest command execution and interactive acceptance remain unverified."
+      ],
+      "next_owner": "@IbertAgentControlBot",
+      "next_action": "Verify the VM screen on the single desktop; establish the supported guest path or have the owner launch the prepared read-only runner locally and handle sudo authentication. Then complete the assigned guest checks. MAC independently reviews resulting evidence."
+    },
+    {
+      "reference": "ATLAS-BILLY-MSI-RECEIPT-20261104-01",
+      "updated_at": "2026-11-04T17:23:27.282309+00:00",
+      "author": "@IbertAgentControlBot",
+      "recipients": [
+        "@IbertMACBot",
+        "@IbertClaudeBot"
+      ],
+      "task": "Acknowledge the MSI native Windows test requests",
+      "source": {
+        "repository": "ibert-ai/threat-atlas",
+        "branch": "codex/claude-windows-msi",
+        "commit": "773a1062d2",
+        "base": "b007677eb30f2c336d096b7c98655e8ef8a22b1b",
+        "product_version": "0.4.2-rc.1 (unchanged; MAC sets the new version)"
+      },
+      "outcome": "CL first findings and newer candidate handover read. T1-T5 for the withdrawn package and T6-T9 for the review candidate are recorded as pending native Windows evidence; no MSI source changes or successful tests claimed.",
+      "checks": [
+        {
+          "name": "Native Windows T1-T9",
+          "result": "NOT RUN",
+          "limits": "Requires a disposable clean Windows x64 test environment and preservation of saver/idle/lock/password state."
+        }
+      ],
+      "blockers": [
+        "Native Windows clean-environment execution is not yet recorded for this assignment."
+      ],
+      "next_owner": "@IbertAgentControlBot",
+      "next_action": "Coordinate exact candidate/artifact with CL before native reproduction. CL owns source fixes; MAC owns version/PR/release decisions."
+    }
+  ],
+  "acknowledgements": [
+    {
+      "reference": "ATLAS-GIT-HANDOVERS-20261104-01",
+      "observed_commit": "9d762ec682cb9be21ad97358f9bd207ef1794b2b",
+      "received_at": "2026-11-04T17:23:27.282309+00:00",
+      "state": "received",
+      "note": "Read in Telegram Desktop and committed handovers/README.md. Receipt is separate from implementation and independent validation."
+    },
+    {
+      "reference": "ATLAS-CL-MSI-20261104-01",
+      "observed_commit": "9d762ec682cb9be21ad97358f9bd207ef1794b2b",
+      "received_at": "2026-11-04T17:23:27.282309+00:00",
+      "state": "received",
+      "note": "Native Windows test request recorded privately; not executed by this protocol change. CL retains source implementation ownership."
+    },
+    {
+      "reference": "ATLAS-CL-MSI-20261104-02",
+      "observed_commit": "9d762ec682cb9be21ad97358f9bd207ef1794b2b",
+      "received_at": "2026-11-04T17:23:27.282309+00:00",
+      "state": "received",
+      "note": "Native Windows test request recorded privately; not executed by this protocol change. CL retains source implementation ownership."
+    },
+    {
+      "reference": "ATLAS-MAC-MSI-TESTS-20261104-01",
+      "observed_commit": "9d762ec682cb9be21ad97358f9bd207ef1794b2b",
+      "received_at": "2026-11-04T17:23:27.282309+00:00",
+      "state": "received",
+      "note": "Mac review evidence read; native Windows T6-T9 remain NOT RUN here."
+    }
+  ]
 }
