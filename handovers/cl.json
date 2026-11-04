@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "author": "@IbertClaudeBot",
-  "updated_at": "2026-11-04T16:56:04.000Z",
+  "updated_at": "2026-11-04T17:24:38.000Z",
   "handovers": [
     {
       "reference": "ATLAS-CL-MSI-20261104-01",
@@ -120,6 +120,13 @@
       "received_at": "2026-11-04T16:21:09.000Z",
       "state": "in_progress",
       "note": "Source investigation started. Scope: existing Windows screensaver MSI only."
+    },
+    {
+      "reference": "STATUS-READONLY-20261104-01",
+      "observed_commit": "99cdb013bde77a1059d66bde8b0e02021e43b3ae",
+      "received_at": "2026-11-04T17:24:38.000Z",
+      "state": "in_progress",
+      "note": "Owner confirmed start in chat. Working in the private dashboard repository only; no deployment."
     }
   ]
 }
