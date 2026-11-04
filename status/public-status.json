@@ -1,80 +1,117 @@
 {
- "schema_version": 1,
- "generated_at": "2026-11-04T20:22:15.610Z",
- "source_updated_at": "2026-11-04T20:22:15.610Z",
- "title": "Threat Atlas — Status",
- "state": "Screensaver beta · Mac Gatekeeper trust unresolved",
- "summary": "Screensaver0.4.3-rc.1 Mac package is ad-hoc signed and not notarized:normal quarantined installation is blocked by Gatekeeper. Build/signature integrity checks do not establish Apple trust or install acceptance. Windows portable remains separate;Linux follow-up stays in issue25. Trusted Mac signing/notarization is unresolved.",
- "release": {
-  "name": "AtlasSOC 0.7.0 beta 1 / build 10",
-  "decision": "PUBLISHED BETA",
-  "published_at": "2026-11-02T21:06:45Z",
-  "url": "https://github.com/ibert-ai/threat-atlas/releases/tag/atlassoc-v0.7.0-beta.1",
-  "downloads": [
-   {
-    "name": "AtlasSOC-macOS-universal-v0.7.0-build10.zip",
-    "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/AtlasSOC-macOS-universal-v0.7.0-build10.zip",
-    "sha256": "665af1efd546cdbab9d53265ddd5f7523e1000e479cdb295b1413558d1f86d8c"
-   },
-   {
-    "name": "AtlasSOC-VERIFICATION.json",
-    "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/AtlasSOC-VERIFICATION.json",
-    "sha256": "8a62d9804a4e2910fd29f8fbd323444d990d20cfc435bdf9f9b74d6867eb36a0"
-   },
-   {
-    "name": "AtlasSOC-Windows-x64-v0.7.0-build10.zip",
-    "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/AtlasSOC-Windows-x64-v0.7.0-build10.zip",
-    "sha256": "866da4052e30eafe7530593d9613db910a6252c59e003b3c886cfc627f2ed0cb"
-   },
-   {
-    "name": "INSTALL-PRIVACY-LIMITS.md",
-    "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/INSTALL-PRIVACY-LIMITS.md",
-    "sha256": "1ed35583bede2474e287975ce100af8d330258c0e51cae1ff7817bcf1df6826e"
-   },
-   {
-    "name": "SHA256SUMS.txt",
-    "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/SHA256SUMS.txt",
-    "sha256": "c6275d06ee1ba2e6a08c7394aa57c2534f94f1a8a8a63acca7fadfbff210b5f8"
-   }
-  ]
- },
- "screensaver": {
-  "name": "0.4.3-rc.1/build11 · macOS + Windows portable",
-  "decision": "PUBLISHED BETA · no MSI/Linux assets",
-  "published_at": "2026-11-04T20:10:42Z",
-  "url": "https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.3-rc.1"
- },
- "tasks": [
-  {
-   "status": "checked",
-   "task": "Combined source and release identity"
+  "schema_version": 1,
+  "generated_at": "2026-11-04T22:07:31.777Z",
+  "source_updated_at": "2026-11-04T22:07:31.777Z",
+  "title": "Threat Atlas — Status",
+  "state": "Screensaver 0.4.4-rc.1 · Windows MSI + Linux beta published",
+  "summary": "Windows x64 all-users MSI, portable ZIP and Linux x86_64 windowed preview published. Lock-on-resume and browser-downloaded MSI installation remain UNTESTED. No macOS package in this release; Gatekeeper trust remains unresolved.",
+  "release": {
+    "name": "AtlasSOC 0.7.0 beta 1 / build 10",
+    "decision": "PUBLISHED BETA",
+    "published_at": "2026-11-02T21:06:45Z",
+    "url": "https://github.com/ibert-ai/threat-atlas/releases/tag/atlassoc-v0.7.0-beta.1",
+    "downloads": [
+      {
+        "name": "AtlasSOC-macOS-universal-v0.7.0-build10.zip",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/AtlasSOC-macOS-universal-v0.7.0-build10.zip",
+        "sha256": "665af1efd546cdbab9d53265ddd5f7523e1000e479cdb295b1413558d1f86d8c"
+      },
+      {
+        "name": "AtlasSOC-VERIFICATION.json",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/AtlasSOC-VERIFICATION.json",
+        "sha256": "8a62d9804a4e2910fd29f8fbd323444d990d20cfc435bdf9f9b74d6867eb36a0"
+      },
+      {
+        "name": "AtlasSOC-Windows-x64-v0.7.0-build10.zip",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/AtlasSOC-Windows-x64-v0.7.0-build10.zip",
+        "sha256": "866da4052e30eafe7530593d9613db910a6252c59e003b3c886cfc627f2ed0cb"
+      },
+      {
+        "name": "INSTALL-PRIVACY-LIMITS.md",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/INSTALL-PRIVACY-LIMITS.md",
+        "sha256": "1ed35583bede2474e287975ce100af8d330258c0e51cae1ff7817bcf1df6826e"
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/SHA256SUMS.txt",
+        "sha256": "c6275d06ee1ba2e6a08c7394aa57c2534f94f1a8a8a63acca7fadfbff210b5f8"
+      }
+    ]
   },
-  {
-   "status": "checked",
-   "task": "Windows standalone build and native offline smoke"
+  "screensaver": {
+    "name": "0.4.4-rc.1/build12 · Windows MSI + Linux preview",
+    "decision": "PUBLISHED BETA · macOS excluded",
+    "published_at": "2026-11-04T22:07:00Z",
+    "url": "https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.4-rc.1"
   },
-  {
-   "status": "checked",
-   "task": "Universal Mac and consent validation"
+  "tasks": [
+    {
+      "status": "checked",
+      "task": "Combined source and release identity"
+    },
+    {
+      "status": "checked",
+      "task": "Windows standalone build and native offline smoke"
+    },
+    {
+      "status": "checked",
+      "task": "Universal Mac and consent validation"
+    },
+    {
+      "status": "checked",
+      "task": "Versioned docs, privacy, licensing and known limits"
+    },
+    {
+      "status": "checked",
+      "task": "Publish beta and verify assets"
+    },
+    {
+      "status": "pending",
+      "task": "Final installer, trusted signing and wider physical acceptance"
+    }
+  ],
+  "security": {
+    "status": "blocked",
+    "advisory_status": "passed",
+    "known_vulnerabilities": 0,
+    "checked_at": "2026-11-02T12:51:03.622428+00:00"
   },
-  {
-   "status": "checked",
-   "task": "Versioned docs, privacy, licensing and known limits"
-  },
-  {
-   "status": "checked",
-   "task": "Publish beta and verify assets"
-  },
-  {
-   "status": "pending",
-   "task": "Final installer, trusted signing and wider physical acceptance"
+  "wishlist": [],
+  "build": {
+    "name": "Screensaver 0.4.4-rc.1 / build 12",
+    "status": "Published · download verification in progress",
+    "commit": "47fdc290f03b64ceb441f495c6c4fa2a15138677",
+    "url": "https://github.com/ibert-ai/threat-atlas/actions/runs/41920838375",
+    "updated_at": "2026-11-04T22:07:31.777Z",
+    "stages": [
+      {
+        "name": "Source & version checks",
+        "status": "checked"
+      },
+      {
+        "name": "Quality · tests & dependency audit",
+        "status": "checked"
+      },
+      {
+        "name": "Linux build & Xvfb smoke",
+        "status": "checked"
+      },
+      {
+        "name": "Windows tests & build",
+        "status": "checked"
+      },
+      {
+        "name": "MSI structure & installer lifecycle",
+        "status": "checked"
+      },
+      {
+        "name": "Publish Windows + Linux beta",
+        "status": "checked"
+      },
+      {
+        "name": "Verify public downloads",
+        "status": "in_progress"
+      }
+    ]
   }
- ],
- "security": {
-  "status": "blocked",
-  "advisory_status": "passed",
-  "known_vulnerabilities": 0,
-  "checked_at": "2026-11-02T12:51:03.622428+00:00"
- },
- "wishlist": []
 }
