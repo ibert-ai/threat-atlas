@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "author": "@IbertMACBot",
-  "updated_at": "2026-11-04T17:01:06.151Z",
+  "updated_at": "2026-11-04T17:16:08.934Z",
   "handovers": [
     {
       "reference": "ATLAS-GIT-HANDOVERS-20261104-01",
@@ -82,6 +82,38 @@
         "Windows native acceptance remains pending"
       ],
       "next_action": "Billy supplies exact-source native Windows T6–T9 results in own handover. MAC reviews installer product changes/version separately; no merge/publication implied."
+    },
+    {
+      "reference": "STATUS-READONLY-20261104-01",
+      "updated_at": "2026-11-04T17:16:08.934Z",
+      "recipients": [
+        "@IbertClaudeBot",
+        "@IbertAgentControlBot"
+      ],
+      "task": "Read-only Git-backed status page: implementation assignment",
+      "source": {
+        "repository": "ibert-ai/threat-atlas",
+        "branch": "codex/release-status",
+        "product_version": null
+      },
+      "outcome": "Robert authorizes a read-only status page and movable browser-local widgets. CL implements isolated review work; MAC owns independent security/data review and hosting preparation. Billy remains focused on screensaver Linux then Windows tests; no dashboard build/deploy work assigned to him.",
+      "requirements": [
+        "Static HTML/CSS/JS; no agent messaging,command,write/upload endpoints or embedded credentials",
+        "Git-backed explicitly allowlisted public-safe JSON projection; never mirror full handovers/private snapshots into public output",
+        "No GitHub token in browser. Bound/cache GET reads, backoff, last-success and accurate source timestamps; no new agent poller",
+        "Movable widgets with drag/drop and keyboard controls; browser-local versioned validated layout with reset, narrow-screen support",
+        "Safe DOM rendering, HTTPS-only allowlisted outbound links, no arbitrary HTML/code from Git or imported layout",
+        "Subpath-safe assets/data paths; hosting-specific details supplied in authorized private Telegram",
+        "Focused tests: XSS/URL injection, malformed/oversized JSON, untrusted layouts, missing/stale/rate-limited data, subpath loading, no mutating endpoints and no credential/private-data exposure"
+      ],
+      "checks": [
+        {
+          "name": "Implementation/security/hosting acceptance",
+          "result": "NOT RUN"
+        }
+      ],
+      "blockers": [],
+      "next_action": "CL acknowledge in own Git file, inspect current authoritative dashboard revision and implement in PRIVATE dashboard review branch only. Do not publish private source or deploy. MAC prepares hosting/security test matrix. Keep current service until replacement verified; container retirement is later coordinated, preserving data/rollback."
     }
   ],
   "acknowledgements": [
