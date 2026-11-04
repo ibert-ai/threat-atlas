@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "name": "Atlas Linux desktop test schema",
+  "updated_date": "2026-11-04",
+  "owner": "BILLY-BADASS; MAC independently reviews evidence and owns release documentation",
+  "version_policy": {
+    "scope": "Ubuntu test operating system, explicitly clarified by Robert",
+    "primary_environment": "Latest generally available stable Ubuntu Desktop x86_64 at test start; exclude daily, beta, release-candidate and development images",
+    "resolve_before_each_test_cycle": true,
+    "official_sources": ["https://ubuntu.com/download/desktop", "https://releases.ubuntu.com/"],
+    "record_release_and_point_version": true,
+    "record_resolution_timestamp_and_source": true,
+    "fully_update_before_baseline": true,
+    "finish_required_reboots_before_baseline": true,
+    "older_supported_releases": "Separate explicitly identified compatibility cases; never label them latest stable",
+    "latest_stable_on_2026_11_04": "Ubuntu 26.10",
+    "latest_lts_on_2026_11_04": "Ubuntu 26.04.1 LTS",
+    "atlas_target_policy": "Keep the explicitly assigned Atlas candidate; latest-stable OS policy does not silently replace the product under test"
+  },
+  "atlas_target": {
+    "family": "screensaver-family Linux windowed X11/XWayland preview; not AtlasSOC standalone",
+    "release": "v0.4.2-rc.1",
+    "product_version": "0.4.2",
+    "source_commit": "684a63bd4c21428d126f04aa4d3156bdcea232c9",
+    "package": "ThreatAtlas-Linux-0.4.2-x86_64.tar.gz",
+    "sha256": "b526c5b05a92c192179afbf034754ec585e3d866ab62fe98c3bb8ae8fd2f90ce"
+  },
+  "required_environment_evidence": [
+    "Official stable release lookup with timestamp and URL",
+    "Official ISO filename and verified SHA256; record any locally prepared installer separately",
+    "VM name/ID, x86_64 architecture, CPU, RAM, disk and NAT configuration",
+    "Installed /etc/os-release, running kernel, session type and XWayland availability",
+    "Installer ISO detached; guest root filesystem on virtual disk, not overlay/squashfs/tmpfs/casper",
+    "Official package indexes refreshed on installed guest; upgrades successful; no failed package configuration or required pending upgrades",
+    "Required reboot completed and kernel/update state checked after reboot",
+    "Clean powered-off baseline checkpoint ID, name and creation time verified"
+  ],
+  "baseline_gate": {
+    "snapshot_name": "01-Clean-Ubuntu-Updated-Before-Atlas",
+    "requires": ["latest_stable_os_verified", "persistent_disk_boot_verified", "installed_guest_updates_verified", "required_reboots_complete", "clean_guest_shutdown", "checkpoint_exists_verified"],
+    "must_precede": ["Atlas installation", "Project build prerequisites", "Atlas package or source tests"],
+    "preserve_for_rollback": true,
+    "unknown_or_failed_gate": "BLOCKED; do not substitute a pre-install or partially updated snapshot"
+  },
+  "test_cases": [
+    {"id": "anonymous-https-clone", "record": "Exact clone command, checked-out full revision, or full credential-free/TLS-preserving error"},
+    {"id": "published-package", "record": "Verify specified hash, extract, run AppRun as normal guest user; dependency failures and package result"},
+    {"id": "gui", "record": "Map, labels/version, resize/maximize, country shading and expiry; screenshots without credentials/private telemetry"},
+    {"id": "live-feed", "record": "Real changing telemetry over validated TLS; accurate stale/offline behavior through guest disconnect/reconnect; no fake threats"},
+    {"id": "exit-relaunch", "record": "Escape, close, process exit, relaunch and any delayed feed shutdown"},
+    {"id": "exact-source", "record": "Core tests and native Linux build at the assigned commit; record separately from published-package execution"},
+    {"id": "smoke", "record": "--smoke-test; Xvfb acceptable for smoke only"}
+  ],
+  "outcomes": ["PASS", "FAIL", "NOT RUN", "BLOCKED"],
+  "limits": "VM testing does not establish physical Linux hardware, idle/lock integration, GPU or multimonitor acceptance. Sending or receipt of a handoff is not execution or independent verification."
+}
