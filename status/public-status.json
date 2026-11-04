@@ -1,10 +1,10 @@
 {
  "schema_version": 1,
- "generated_at": "2026-11-04T20:14:39.738Z",
- "source_updated_at": "2026-11-04T20:14:39.738Z",
+ "generated_at": "2026-11-04T20:22:15.610Z",
+ "source_updated_at": "2026-11-04T20:22:15.610Z",
  "title": "Threat Atlas — Status",
- "state": "Screensaver 0.4.3-rc.1 beta · macOS + Windows portable published",
- "summary": "Screensaver0.4.3-rc.1/build11 is published for universal macOS and Windows x64 portable,with checksums and documented signing/manual-test limits. Linux remains on its earlier beta with focused acceptance follow-up in issue25. No MSI is included. AtlasSOC0.7.0 standalone beta remains unchanged.",
+ "state": "Screensaver beta · Mac Gatekeeper trust unresolved",
+ "summary": "Screensaver0.4.3-rc.1 Mac package is ad-hoc signed and not notarized:normal quarantined installation is blocked by Gatekeeper. Build/signature integrity checks do not establish Apple trust or install acceptance. Windows portable remains separate;Linux follow-up stays in issue25. Trusted Mac signing/notarization is unresolved.",
  "release": {
   "name": "AtlasSOC 0.7.0 beta 1 / build 10",
   "decision": "PUBLISHED BETA",
