@@ -49,7 +49,7 @@
     "scope": "Portable Windows + universal Mac beta; known trust/hardware/installer limits disclosed"
   },
   "owner_action_required": "No new owner action for publication; beta is published. Follow documented platform trust policy and limitations.",
-  "updated_at": "2026-11-04T19:34:48.167Z",
+  "updated_at": "2026-11-04T20:14:41.419Z",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
@@ -669,117 +669,49 @@
     "main_merge": "b007677eb30f2c336d096b7c98655e8ef8a22b1b"
   },
   "screensaver_release": {
-    "release": "0.4.2-rc.1 / build10 — Windows MSI withdrawn",
-    "decision": "PUBLISHED — MSI WITHDRAWN",
-    "source_commit": "684a63bd4c21428d126f04aa4d3156bdcea232c9",
-    "published_at": "2026-10-31T00:51:21Z",
-    "release_url": "https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.2-rc.1",
-    "downloads": [
+    "release": "0.4.3-rc.1/build11",
+    "decision": "PUBLISHED BETA macOS and Windows portable",
+    "source_commit": "ad56c6d148fbaaf9f0e2dbc33dc52ef6f7e1e584",
+    "published_at": "2026-11-04T20:10:42Z",
+    "release_url": "https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.3-rc.1",
+    "platforms": {
+      "macos": "Fresh universal build,37tests,Clippy,version,signatures,lifecycle and updater security PASS;ad-hoc/unnotarized;physical/idle-lock limits disclosed",
+      "windows": "Exact-source hosted tests/build PASS;artifact digest/ZIP/x64 verification PASS onMAC;portable unsigned,not MSI;new interactive acceptance not claimed",
+      "linux": "Previous0.4.2beta preserved;guest acceptance follow-up issue25,not included"
+    },
+    "assets": [
       {
-        "name": "ThreatAtlas-Linux-0.4.2-x86_64.tar.gz",
-        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.2-rc.1/ThreatAtlas-Linux-0.4.2-x86_64.tar.gz",
-        "sha256": "sha256:b526c5b05a92c192179afbf034754ec585e3d866ab62fe98c3bb8ae8fd2f90ce"
+        "name": "ThreatAtlas-macOS-SHA256SUMS.txt",
+        "sha256": "sha256:8b78fd07df1db137f8e0c737eeb6d5053939cb4f80b6b8ad26142443e83cd47d",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.3-rc.1/ThreatAtlas-macOS-SHA256SUMS.txt"
+      },
+      {
+        "name": "ThreatAtlas-macOS-VERIFICATION.json",
+        "sha256": "sha256:3b690b2dc1d4c6d12c81c917268c52db0b8980da778794b223eb93d31ea0d33b",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.3-rc.1/ThreatAtlas-macOS-VERIFICATION.json"
       },
       {
         "name": "ThreatAtlas-macOS.zip",
-        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.2-rc.1/ThreatAtlas-macOS.zip",
-        "sha256": "sha256:ebf7eec641ec2860efa3b1f6fee0d458af7e47000c332fc5ba6f9aa9e1eeda98"
+        "sha256": "sha256:7e3c59381eb368d66dc81c093664edabbbf066d788d116870f863afc7f483f89",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.3-rc.1/ThreatAtlas-macOS.zip"
       },
       {
-        "name": "ThreatAtlas-source-v0.4.2-rc.1.zip",
-        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.2-rc.1/ThreatAtlas-source-v0.4.2-rc.1.zip",
-        "sha256": "sha256:65bd1a4688097927d1f7637b9bafc255043b68f782a6a4e5600f1c7cb11c589a"
+        "name": "ThreatAtlas-Windows-SHA256SUMS.txt",
+        "sha256": "sha256:2bccc45cfdaaf97b130b6ca9a70b4c1e25fddc53fd03e6123f8640ff43bf899c",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.3-rc.1/ThreatAtlas-Windows-SHA256SUMS.txt"
       },
       {
-        "name": "ThreatAtlas-v0.4.2-rc.1-SHA256SUMS.txt",
-        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.2-rc.1/ThreatAtlas-v0.4.2-rc.1-SHA256SUMS.txt",
-        "sha256": "sha256:f9fcab272a2ceb8d0c1e10b021431f15c35536cefe2c987d21deac6ab67dd618"
+        "name": "ThreatAtlas-Windows-v0.4.3-rc.1.zip",
+        "sha256": "sha256:08bb1ac3ad2cb0b390121dc3ee3d744ff021277031faccdf0a97aafcaa0716a8",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.3-rc.1/ThreatAtlas-Windows-v0.4.3-rc.1.zip"
       },
       {
-        "name": "ThreatAtlas-Windows-v0.4.2-rc.1.zip",
-        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.2-rc.1/ThreatAtlas-Windows-v0.4.2-rc.1.zip",
-        "sha256": "sha256:8607a0c1a1c7dc7fe3ce8dadd06870c8c9f4b1c64bb0e7cb54a363eca637d8ba"
+        "name": "ThreatAtlas-Windows-VERIFICATION.json",
+        "sha256": "sha256:bc4f8d2ac6386cf197cc3f68a2874c403a90bae7ccf5b98345c39a497f20f36e",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.3-rc.1/ThreatAtlas-Windows-VERIFICATION.json"
       }
     ],
-    "tasks": [
-      {
-        "status": "checked",
-        "task": "Owner visual and version approvals",
-        "evidence": "Telegram Desktop verified 20:02 visual and 20:03 version0.4.2-rc.1 approvals",
-        "owner": "@IbertMACBot"
-      },
-      {
-        "status": "checked",
-        "task": "Integration CI baseline",
-        "evidence": "Final main684a63b: all7 quality/macOS/Windows/Linux/updater/MSI/lifecycle gates PASS.",
-        "owner": "@IbertMACBot"
-      },
-      {
-        "status": "checked",
-        "task": "Universal Mac baseline",
-        "evidence": "Exact-main downloaded universal ZIPebf7eec6: Intel+Apple Silicon, signatures/native/updater PASS.",
-        "owner": "@IbertMACBot"
-      },
-      {
-        "status": "checked",
-        "task": "Source/evidence handoff received",
-        "evidence": "Candidate574e22e6 independently checked; final commit684a63b tree identical to reviewed PR14e4dcdc6.",
-        "owner": "@IbertMACBot"
-      },
-      {
-        "status": "checked",
-        "task": "Country highlight regression",
-        "evidence": "Independent13 core tests PASS including>600-record retention and expiry; final hosted core tests PASS.",
-        "owner": "@IbertMACBot"
-      },
-      {
-        "status": "checked",
-        "task": "Missing Windows patch",
-        "evidence": "Scaling patch integrated and source reviewed; final hosted Windows Clippy/tests/build PASS.",
-        "owner": "@IbertMACBot"
-      },
-      {
-        "status": "checked",
-        "task": "Version + MSI upgrade identity",
-        "evidence": "0.4.2-rc.1/build10/MSI0.4.2 version checks PASS; hosted MSI lifecycle PASS; Billy upgrade test remains scoped teammate report.",
-        "owner": "@IbertMACBot"
-      },
-      {
-        "status": "checked",
-        "task": "Final candidate builds + tests",
-        "evidence": "Final main684a63b hosted Windows/Linux/MSI builds and tests PASS. Teammate-only physical limits remain below.",
-        "owner": "@IbertMACBot"
-      },
-      {
-        "status": "checked",
-        "task": "Independent final verification",
-        "evidence": "Exact-main universal Mac: digest,3 dual-architecture binaries, strict signatures, native lifecycle and updater tests PASS.",
-        "owner": "@IbertMACBot"
-      },
-      {
-        "status": "pending",
-        "task": "Final commit + publication",
-        "evidence": "Release remains published; Windows MSI withdrawn after installation issue.5 assets remain; original6-asset verification remains historical.",
-        "owner": "@IbertMACBot"
-      },
-      {
-        "status": "pending",
-        "task": "Physical acceptance and trusted signing",
-        "owner": "Future validation — not owner approval",
-        "evidence": "Idle/lock, multiple monitors/HiDPI, Intel hardware, physical Linux desktop, signed update/rollback and soak remain incomplete; disclosed beta limits."
-      },
-      {
-        "status": "pending",
-        "task": "Next release: Windows installer integration",
-        "owner": "@IbertAgentControlBot",
-        "evidence": "Reproduce real Settings discovery and browser-download workflow; generic guidance in PR15. No next-release version or fix claimed."
-      }
-    ],
-    "approvals": {
-      "visual": "Approved by Robert in Telegram at 20:02 CET",
-      "version": "0.4.2-rc.1 approved by Robert at 20:03 CET",
-      "publication": "Previously authorized after required technical gates pass"
-    }
+    "owner_policy": "Publish OS-by-OS when applicable checks pass;no waiting for another platform;preserve source/version and known limits"
   },
   "main_integration": {
     "pr": 23,
@@ -791,5 +723,120 @@
     "source_tree_identity": "PASS no changed files between published tag source and main merge",
     "auto_merge": "Repository feature disabled; after explicit owner authorization and checks passing, normal guarded merge completed without repository setting changes",
     "rule_bypass": false
-  }
+  },
+  "screensaver_release_history": [
+    {
+      "release": "0.4.2-rc.1 / build10 — Windows MSI withdrawn",
+      "decision": "PUBLISHED — MSI WITHDRAWN",
+      "source_commit": "684a63bd4c21428d126f04aa4d3156bdcea232c9",
+      "published_at": "2026-10-31T00:51:21Z",
+      "release_url": "https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.2-rc.1",
+      "downloads": [
+        {
+          "name": "ThreatAtlas-Linux-0.4.2-x86_64.tar.gz",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.2-rc.1/ThreatAtlas-Linux-0.4.2-x86_64.tar.gz",
+          "sha256": "sha256:b526c5b05a92c192179afbf034754ec585e3d866ab62fe98c3bb8ae8fd2f90ce"
+        },
+        {
+          "name": "ThreatAtlas-macOS.zip",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.2-rc.1/ThreatAtlas-macOS.zip",
+          "sha256": "sha256:ebf7eec641ec2860efa3b1f6fee0d458af7e47000c332fc5ba6f9aa9e1eeda98"
+        },
+        {
+          "name": "ThreatAtlas-source-v0.4.2-rc.1.zip",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.2-rc.1/ThreatAtlas-source-v0.4.2-rc.1.zip",
+          "sha256": "sha256:65bd1a4688097927d1f7637b9bafc255043b68f782a6a4e5600f1c7cb11c589a"
+        },
+        {
+          "name": "ThreatAtlas-v0.4.2-rc.1-SHA256SUMS.txt",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.2-rc.1/ThreatAtlas-v0.4.2-rc.1-SHA256SUMS.txt",
+          "sha256": "sha256:f9fcab272a2ceb8d0c1e10b021431f15c35536cefe2c987d21deac6ab67dd618"
+        },
+        {
+          "name": "ThreatAtlas-Windows-v0.4.2-rc.1.zip",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.2-rc.1/ThreatAtlas-Windows-v0.4.2-rc.1.zip",
+          "sha256": "sha256:8607a0c1a1c7dc7fe3ce8dadd06870c8c9f4b1c64bb0e7cb54a363eca637d8ba"
+        }
+      ],
+      "tasks": [
+        {
+          "status": "checked",
+          "task": "Owner visual and version approvals",
+          "evidence": "Telegram Desktop verified 20:02 visual and 20:03 version0.4.2-rc.1 approvals",
+          "owner": "@IbertMACBot"
+        },
+        {
+          "status": "checked",
+          "task": "Integration CI baseline",
+          "evidence": "Final main684a63b: all7 quality/macOS/Windows/Linux/updater/MSI/lifecycle gates PASS.",
+          "owner": "@IbertMACBot"
+        },
+        {
+          "status": "checked",
+          "task": "Universal Mac baseline",
+          "evidence": "Exact-main downloaded universal ZIPebf7eec6: Intel+Apple Silicon, signatures/native/updater PASS.",
+          "owner": "@IbertMACBot"
+        },
+        {
+          "status": "checked",
+          "task": "Source/evidence handoff received",
+          "evidence": "Candidate574e22e6 independently checked; final commit684a63b tree identical to reviewed PR14e4dcdc6.",
+          "owner": "@IbertMACBot"
+        },
+        {
+          "status": "checked",
+          "task": "Country highlight regression",
+          "evidence": "Independent13 core tests PASS including>600-record retention and expiry; final hosted core tests PASS.",
+          "owner": "@IbertMACBot"
+        },
+        {
+          "status": "checked",
+          "task": "Missing Windows patch",
+          "evidence": "Scaling patch integrated and source reviewed; final hosted Windows Clippy/tests/build PASS.",
+          "owner": "@IbertMACBot"
+        },
+        {
+          "status": "checked",
+          "task": "Version + MSI upgrade identity",
+          "evidence": "0.4.2-rc.1/build10/MSI0.4.2 version checks PASS; hosted MSI lifecycle PASS; Billy upgrade test remains scoped teammate report.",
+          "owner": "@IbertMACBot"
+        },
+        {
+          "status": "checked",
+          "task": "Final candidate builds + tests",
+          "evidence": "Final main684a63b hosted Windows/Linux/MSI builds and tests PASS. Teammate-only physical limits remain below.",
+          "owner": "@IbertMACBot"
+        },
+        {
+          "status": "checked",
+          "task": "Independent final verification",
+          "evidence": "Exact-main universal Mac: digest,3 dual-architecture binaries, strict signatures, native lifecycle and updater tests PASS.",
+          "owner": "@IbertMACBot"
+        },
+        {
+          "status": "pending",
+          "task": "Final commit + publication",
+          "evidence": "Release remains published; Windows MSI withdrawn after installation issue.5 assets remain; original6-asset verification remains historical.",
+          "owner": "@IbertMACBot"
+        },
+        {
+          "status": "pending",
+          "task": "Physical acceptance and trusted signing",
+          "owner": "Future validation — not owner approval",
+          "evidence": "Idle/lock, multiple monitors/HiDPI, Intel hardware, physical Linux desktop, signed update/rollback and soak remain incomplete; disclosed beta limits."
+        },
+        {
+          "status": "pending",
+          "task": "Next release: Windows installer integration",
+          "owner": "@IbertAgentControlBot",
+          "evidence": "Reproduce real Settings discovery and browser-download workflow; generic guidance in PR15. No next-release version or fix claimed."
+        }
+      ],
+      "approvals": {
+        "visual": "Approved by Robert in Telegram at 20:02 CET",
+        "version": "0.4.2-rc.1 approved by Robert at 20:03 CET",
+        "publication": "Previously authorized after required technical gates pass"
+      }
+    }
+  ]
 }
