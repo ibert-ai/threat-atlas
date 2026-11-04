@@ -62,3 +62,10 @@ List confirmed defects, affected versions, issue links and workarounds; identify
 unverified reports and incomplete acceptance separately. Update
 [KNOWN-BUGS.md](KNOWN-BUGS.md) when a fix is verified and name its first released
 version. Do not describe a candidate fix as available in an older download.
+
+## OS-by-OS beta publication —4 November2026
+Robert directs each OS to ship its next beta after applicable checks pass,without waiting for another OS. A release may initially contain only one platform. List included/excluded assets and exact commit/version/test limits explicitly. Add a platform only from the same tagged source with matching metadata and accepted evidence;otherwise use a new version/tag rather than changing source of an existing release. Preserve historical binaries and signing/update restrictions. Old manual workflow remains guarded for0.4.2 and must not be used for this new release;MAC handles reviewed platform-specific publication.
+
+## Stable decision — 4 November 2026
+
+Robert authorizes Windows/Linux stable0.4.5/build13 from the approved0.4.4RC implementation after final exact-source checks. The numeric version advances for new MSI payload identity;prerelease=null. macOS is excluded while Gatekeeper trust is unresolved. Unsigned publication and disclosed manual/hardware test limits remain explicitly accepted;stable status does not manufacture missing results or weaken updater signing enforcement. The earlier prerelease-only checklist applies to previews;this scoped owner decision authorizes this stable publication.

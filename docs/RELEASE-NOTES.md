@@ -1,32 +1,22 @@
-# Threat Atlas SOC 0.4.2-rc.1 — Beta
+# Threat Atlas screensaver 0.4.5 — Stable for Windows and Linux
 
-Beta prerelease, 31 October 2026; product/MSI version 0.4.2, Mac build 10.
-Version 0.4.0 remains the latest stable release. Preserve earlier downloads.
+Product 0.4.5, build 13. Robert approved stable publication on 4 November 2026 after reviewing 0.4.4-rc.1. Application implementation is unchanged from approved RC source 47fdc290f03b64ceb441f495c6c4fa2a15138677; numeric version advances to preserve MSI upgrade identity, and the manifest prerelease is null. Final exact-source checks and package hashes accompany downloads. Older releases and RC1 remain available.
 
-## Changes since 0.4.1-rc.1
+## Included and excluded platforms
 
-- Country borders and classification shading with independent expiry timestamps. High-volume traffic no longer removes an active country highlight when the 600-record recent buffer turns over.
-- Linux x86_64 windowed preview with portable archive packaging and hosted Xvfb smoke checks. This is not an idle screensaver or lock-screen integration.
-- Installed version, prerelease and build displayed in the shared renderer footer.
-- Windows scaling/layout regression coverage and MSI ProductVersion 0.4.2 for a distinct upgrade identity.
-- Retains live GreyNoise telemetry, certificate-validated TLS, clocks, native Mac lifecycle repairs and screenshot thumbnails.
+Windows 10/11 x64: all-users MSI and portable ZIP. Linux x86_64: windowed X11/XWayland preview, without idle screensaver or lock-screen integration. No macOS package: normal quarantined installation remains blocked by Gatekeeper; trusted signing/notarization is unresolved. Stable does not imply trusted publisher signing or universal platform acceptance.
 
-## Signing and updates
+## Windows installation and updates
 
-Windows SCR/MSI are unsigned. Mac bundles contain Intel and Apple Silicon slices and are ad-hoc signed, not Developer ID signed or notarized. OS warnings or blocking may occur; do not disable protections. Automatic updates reject unsigned packages and ignore prereleases. Install manually. Linux is an unsigned application preview.
+The MSI installs one x64 SCR into System32, documents into Program Files and three Start Menu items. Check the checksum and approve the administrator prompt. Manual System32 copying requires **Run as administrator**; routine screensaver execution does not. Uninstall the older per-user install first; the MSI refuses overlap. Automatic updates are absent from the all-users MSI pending a reviewed redesign; use verified manual packages. Windows binaries remain unsigned.
 
-## Verification and limits
+## Known bugs and test limits
 
-Publication requires quality/core tests, universal Mac build/native lifecycle/updater checks, Windows tests/build, Linux build/Xvfb smoke, MSI packaging and MSI lifecycle checks on the published source commit. Download checksums accompany all packages. Earlier-commit checks do not establish final-source acceptance.
+- Lock-on-resume and installation from a browser-downloaded MSI, including Zone.Identifier/SmartScreen behavior, remain UNTESTED. The owner explicitly accepts release with these notes.
+- Native Settings listing, small/full preview and one-minute idle start are owner-reported for the earlier MSI candidate. Layout, real per-user refusal and uninstall were checked by the testing agent. These are prior-candidate results, not fresh 0.4.5 native runs.
+- Between-version installer upgrade and post-uninstall Settings state remain untested.
+- Linux prior-source retests passed bounded Xvfb smoke, measured resize and held Escape. Owner manual GNOME XWayland resize/Escape passed. Very short Escape taps can be missed because key state is polled per frame. Earlier smoke timeout was not reproduced; its cause remains unconfirmed.
+- Physical GPU, multimonitor, broad desktop/hardware and soak acceptance remain untested. Linux is a windowed viewer, not idle/lock integration.
+- OS DNS resolution can delay feed-worker shutdown. No immediate-zero-background-traffic guarantee is made.
 
-Billy reports Windows and Linux candidate tests and 0.4.1-to-0.4.2 MSI upgrade/replacement/uninstall passed on source574e22e6. MAC independently passed13 core tests, formatting, Clippy, version tests, native Apple Silicon packaging/signatures, native saver lifecycle and offline updater safety on that source. Hosted final-source results must pass before publication.
-
-Physical Intel Mac and Linux desktop acceptance, Windows interactive Settings, idle/lock transitions, multiple monitors/HiDPI, signed upgrade/rollback and extended soak remain incomplete. Visual approval does not imply those unrun tests passed. Linux Xvfb smoke is not physical desktop validation. See docs/QUALITY.md.
-
-## Known bugs
-
-- OS DNS resolution can delay feed-worker shutdown; immediate termination and zero background traffic after stopping are not guaranteed.
-- A legacy Mac0.2 saver may remain selected after upgrade and show a blank preview. Select Threat Atlas SOC, back up duplicate legacy bundles and reopen System Settings.
-- Signing and physical acceptance gaps above remain limitations. No trusted automatic-update support is claimed for this beta.
-
-Use the per-user Windows MSI, universal Mac ZIP or Linux application archive. Keep known-working stable0.4.0 available. Source commit and Mac build are appended by the exact-commit publication job.
+No simulated threats or TLS validation bypasses. Displayed records are real provider receipts, not verified unique attacks.

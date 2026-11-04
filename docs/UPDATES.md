@@ -35,7 +35,7 @@ transaction rollback. A Mac update takes effect on the next saver launch.
   Authenticode signatures and pins the installed SCR's signing public key.
   A changed signing key requires a manual trusted upgrade, even when the publisher
   name stays the same. Update MSI ProductVersion and DocsVersion every release;
-  keep the UpgradeCode and per-user installation path.
+  keep the UpgradeCode.
 - Mac asset: `ThreatAtlas-macOS.zip`, containing `ThreatAtlasSOC.saver` and
   `Threat Atlas SOC.app` with the embedded updater. Both bundle versions must
   match the release tag. Sign nested components before the app using a Developer
@@ -49,7 +49,7 @@ transaction rollback. A Mac update takes effect on the next saver launch.
 
 ## Status and removal
 
-Windows: `%LOCALAPPDATA%\ThreatAtlas\update-status.txt`. Use **Disable automatic
+Windows: `%LOCALAPPDATA%\ThreatAtlas\update-status.txt`. The all-users MSI does not install the updater or its Start Menu items: the updater runs per-user and cannot replace a per-machine install, so Windows automatic updates need a redesign before a signed release. Use **Disable automatic
 updates** before uninstalling. If omitted, the orphaned task removes itself at
 its next run when it finds the saver absent.
 
