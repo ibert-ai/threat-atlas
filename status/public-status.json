@@ -1,0 +1,80 @@
+{
+ "schema_version": 1,
+ "generated_at": "2026-11-04T17:52:07.651035+00:00",
+ "source_updated_at": "2026-11-04T17:23:27.282309+00:00",
+ "title": "Threat Atlas — Status",
+ "state": "Published beta · screensaver platform tests pending",
+ "summary": "AtlasSOC 0.7.0 beta1/build10 remains published. Independent Mac checks passed on MSI review source 773a1062d270. Billy reports supplemental WSL checks passed; Hyper-V application and native Windows installer acceptance remain pending. Test receipts are separate from release acceptance.",
+ "release": {
+  "name": "AtlasSOC 0.7.0 beta 1 / build 10",
+  "decision": "PUBLISHED BETA",
+  "published_at": "2026-11-02T21:06:45Z",
+  "url": "https://github.com/ibert-ai/threat-atlas/releases/tag/atlassoc-v0.7.0-beta.1",
+  "downloads": [
+   {
+    "name": "AtlasSOC-macOS-universal-v0.7.0-build10.zip",
+    "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/AtlasSOC-macOS-universal-v0.7.0-build10.zip",
+    "sha256": "665af1efd546cdbab9d53265ddd5f7523e1000e479cdb295b1413558d1f86d8c"
+   },
+   {
+    "name": "AtlasSOC-VERIFICATION.json",
+    "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/AtlasSOC-VERIFICATION.json",
+    "sha256": "8a62d9804a4e2910fd29f8fbd323444d990d20cfc435bdf9f9b74d6867eb36a0"
+   },
+   {
+    "name": "AtlasSOC-Windows-x64-v0.7.0-build10.zip",
+    "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/AtlasSOC-Windows-x64-v0.7.0-build10.zip",
+    "sha256": "866da4052e30eafe7530593d9613db910a6252c59e003b3c886cfc627f2ed0cb"
+   },
+   {
+    "name": "INSTALL-PRIVACY-LIMITS.md",
+    "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/INSTALL-PRIVACY-LIMITS.md",
+    "sha256": "1ed35583bede2474e287975ce100af8d330258c0e51cae1ff7817bcf1df6826e"
+   },
+   {
+    "name": "SHA256SUMS.txt",
+    "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/SHA256SUMS.txt",
+    "sha256": "c6275d06ee1ba2e6a08c7394aa57c2534f94f1a8a8a63acca7fadfbff210b5f8"
+   }
+  ]
+ },
+ "screensaver": {
+  "name": "0.4.2-rc.1 / build10 — Windows MSI withdrawn",
+  "decision": "PUBLISHED — MSI WITHDRAWN",
+  "published_at": "2026-10-31T00:51:21Z",
+  "url": "https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.2-rc.1"
+ },
+ "tasks": [
+  {
+   "status": "checked",
+   "task": "Combined source and release identity"
+  },
+  {
+   "status": "checked",
+   "task": "Windows standalone build and native offline smoke"
+  },
+  {
+   "status": "checked",
+   "task": "Universal Mac and consent validation"
+  },
+  {
+   "status": "checked",
+   "task": "Versioned docs, privacy, licensing and known limits"
+  },
+  {
+   "status": "checked",
+   "task": "Publish beta and verify assets"
+  },
+  {
+   "status": "pending",
+   "task": "Final installer, trusted signing and wider physical acceptance"
+  }
+ ],
+ "security": {
+  "status": "blocked",
+  "advisory_status": "passed",
+  "known_vulnerabilities": 0,
+  "checked_at": "2026-11-02T12:51:03.622428+00:00"
+ },
+ "wishlist": []
+}
