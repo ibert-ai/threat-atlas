@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-04T22:30:45.620Z",
-  "source_updated_at": "2026-11-04T22:30:45.620Z",
-  "title": "Threat Atlas — Status",
+  "generated_at": "2026-11-04T22:43:13.287Z",
+  "source_updated_at": "2026-11-04T22:43:13.287Z",
+  "title": "Atlas — Project status",
   "state": "Screensaver 0.4.5 stable · Windows + Linux",
   "summary": "Owner-approved stable0.4.5/build13 published. All7 exact-source baseline checks and all7 public download verifications PASS. Windows MSI/ZIP and Linux windowed preview included. macOS excluded pending Gatekeeper trust. Signing and accepted manual test limits remain documented.",
   "release": {
@@ -189,6 +189,110 @@
         "name": "SHA256SUMS.txt",
         "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/SHA256SUMS.txt",
         "sha256": "c6275d06ee1ba2e6a08c7394aa57c2534f94f1a8a8a63acca7fadfbff210b5f8"
+      }
+    ]
+  },
+  "desktop": {
+    "name": "AtlasSOC Desktop",
+    "state": "Next version · requirements assigned",
+    "summary": "Published Desktop beta remains available for Windows and macOS. Next work preserves current features and accounts for stable screensaver0.4.5 changes, with Windows implementation and testing first. No next Desktop build or release is claimed; Linux Desktop is a later phase.",
+    "updated_at": "2026-11-04T22:43:13.287Z",
+    "release": {
+      "name": "AtlasSOC 0.7.0 beta 1 / build 10",
+      "decision": "PUBLISHED BETA",
+      "published_at": "2026-11-02T21:06:45Z",
+      "url": "https://github.com/ibert-ai/threat-atlas/releases/tag/atlassoc-v0.7.0-beta.1",
+      "downloads": [
+        {
+          "name": "ThreatAtlas-0.4.4-x64.msi",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.4-rc.1/ThreatAtlas-0.4.4-x64.msi",
+          "sha256": "015f451bb3f56adcc23ebcc8c4dec9ac4bc6fdaf15e53910272820d5f531b500"
+        },
+        {
+          "name": "ThreatAtlas-Linux-0.4.4-x86_64.tar.gz",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.4-rc.1/ThreatAtlas-Linux-0.4.4-x86_64.tar.gz",
+          "sha256": "1fb709e11ca8a9e4cd23362a1c5d48898454d83da3454ac97d5e88e60279e205"
+        },
+        {
+          "name": "ThreatAtlas-Linux-SHA256SUMS.txt",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.4-rc.1/ThreatAtlas-Linux-SHA256SUMS.txt",
+          "sha256": "0d218e9cfae191c786bc71ec87d566e4195cb8dc83672d29c4b9cf682126c7be"
+        },
+        {
+          "name": "ThreatAtlas-Linux-VERIFICATION.json",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.4-rc.1/ThreatAtlas-Linux-VERIFICATION.json",
+          "sha256": "9fb4b6cda02f86cf1e3b43ca9149fc3c91074150441e9871294432aae986a60f"
+        },
+        {
+          "name": "ThreatAtlas-Windows-SHA256SUMS.txt",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.4-rc.1/ThreatAtlas-Windows-SHA256SUMS.txt",
+          "sha256": "8f995a6fea2856583e00e265303f28bc1d859fd36b71a6b830006472e8340dcd"
+        },
+        {
+          "name": "ThreatAtlas-Windows-v0.4.4-rc.1.zip",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.4-rc.1/ThreatAtlas-Windows-v0.4.4-rc.1.zip",
+          "sha256": "855bfbbd3811c73d25e830253b52eeadac5f65ecd81b5801177355512ef7a5bc"
+        },
+        {
+          "name": "ThreatAtlas-Windows-VERIFICATION.json",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.4-rc.1/ThreatAtlas-Windows-VERIFICATION.json",
+          "sha256": "1218fb3bdb338a6837b311e335a3a5188882e445abbfc97a2b35121b961dd2a0"
+        },
+        {
+          "name": "AtlasSOC-macOS-universal-v0.7.0-build10.zip",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/AtlasSOC-macOS-universal-v0.7.0-build10.zip",
+          "sha256": "665af1efd546cdbab9d53265ddd5f7523e1000e479cdb295b1413558d1f86d8c"
+        },
+        {
+          "name": "AtlasSOC-VERIFICATION.json",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/AtlasSOC-VERIFICATION.json",
+          "sha256": "8a62d9804a4e2910fd29f8fbd323444d990d20cfc435bdf9f9b74d6867eb36a0"
+        },
+        {
+          "name": "AtlasSOC-Windows-x64-v0.7.0-build10.zip",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/AtlasSOC-Windows-x64-v0.7.0-build10.zip",
+          "sha256": "866da4052e30eafe7530593d9613db910a6252c59e003b3c886cfc627f2ed0cb"
+        },
+        {
+          "name": "INSTALL-PRIVACY-LIMITS.md",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/INSTALL-PRIVACY-LIMITS.md",
+          "sha256": "1ed35583bede2474e287975ce100af8d330258c0e51cae1ff7817bcf1df6826e"
+        },
+        {
+          "name": "SHA256SUMS.txt",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/SHA256SUMS.txt",
+          "sha256": "c6275d06ee1ba2e6a08c7394aa57c2534f94f1a8a8a63acca7fadfbff210b5f8"
+        }
+      ]
+    },
+    "tasks": [
+      {
+        "task": "Stable-to-Desktop feature and source audit",
+        "status": "checked"
+      },
+      {
+        "task": "Preserve every existing Desktop function",
+        "status": "pending"
+      },
+      {
+        "task": "Correct Desktop version/build shown in the main view",
+        "status": "pending"
+      },
+      {
+        "task": "Windows installer: Just me/Everyone and shortcut choices",
+        "status": "pending"
+      },
+      {
+        "task": "Windows scaling, settings and installer lifecycle tests",
+        "status": "pending"
+      },
+      {
+        "task": "Review existing macOS Radar startup fix",
+        "status": "pending"
+      },
+      {
+        "task": "Linux Desktop in a later OS phase",
+        "status": "pending"
       }
     ]
   }
