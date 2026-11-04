@@ -1,7 +1,68 @@
 {
   "schema_version": 1,
   "author": "@IbertClaudeBot",
-  "updated_at": "2026-11-04T16:17:15.061Z",
-  "handovers": [],
-  "acknowledgements": []
+  "updated_at": "2026-11-04T16:21:09.000Z",
+  "handovers": [
+    {
+      "reference": "ATLAS-CL-MSI-20261104-01",
+      "updated_at": "2026-11-04T16:21:09.000Z",
+      "author": "@IbertClaudeBot",
+      "recipients": [
+        "@IbertAgentControlBot",
+        "@IbertMACBot"
+      ],
+      "task": "Screensaver MSI investigation: first findings and native Windows test request (ATLAS-MSI-CL-20261104-01)",
+      "source": {
+        "repository": "ibert-ai/threat-atlas",
+        "branch": "main",
+        "commit": "b007677eb30f2c336d096b7c98655e8ef8a22b1b",
+        "affected_release": "v0.4.2-rc.1",
+        "affected_source": "684a63bd4c21428d126f04aa4d3156bdcea232c9",
+        "product_version": "0.4.2-rc.1"
+      },
+      "outcome": "First-pass source read only. No code changed and no fix claimed. Leading fit, not a confirmed root cause: the MSI installs only under the per-user LocalAppData folder, outside the system folders Screen Saver Settings is documented to list.",
+      "checks": [
+        {
+          "name": "Installer, setup shortcut, updater and MSI test sources read",
+          "result": "PASS",
+          "limits": "Static read on macOS; proves nothing about Windows runtime."
+        },
+        {
+          "name": "SCR argument handling (/s, /p, /c) read",
+          "result": "PASS",
+          "limits": "Looks correct in source; not run."
+        },
+        {
+          "name": "MSI test coverage",
+          "result": "FAIL",
+          "limits": "scripts/test-msi.ps1 does not run the setup shortcut, read the Settings list, or test preview or idle start."
+        },
+        {
+          "name": "Native Windows behaviour",
+          "result": "NOT RUN",
+          "limits": "Requires the tests in next_action."
+        }
+      ],
+      "blockers": [
+        "No native Windows evidence yet. Any per-machine MSI also needs an owner decision on elevation and on an unsigned file in a system folder."
+      ],
+      "next_action": "Billy: on a disposable clean Windows 10/11 x64 machine, test the v0.4.2-rc.1 packages. T1 install MSI and open Screen Saver Settings without the shortcut: is ThreatAtlas listed? T2 run the setup shortcut: record HKCU Control Panel Desktop SCRNSAVE.EXE, listing, preview, idle start; select another saver and reopen: still listed? T3 right-click Install from an extracted ZIP: same records, does Windows copy or reference the file, what happens if the source folder moves? T4 x64 SCR in System32 only, then SysWOW64 only, then both: listing, preview, idle start for each. T5 Zone.Identifier state for each route. Report package SHA-256, Windows build, recorded values, screenshots and limits in billy.json. Preserve idle, lock and password settings and Windows protections. Do not implement a fix; CL owns source. MAC: review after evidence."
+    }
+  ],
+  "acknowledgements": [
+    {
+      "reference": "ATLAS-GIT-HANDOVERS-20261104-01",
+      "observed_commit": "ea00289863abf1ed53465092882760e8fbf4ef76",
+      "received_at": "2026-11-04T16:21:09.000Z",
+      "state": "received",
+      "note": "Owner approved this write in chat. Read through Telegram Desktop; @IbertClaudeBot does not receive group messages."
+    },
+    {
+      "reference": "ATLAS-MSI-CL-20261104-01",
+      "observed_commit": "ea00289863abf1ed53465092882760e8fbf4ef76",
+      "received_at": "2026-11-04T16:21:09.000Z",
+      "state": "in_progress",
+      "note": "Source investigation started. Scope: existing Windows screensaver MSI only."
+    }
+  ]
 }
