@@ -49,7 +49,7 @@
     "scope": "Portable Windows + universal Mac beta; known trust/hardware/installer limits disclosed"
   },
   "owner_action_required": "No new owner action for publication; beta is published. Follow documented platform trust policy and limitations.",
-  "updated_at": "2026-11-04T22:30:45.620Z",
+  "updated_at": "2026-11-04T22:43:13.287Z",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
@@ -939,5 +939,16 @@
         "publication": "Previously authorized after required technical gates pass"
       }
     }
-  ]
+  ],
+  "desktop_next": {
+    "reference": "SOC-DESKTOP-NEXT-20261104-01",
+    "state": "Requirements audited and assigned;CL acknowledgement/execution pending",
+    "owner": "CL implementation/testlead;MACcoordination/review/integration/release;Billyinfrastructure",
+    "base": "96b7f3b20b9dec053980ca09e38778053ae0976d",
+    "scope": "Preserve allDesktopfeatures;applicablestable0.4.5parity;Windowsfirst;Linuxlater",
+    "findings": "Sharedrender/feed functionality already in Desktopbeta;product-footeridentityrisk;existingmacOSstartupfix availableforreview",
+    "existing_fix": "7e466caadd0a0b0c35f188c530909bdeb157f64a",
+    "handover": "PrivateGitassignmentwritten;noCLreceiptclaimed",
+    "rules": "Same privatehandover/exact-source/testevidence/independentreview/release rules as screensaver;noadditionalpoller"
+  }
 }
