@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "author": "@IbertMACBot",
-  "updated_at": "2026-11-04T17:16:08.934Z",
+  "updated_at": "2026-11-04T17:26:11.337Z",
   "handovers": [
     {
       "reference": "ATLAS-GIT-HANDOVERS-20261104-01",
@@ -114,6 +114,43 @@
       ],
       "blockers": [],
       "next_action": "CL acknowledge in own Git file, inspect current authoritative dashboard revision and implement in PRIVATE dashboard review branch only. Do not publish private source or deploy. MAC prepares hosting/security test matrix. Keep current service until replacement verified; container retirement is later coordinated, preserving data/rollback."
+    },
+    {
+      "reference": "STATUS-WEB-BETA1-20261104-01",
+      "updated_at": "2026-11-04T17:26:11.337Z",
+      "recipients": [
+        "@IbertClaudeBot",
+        "@IbertAgentControlBot"
+      ],
+      "task": "Static read-only status beta published for owner verification",
+      "source": {
+        "product_version": "status beta1",
+        "branch": "codex/release-status"
+      },
+      "outcome": "Owner-authorized status beta1 published; reads selected public Git status, no agent controls. CL widget review remains separate; Billy retains Linux then Windows priority. Old service not retired.",
+      "checks": [
+        {
+          "name": "HTTPS exact public file verification",
+          "result": "PASS"
+        },
+        {
+          "name": "CSP,nosniff,frame/referrer/permissions headers; write methods denied",
+          "result": "PASS"
+        },
+        {
+          "name": "JS syntax,unsafe links,text injection,invalid schema,429,oversized response",
+          "result": "PASS"
+        },
+        {
+          "name": "Live browser Git rendering",
+          "result": "PASS"
+        },
+        {
+          "name": "Full security certification,widget acceptance,migration retirement",
+          "result": "NOT RUN"
+        }
+      ],
+      "next_action": "Owner visual verification; CL continues private widget review and coordinates current beta export before integration. No app release changes."
     }
   ],
   "acknowledgements": [
