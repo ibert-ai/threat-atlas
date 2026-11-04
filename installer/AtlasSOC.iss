@@ -4,7 +4,7 @@
 #define UninstallKey "Software\Microsoft\Windows\CurrentVersion\Uninstall\{" + AppGuid + "}_is1"
 
 [Setup]
-AppId={{#AppGuid}
+AppId={{{#AppGuid}}
 AppName=AtlasSOC
 AppVersion={#AppVersion}
 AppVerName=AtlasSOC {#AppVersion} (build {#AppBuild})
@@ -62,7 +62,7 @@ begin
     Root := HKCU
   else
     Root := HKLM64;
-  Result := RegKeyExists(Root, ExpandConstant('{#UninstallKey}'));
+  Result := RegKeyExists(Root, '{#UninstallKey}');
 end;
 
 function InitializeSetup(): Boolean;
