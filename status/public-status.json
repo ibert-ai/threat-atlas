@@ -1,10 +1,10 @@
 {
  "schema_version": 1,
- "generated_at": "2026-11-04T17:52:07.651035+00:00",
- "source_updated_at": "2026-11-04T17:23:27.282309+00:00",
+ "generated_at": "2026-11-04T19:34:44.847Z",
+ "source_updated_at": "2026-11-04T19:24:55.147157+00:00",
  "title": "Threat Atlas — Status",
- "state": "Published beta · screensaver platform tests pending",
- "summary": "AtlasSOC 0.7.0 beta1/build10 remains published. Independent Mac checks passed on MSI review source 773a1062d270. Billy reports supplemental WSL checks passed; Hyper-V application and native Windows installer acceptance remain pending. Test receipts are separate from release acceptance.",
+ "state": "Published beta · Linux acceptance needs follow-up",
+ "summary": "AtlasSOC 0.7.0 beta1/build10 remains published. Screensaver Linux VM tests have run: source/build and package identity checks are reported passed, but smoke timeout, resize proof and Escape-exit checks need focused follow-up. Linux acceptance remains on hold. Native Windows installer acceptance is still pending.",
  "release": {
   "name": "AtlasSOC 0.7.0 beta 1 / build 10",
   "decision": "PUBLISHED BETA",
