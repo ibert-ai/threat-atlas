@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-11-04T17:01:06.151Z",
+  "handovers": [
+    {
+      "reference": "ATLAS-MAC-MSI-TESTS-20261104-01",
+      "updated_at": "2026-11-04T17:01:06.151Z",
+      "source": {
+        "commit": "773a1062d2704508a9384e603b5bb6d9f3fcb35c"
+      },
+      "outcome": "Fresh local universal Mac build and focused regression checks PASS. Mac/core/build sources unchanged versus b007677e. Test package only; published releases untouched.",
+      "checks": [
+        {
+          "name": "Workspace tests",
+          "result": "PASS",
+          "evidence": "37 passed:32 core+5 helper tests on macOS;0 failed"
+        },
+        {
+          "name": "fmt/Clippy/version/source scan",
+          "result": "PASS",
+          "limits": "Pattern scan is not a complete security audit"
+        },
+        {
+          "name": "Fresh universal build,strict signatures,archive verification",
+          "result": "PASS",
+          "evidence": "Saver/updater/preview each arm64+x86_64; ZIP SHA256 9060eab9b13c11994cd6cd85fdc34226ed7649e79792ca8d8bb01cd9c07c72ed"
+        },
+        {
+          "name": "Offline updater version/archive security",
+          "result": "PASS"
+        },
+        {
+          "name": "Native CheckSaver lifecycle",
+          "result": "PASS",
+          "evidence": "Bundle load,initial rendering,preview/full-screen views and stop/restart"
+        },
+        {
+          "name": "Physical Intel,System Settings install,real idle/lock,new live-feed acceptance",
+          "result": "NOT RUN"
+        },
+        {
+          "name": "Native Windows installer acceptance",
+          "result": "NOT RUN",
+          "limits": "Billy-owned; Mac checks cannot validate MSI behavior"
+        }
+      ]
+    }
+  ]
+}
