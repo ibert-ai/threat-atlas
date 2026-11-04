@@ -49,11 +49,11 @@
     "scope": "Portable Windows + universal Mac beta; known trust/hardware/installer limits disclosed"
   },
   "owner_action_required": "No new owner action for publication; beta is published. Follow documented platform trust policy and limitations.",
-  "updated_at": "2026-11-04T22:13:07.606Z",
+  "updated_at": "2026-11-04T22:30:45.620Z",
   "schema_version": 1,
   "updated_by": "@IbertMACBot",
   "source": "GitHub codex/release-status / status/mac.json; owner approvals originate in Telegram",
-  "current_task": "Screensaver0.4.4-rc.1 Windows MSI/ZIP + Linux beta published;all7CI gates and all7HTTPS asset checks PASS. Status beta4 adds build stages and persisted page reload options Never/5/10/30min.",
+  "current_task": "Owner-approved screensaver0.4.5stable/build13 PUBLISHED Latest,sourcece986195;all7CI41924443584 and7HTTPS asset verifications PASS;mainintegratedPR28/96b7f3b2",
   "active_pr": 23,
   "source_commit": "2260a27c0fa103227626387d2c3ca88b2b4a5c6d",
   "workflow_run": 41523890988,
@@ -91,7 +91,7 @@
     "documentation_pr": 15,
     "windows_owner": "@IbertAgentControlBot",
     "mac_owner": "@IbertMACBot",
-    "status": "Corrected screensaver MSI published in0.4.4-rc.1;previous withdrawn0.4.2 artifact remains withdrawn",
+    "status": "Owner-approved0.4.5stable published;olderRCandwithdrawn0.4.2artifactsremainhistorical",
     "items": [
       "Interactive Windows screensaver installation/discovery",
       "Browser-downloaded SCR/ZIP trust handling and clearer installation instructions"
@@ -115,7 +115,7 @@
       "implementation_owner": "@IbertClaudeBot",
       "windows_test_support": "@IbertAgentControlBot",
       "coordinator": "@IbertMACBot",
-      "status": "Delivered,reviewed and published in0.4.4-rc.1 with explicit limits",
+      "status": "Delivered/reviewed/nowstable0.4.5",
       "base_commit": "b007677eb30f2c336d096b7c98655e8ef8a22b1b",
       "scope": "Existing withdrawn screensaver MSI path/registration investigation and fix proposal; not a new standalone installer",
       "review_branch": "codex/claude-windows-msi",
@@ -669,51 +669,58 @@
     "main_merge": "b007677eb30f2c336d096b7c98655e8ef8a22b1b"
   },
   "screensaver_release": {
-    "release": "0.4.4-rc.1/build12",
-    "decision": "PUBLISHED BETA Windows MSI/ZIP and Linux preview",
-    "source_commit": "47fdc290f03b64ceb441f495c6c4fa2a15138677",
-    "published_at": "2026-11-04T22:07:07Z",
-    "release_url": "https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.4-rc.1",
+    "release": "0.4.5stable/build13",
+    "decision": "PUBLISHED STABLE · Latest",
+    "source_commit": "ce986195d57237dc27a77b2d2161a50eb3127346",
+    "published_at": "2026-11-04T22:29:58Z",
+    "release_url": "https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.5",
     "assets": [
       {
-        "name": "ThreatAtlas-0.4.4-x64.msi",
-        "sha256": "sha256:015f451bb3f56adcc23ebcc8c4dec9ac4bc6fdaf15e53910272820d5f531b500",
-        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.4-rc.1/ThreatAtlas-0.4.4-x64.msi"
+        "name": "ThreatAtlas-0.4.5-x64.msi",
+        "sha256": "sha256:709a6f6467c5ddf2cd58e6d183afcde36a241918ec344ed7f69925ac040ff91a",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.5/ThreatAtlas-0.4.5-x64.msi"
       },
       {
-        "name": "ThreatAtlas-Linux-0.4.4-x86_64.tar.gz",
-        "sha256": "sha256:1fb709e11ca8a9e4cd23362a1c5d48898454d83da3454ac97d5e88e60279e205",
-        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.4-rc.1/ThreatAtlas-Linux-0.4.4-x86_64.tar.gz"
+        "name": "ThreatAtlas-Linux-0.4.5-x86_64.tar.gz",
+        "sha256": "sha256:388edc530a70109dc695929a6698984980d0f9586050f36036112cf6bba21235",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.5/ThreatAtlas-Linux-0.4.5-x86_64.tar.gz"
       },
       {
         "name": "ThreatAtlas-Linux-SHA256SUMS.txt",
-        "sha256": "sha256:0d218e9cfae191c786bc71ec87d566e4195cb8dc83672d29c4b9cf682126c7be",
-        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.4-rc.1/ThreatAtlas-Linux-SHA256SUMS.txt"
+        "sha256": "sha256:781ce089868f86087ccddfabf63c0d89e469a84c29d63161ea123566a2912803",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.5/ThreatAtlas-Linux-SHA256SUMS.txt"
       },
       {
         "name": "ThreatAtlas-Linux-VERIFICATION.json",
-        "sha256": "sha256:9fb4b6cda02f86cf1e3b43ca9149fc3c91074150441e9871294432aae986a60f",
-        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.4-rc.1/ThreatAtlas-Linux-VERIFICATION.json"
+        "sha256": "sha256:30794c46b4724e07297362b2bf113f23be96492f56206a474fab7be022560a12",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.5/ThreatAtlas-Linux-VERIFICATION.json"
       },
       {
         "name": "ThreatAtlas-Windows-SHA256SUMS.txt",
-        "sha256": "sha256:8f995a6fea2856583e00e265303f28bc1d859fd36b71a6b830006472e8340dcd",
-        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.4-rc.1/ThreatAtlas-Windows-SHA256SUMS.txt"
+        "sha256": "sha256:064bb6cf9cca283d147e1df8c485a9d83d79e69cafe4d24fd39cd6c6f6a99612",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.5/ThreatAtlas-Windows-SHA256SUMS.txt"
       },
       {
-        "name": "ThreatAtlas-Windows-v0.4.4-rc.1.zip",
-        "sha256": "sha256:855bfbbd3811c73d25e830253b52eeadac5f65ecd81b5801177355512ef7a5bc",
-        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.4-rc.1/ThreatAtlas-Windows-v0.4.4-rc.1.zip"
+        "name": "ThreatAtlas-Windows-v0.4.5.zip",
+        "sha256": "sha256:bfc2131b359e251ee1f728da8b39379e35f735ad7bfa982883ea8c518b68de1b",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.5/ThreatAtlas-Windows-v0.4.5.zip"
       },
       {
         "name": "ThreatAtlas-Windows-VERIFICATION.json",
-        "sha256": "sha256:1218fb3bdb338a6837b311e335a3a5188882e445abbfc97a2b35121b961dd2a0",
-        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.4-rc.1/ThreatAtlas-Windows-VERIFICATION.json"
+        "sha256": "sha256:d8cf4f70ee82083f9218b870561f424986072ca153435fd350ea23b2a880198f",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.5/ThreatAtlas-Windows-VERIFICATION.json"
       }
     ],
-    "limits": "macOS excluded;unsigned Windows;lock-on-resume/browser-downloaded installation UNTESTED,owner accepts notes. Native prior-candidate evidence attributed;no MAC guest rerun.",
-    "ci_run": 41920838375,
-    "verification": "All7 checks PASS;all7 published assets HTTPS200 exact-byte matched"
+    "ci_run": 41924443584,
+    "main_merge": "96b7f3b20b9dec053980ca09e38778053ae0976d",
+    "verification": "7baselinechecksPASS;WindowsSOCregressionPASS;fresh37localtestsPASS;all7downloadsHTTPS200exact-bytePASS",
+    "platforms": {
+      "windows": "x64 MSI and portableZIP,unsigned;manualtestlimitsdisclosed",
+      "linux": "x86_64windowedX11/XWaylandpreview;noidle-lockintegration",
+      "macos": "Excluded;Gatekeepertrustunresolved"
+    },
+    "owner_decision": "Stableauthorized4November2026;lock-on-resume/browser-downloadedMSI remainUNTESTED",
+    "limits": "Prior-native evidence attributed;betweenversionupgrade/postuninstallSettings/physicalGPU/multimonitor/soaknotrun"
   },
   "main_integration": {
     "pr": 23,
@@ -727,6 +734,53 @@
     "rule_bypass": false
   },
   "screensaver_release_history": [
+    {
+      "release": "0.4.4-rc.1/build12",
+      "decision": "PUBLISHED BETA Windows MSI/ZIP and Linux preview",
+      "source_commit": "47fdc290f03b64ceb441f495c6c4fa2a15138677",
+      "published_at": "2026-11-04T22:07:07Z",
+      "release_url": "https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.4-rc.1",
+      "assets": [
+        {
+          "name": "ThreatAtlas-0.4.4-x64.msi",
+          "sha256": "sha256:015f451bb3f56adcc23ebcc8c4dec9ac4bc6fdaf15e53910272820d5f531b500",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.4-rc.1/ThreatAtlas-0.4.4-x64.msi"
+        },
+        {
+          "name": "ThreatAtlas-Linux-0.4.4-x86_64.tar.gz",
+          "sha256": "sha256:1fb709e11ca8a9e4cd23362a1c5d48898454d83da3454ac97d5e88e60279e205",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.4-rc.1/ThreatAtlas-Linux-0.4.4-x86_64.tar.gz"
+        },
+        {
+          "name": "ThreatAtlas-Linux-SHA256SUMS.txt",
+          "sha256": "sha256:0d218e9cfae191c786bc71ec87d566e4195cb8dc83672d29c4b9cf682126c7be",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.4-rc.1/ThreatAtlas-Linux-SHA256SUMS.txt"
+        },
+        {
+          "name": "ThreatAtlas-Linux-VERIFICATION.json",
+          "sha256": "sha256:9fb4b6cda02f86cf1e3b43ca9149fc3c91074150441e9871294432aae986a60f",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.4-rc.1/ThreatAtlas-Linux-VERIFICATION.json"
+        },
+        {
+          "name": "ThreatAtlas-Windows-SHA256SUMS.txt",
+          "sha256": "sha256:8f995a6fea2856583e00e265303f28bc1d859fd36b71a6b830006472e8340dcd",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.4-rc.1/ThreatAtlas-Windows-SHA256SUMS.txt"
+        },
+        {
+          "name": "ThreatAtlas-Windows-v0.4.4-rc.1.zip",
+          "sha256": "sha256:855bfbbd3811c73d25e830253b52eeadac5f65ecd81b5801177355512ef7a5bc",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.4-rc.1/ThreatAtlas-Windows-v0.4.4-rc.1.zip"
+        },
+        {
+          "name": "ThreatAtlas-Windows-VERIFICATION.json",
+          "sha256": "sha256:1218fb3bdb338a6837b311e335a3a5188882e445abbfc97a2b35121b961dd2a0",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/v0.4.4-rc.1/ThreatAtlas-Windows-VERIFICATION.json"
+        }
+      ],
+      "limits": "macOS excluded;unsigned Windows;lock-on-resume/browser-downloaded installation UNTESTED,owner accepts notes. Native prior-candidate evidence attributed;no MAC guest rerun.",
+      "ci_run": 41920838375,
+      "verification": "All7 checks PASS;all7 published assets HTTPS200 exact-byte matched"
+    },
     {
       "release": "0.4.3-rc.1/build11",
       "decision": "PUBLISHED BETA macOS and Windows portable",
