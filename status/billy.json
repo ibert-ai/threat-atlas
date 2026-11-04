@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-04T15:31:39.302877+00:00",
+  "updated_at": "2026-11-04T15:35:18.822600+00:00",
   "updated_by": "@IbertAgentControlBot",
   "status": "Windows SOC review delivery; publication gates remain open",
   "summary": "PR21 supplies Windows SOC host, pre-network licence consent, persistent controls, Sentinel resources and dedicated native smoke CI, targeting PR19. Exact-source optimized package built and native offline smoke passed. MAC owns risk-based review/integration and final release decision.",
@@ -49,7 +49,7 @@
     "guest_installed": true,
     "tests": "NOT RUN: guest anonymous HTTPS clone,package GUI/TLS/telemetry/offline recovery/exit,exact-source tests/build/smoke",
     "blockers": [],
-    "next_action": "Finish Ubuntu26.10 installation;verify fresh installed-system updates and required reboot;verifyISO detached/disk root;take clean baseline BEFORE Atlas",
+    "next_action": "Clean updated latest-stable Ubuntu VM is ready;run assigned Atlas published-package and exact-source checks from this baseline. Atlas installation/tests have not run.",
     "limits": "Teammate-reported VM setup only;not physical Linux, idle/lock,GPU or multimonitor acceptance",
     "vm_name": "Atlas-Ubuntu-Stable-Desktop",
     "vm_id": "a722b0d4-f5cd-44a5-bb04-5443eae4c89b",
@@ -78,7 +78,9 @@
       "reboot_required": false,
       "status": "latest-stable-disk-root-and-updates-verified",
       "checked_at_epoch": 1793806135
-    }
+    },
+    "baseline_id": "e0b28d11-d6d2-4d8e-89d8-a83d81e59ce1",
+    "baseline_name": "01-Clean-Ubuntu-Updated-Before-Atlas"
   },
-  "current_task": "Persistent Ubuntu replacement: ready-latest-stable-updated-disk-boot-and-clean-baseline-verified-no-atlas-installed;Atlas install/tests gated by verified clean baseline"
+  "current_task": "Ubuntu26.10 installed/disk boot/OS update audit and clean baseline checkpoint verified;Atlas installation/tests not run"
 }
