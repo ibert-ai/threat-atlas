@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-04T15:35:18.822600+00:00",
+  "updated_at": "2026-11-04T17:23:27.282309+00:00",
   "updated_by": "@IbertAgentControlBot",
   "status": "Windows SOC review delivery; publication gates remain open",
   "summary": "PR21 supplies Windows SOC host, pre-network licence consent, persistent controls, Sentinel resources and dedicated native smoke CI, targeting PR19. Exact-source optimized package built and native offline smoke passed. MAC owns risk-based review/integration and final release decision.",
@@ -82,5 +82,41 @@
     "baseline_id": "e0b28d11-d6d2-4d8e-89d8-a83d81e59ce1",
     "baseline_name": "01-Clean-Ubuntu-Updated-Before-Atlas"
   },
-  "current_task": "Ubuntu26.10 installed/disk boot/OS update audit and clean baseline checkpoint verified;Atlas installation/tests not run"
+  "current_task": "Git handovers adopted; exact v0.4.2-rc.1 source and package smoke verified in WSL; Hyper-V Ubuntu26.10 application tests NOT RUN pending guest access. MSI native test requests queued.",
+  "handover_protocol": {
+    "reference": "ATLAS-GIT-HANDOVERS-20261104-01",
+    "observed_commit": "9d762ec682cb9be21ad97358f9bd207ef1794b2b",
+    "canonical_branch": "codex/release-status",
+    "owned_files": [
+      "handovers/billy.json",
+      "status/billy.json"
+    ],
+    "privacy": "Full tasks private; public-safe summaries here",
+    "routine_channel": "Git",
+    "urgent_approvals_channel": "Ibert Consulting Telegram"
+  },
+  "linux_desktop_test_run": {
+    "reference": "ATLAS-BILLY-LINUX-TESTS-20261104-02",
+    "source": {
+      "repository": "ibert-ai/threat-atlas",
+      "branch": "v0.4.2-rc.1 (detached release source)",
+      "commit": "684a63bd4c21428d126f04aa4d3156bdcea232c9",
+      "version": "v0.4.2-rc.1",
+      "product_version": "0.4.2",
+      "build": 10
+    },
+    "package_sha256": "b526c5b05a92c192179afbf034754ec585e3d866ab62fe98c3bb8ae8fd2f90ce",
+    "supplemental_platform": "Ubuntu26.04.1 WSL2",
+    "supplemental_tests": "13 workspace tests and required source checks passed; published/rebuilt Xvfb smoke passed",
+    "live_source_result": {
+      "elapsed_seconds": 32.422218372,
+      "records": 24895,
+      "changed_batches": 74,
+      "status": "LIVE",
+      "process_exit": 0
+    },
+    "hyperv_guest_application_checks": "NOT RUN",
+    "blocker": "Guest command execution / interactive input not established",
+    "limits": "WSL results do not establish Hyper-V desktop, physical hardware, idle/lock, GPU or multimonitor acceptance."
+  }
 }
