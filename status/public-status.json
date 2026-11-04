@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-04T22:07:31.777Z",
-  "source_updated_at": "2026-11-04T22:07:31.777Z",
+  "generated_at": "2026-11-04T22:08:34.629Z",
+  "source_updated_at": "2026-11-04T22:08:34.629Z",
   "title": "Threat Atlas — Status",
   "state": "Screensaver 0.4.4-rc.1 · Windows MSI + Linux beta published",
   "summary": "Windows x64 all-users MSI, portable ZIP and Linux x86_64 windowed preview published. Lock-on-resume and browser-downloaded MSI installation remain UNTESTED. No macOS package in this release; Gatekeeper trust remains unresolved.",
@@ -79,10 +79,10 @@
   "wishlist": [],
   "build": {
     "name": "Screensaver 0.4.4-rc.1 / build 12",
-    "status": "Published · download verification in progress",
+    "status": "Published · all 7 downloads verified",
     "commit": "47fdc290f03b64ceb441f495c6c4fa2a15138677",
     "url": "https://github.com/ibert-ai/threat-atlas/actions/runs/41920838375",
-    "updated_at": "2026-11-04T22:07:31.777Z",
+    "updated_at": "2026-11-04T22:08:34.629Z",
     "stages": [
       {
         "name": "Source & version checks",
@@ -110,7 +110,7 @@
       },
       {
         "name": "Verify public downloads",
-        "status": "in_progress"
+        "status": "checked"
       }
     ]
   }
