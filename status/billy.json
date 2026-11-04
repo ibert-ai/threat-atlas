@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-04T14:55:00.089757+00:00",
+  "updated_at": "2026-11-04T15:31:39.302877+00:00",
   "updated_by": "@IbertAgentControlBot",
   "status": "Windows SOC review delivery; publication gates remain open",
   "summary": "PR21 supplies Windows SOC host, pre-network licence consent, persistent controls, Sentinel resources and dedicated native smoke CI, targeting PR19. Exact-source optimized package built and native offline smoke passed. MAC owns risk-based review/integration and final release decision.",
@@ -28,7 +28,7 @@
   "next_action": "MAC reviews PR21 and exact artifact evidence, reconciles applicable acceptance/security gates, integrates with PR19 and owns final documentation/publication. Hosted Windows SOC CI remains pending verification.",
   "linux_desktop_validation": {
     "reference": "ATLAS-LINUX-VM-20261104-01",
-    "status": "latest-stable-installation-awaiting-user-confirmation-and-account-entry",
+    "status": "ready-latest-stable-updated-disk-boot-and-clean-baseline-verified-no-atlas-installed",
     "owner": "@IbertAgentControlBot",
     "source_commit": "684a63bd4c21428d126f04aa4d3156bdcea232c9",
     "version": "v0.4.2-rc.1",
@@ -46,21 +46,39 @@
       "Ubuntu24.04 compatibility install preserved off withISO removed;primary Ubuntu26.10 VM created with2vCPU,6GiB,40GiB dynamic disk,NAT,Secure Boot",
       "Review brancha0dcd75 adds latest-stable Ubuntu policy and mandatory updated disk-boot/rollback checkpoint gates"
     ],
-    "guest_installed": false,
+    "guest_installed": true,
     "tests": "NOT RUN: guest anonymous HTTPS clone,package GUI/TLS/telemetry/offline recovery/exit,exact-source tests/build/smoke",
-    "blockers": [
-      "Ubuntu installation/account entry,disk-only root verification and clean baseline checkpoint are not yet complete"
-    ],
+    "blockers": [],
     "next_action": "Finish Ubuntu26.10 installation;verify fresh installed-system updates and required reboot;verifyISO detached/disk root;take clean baseline BEFORE Atlas",
     "limits": "Teammate-reported VM setup only;not physical Linux, idle/lock,GPU or multimonitor acceptance",
     "vm_name": "Atlas-Ubuntu-Stable-Desktop",
     "vm_id": "a722b0d4-f5cd-44a5-bb04-5443eae4c89b",
-    "baseline_verified": false,
+    "baseline_verified": true,
     "atlas_installed": false,
     "atlas_tests_run": false,
     "expected_stable_os": "26.10",
-    "updates_verified": false,
-    "test_schema_review": "https://github.com/ibert-ai/threat-atlas/tree/codex/linux-latest-stable-test-schema"
+    "updates_verified": true,
+    "test_schema_review": "https://github.com/ibert-ai/threat-atlas/tree/codex/linux-latest-stable-test-schema",
+    "os_proof": {
+      "reference": "ATLAS-LINUX-VM-20261104-01",
+      "updates_verified": true,
+      "persistent_root_verified": true,
+      "expected_stable_release": "26.10",
+      "os_version": "26.10",
+      "os_name": "Ubuntu 26.10",
+      "root_source": "/dev/sda2",
+      "root_filesystem": "ext4",
+      "kernel": "7.3.0-10-generic",
+      "pending_package_counts": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "reboot_required": false,
+      "status": "latest-stable-disk-root-and-updates-verified",
+      "checked_at_epoch": 1793806135
+    }
   },
-  "current_task": "Persistent Ubuntu replacement: latest-stable-installation-awaiting-user-confirmation-and-account-entry;Atlas install/tests gated by verified clean baseline"
+  "current_task": "Persistent Ubuntu replacement: ready-latest-stable-updated-disk-boot-and-clean-baseline-verified-no-atlas-installed;Atlas install/tests gated by verified clean baseline"
 }
