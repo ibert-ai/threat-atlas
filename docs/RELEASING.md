@@ -62,3 +62,6 @@ List confirmed defects, affected versions, issue links and workarounds; identify
 unverified reports and incomplete acceptance separately. Update
 [KNOWN-BUGS.md](KNOWN-BUGS.md) when a fix is verified and name its first released
 version. Do not describe a candidate fix as available in an older download.
+
+## OS-by-OS beta publication —4 November2026
+Robert directs each OS to ship its next beta after applicable checks pass,without waiting for another OS. A release may initially contain only one platform. List included/excluded assets and exact commit/version/test limits explicitly. Add a platform only from the same tagged source with matching metadata and accepted evidence;otherwise use a new version/tag rather than changing source of an existing release. Preserve historical binaries and signing/update restrictions. Old manual workflow remains guarded for0.4.2 and must not be used for this new release;MAC handles reviewed platform-specific publication.
