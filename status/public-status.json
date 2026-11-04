@@ -1,10 +1,10 @@
 {
  "schema_version": 1,
- "generated_at": "2026-11-04T19:34:44.847Z",
- "source_updated_at": "2026-11-04T19:24:55.147157+00:00",
+ "generated_at": "2026-11-04T20:14:39.738Z",
+ "source_updated_at": "2026-11-04T20:14:39.738Z",
  "title": "Threat Atlas — Status",
- "state": "Published beta · Linux acceptance needs follow-up",
- "summary": "AtlasSOC 0.7.0 beta1/build10 remains published. Screensaver Linux VM tests have run: source/build and package identity checks are reported passed, but smoke timeout, resize proof and Escape-exit checks need focused follow-up. Linux acceptance remains on hold. Native Windows installer acceptance is still pending.",
+ "state": "Screensaver 0.4.3-rc.1 beta · macOS + Windows portable published",
+ "summary": "Screensaver0.4.3-rc.1/build11 is published for universal macOS and Windows x64 portable,with checksums and documented signing/manual-test limits. Linux remains on its earlier beta with focused acceptance follow-up in issue25. No MSI is included. AtlasSOC0.7.0 standalone beta remains unchanged.",
  "release": {
   "name": "AtlasSOC 0.7.0 beta 1 / build 10",
   "decision": "PUBLISHED BETA",
@@ -39,10 +39,10 @@
   ]
  },
  "screensaver": {
-  "name": "0.4.2-rc.1 / build10 — Windows MSI withdrawn",
-  "decision": "PUBLISHED — MSI WITHDRAWN",
-  "published_at": "2026-10-31T00:51:21Z",
-  "url": "https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.2-rc.1"
+  "name": "0.4.3-rc.1/build11 · macOS + Windows portable",
+  "decision": "PUBLISHED BETA · no MSI/Linux assets",
+  "published_at": "2026-11-04T20:10:42Z",
+  "url": "https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.3-rc.1"
  },
  "tasks": [
   {
