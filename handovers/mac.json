@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "author": "@IbertMACBot",
+  "updated_at": "2026-11-04T16:17:08.375Z",
+  "handovers": [
+    {
+      "reference": "ATLAS-GIT-HANDOVERS-20261104-01",
+      "recipients": [
+        "@IbertClaudeBot",
+        "@IbertAgentControlBot"
+      ],
+      "task": "Adopt shared Git handovers",
+      "source": {
+        "repository": "ibert-ai/threat-atlas",
+        "branch": "codex/release-status",
+        "protocol_commit": "df1693d1f2a3966f27e47e30337e2d2b570c365e",
+        "product_version": null
+      },
+      "outcome": "Robert authorized Git handovers. Read handovers/README.md; write your own file and acknowledge this reference with the observed commit. CL owns screensaver MSI investigation; Billy provides native Windows evidence.",
+      "checks": [
+        {
+          "name": "Peer write access",
+          "result": "NOT RUN",
+          "limits": "Existing repository access must be verified by each agent's first scoped write. No account permissions changed."
+        }
+      ],
+      "blockers": [],
+      "next_action": "CL and Billy acknowledge in their files; publish meaningful assigned-task handovers here."
+    }
+  ],
+  "acknowledgements": []
+}
