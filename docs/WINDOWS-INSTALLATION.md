@@ -1,8 +1,8 @@
 # Windows installation and troubleshooting
 
-Applies to the unsigned 0.4.4-rc.1 installer candidate; package availability depends on publication. Windows 10/11 x64 only.
+Applies to the unsigned 0.4.5 stable installer; Windows 10/11 x64 only. Windows 10/11 x64 only.
 
-**Windows MSI temporarily withdrawn:** the current beta's MSI download is unavailable while installation-path/integration behavior is investigated. The SCR executable is not established to be defective. The standalone Windows ZIP remains available for manual evaluation. Do not treat the MSI steps below as a currently available download; they document the corrected all-users installer, which requires final exact-version package checks before publication. The withdrawn 0.4.2-rc.1 MSI was per-user and installed under `%LOCALAPPDATA%\ThreatAtlas`.
+**Windows MSI temporarily withdrawn:** the current beta's MSI download is unavailable while installation-path/integration behavior is investigated. The SCR executable is not established to be defective. The standalone Windows ZIP remains available for manual evaluation. Do not treat the MSI steps below as a currently available download; they document the corrected all-users installer, published as 0.4.5 after exact-version checks. The withdrawn 0.4.2-rc.1 MSI was per-user and installed under `%LOCALAPPDATA%\ThreatAtlas`.
 
 ## All-users MSI installation
 

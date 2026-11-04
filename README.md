@@ -8,10 +8,9 @@ GreyNoise public threat-map feed. The header shows both UTC and the computer's l
 
 ## Release status
 
-The **0.4.4-rc.1 candidate**, build **12**, prepares the corrected all-users Windows MSI and Linux preview for separate platform publication after exact-source checks. It is not a download until its assets are published.
-[Published releases](https://github.com/ibert-ai/threat-atlas/releases) retain the earlier packages.
-The 0.4.3-rc.1 macOS package is ad-hoc signed and unnotarized; Gatekeeper blocks the normal quarantined installation. Trusted signing/notarization remains unresolved.
-Version **0.4.0** remains the latest stable release.
+The **0.4.5 stable release**, build **13**, promotes the approved 0.4.4-rc.1 implementation for Windows x64 (all-users MSI and portable ZIP) and Linux x86_64 (windowed X11/XWayland preview).
+[Release downloads](https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.5).
+No macOS package is included: Gatekeeper trust remains unresolved. Stable is the maintainer's release decision, not trusted signing or a claim that every hardware/manual check passed. Lock-on-resume and browser-downloaded MSI installation remain UNTESTED; see release notes. Existing releases are preserved.
 
 The official **0.4.0**, build **8**, release ships without trusted code signing.
 Windows SCR/MSI files are unsigned; macOS bundles are ad-hoc signed and unnotarized.
@@ -30,7 +29,7 @@ follow the security policy for security concerns.
 
 ## Install
 
-**Windows:** the 0.4.2-rc.1 MSI download is temporarily withdrawn while installation-path/integration behavior is investigated. The standalone Windows ZIP remains available for manual evaluation; a SCR executable defect is not established. See [Windows troubleshooting](docs/WINDOWS-INSTALLATION.md). The following MSI description documents the intended workflow for a corrected installer: use the MSI matching the release you downloaded. The corrected installer asks for administrator approval,
+**Windows:** the 0.4.2-rc.1 MSI download is temporarily withdrawn while installation-path/integration behavior is investigated. The standalone Windows ZIP remains available for manual evaluation; a SCR executable defect is not established. See [Windows troubleshooting](docs/WINDOWS-INSTALLATION.md). The corrected all-users MSI is available in 0.4.5: use the MSI matching the release you downloaded. The corrected installer asks for administrator approval,
 installs one 64-bit `ThreatAtlas.scr` into `System32` and adds a **Threat Atlas SOC** Start
 Menu folder. Open **Set up Threat Atlas**, choose the saver, set the wait time,
 and Apply. **Preview Threat Atlas** opens a normal window. No manual copying is required. For manual System32 copying, open the copying tool with **Run as administrator**; see the Windows guide.

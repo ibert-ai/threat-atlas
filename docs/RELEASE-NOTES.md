@@ -1,15 +1,22 @@
-# Threat Atlas screensaver 0.4.4-rc.1 candidate — Windows MSI and Linux preview
+# Threat Atlas screensaver 0.4.5 — Stable for Windows and Linux
 
-Product 0.4.4, build 12. Candidate only until platform assets are published. Publish each OS separately after its applicable exact-source checks; no waiting for another OS. Previous tags and packages remain unchanged. No macOS package is planned here while downloaded installation remains blocked by Gatekeeper.
+Product 0.4.5, build 13. Robert approved stable publication on 4 November 2026 after reviewing 0.4.4-rc.1. Application implementation is unchanged from approved RC source 47fdc290f03b64ceb441f495c6c4fa2a15138677; numeric version advances to preserve MSI upgrade identity, and the manifest prerelease is null. Final exact-source checks and package hashes accompany downloads. Older releases and RC1 remain available.
 
-## Windows
+## Included and excluded platforms
 
-The corrected all-users MSI installs one x64 SCR into System32, documents into Program Files and three Start Menu items. Approve its administrator prompt after checking source and checksum. Manual System32 copying requires **Run as administrator**. Do not routinely run the saver elevated. Uninstall the old per-user installation first: the MSI refuses to overlap it. The all-users MSI omits automatic updates; use verified manual packages pending updater redesign.
+Windows 10/11 x64: all-users MSI and portable ZIP. Linux x86_64: windowed X11/XWayland preview, without idle screensaver or lock-screen integration. No macOS package: normal quarantined installation remains blocked by Gatekeeper; trusted signing/notarization is unresolved. Stable does not imply trusted publisher signing or universal platform acceptance.
 
-Earlier candidate 773a1062d2704508a9384e603b5bb6d9f3fcb35c passed hosted package/lifecycle checks. Native candidate testing reported successful real per-user refusal, installed layout and uninstall; the owner confirmed Settings listing, small/full preview and one-minute idle start. This is prior-candidate evidence, not fresh 0.4.4 package acceptance. Lock-on-resume, browser download/Zone.Identifier, post-uninstall Settings state and between-version upgrade remain untested. Windows edition/build details in the reported environment need reconciliation. Unsigned publisher warnings remain.
+## Windows installation and updates
 
-## Linux
+The MSI installs one x64 SCR into System32, documents into Program Files and three Start Menu items. Check the checksum and approve the administrator prompt. Manual System32 copying requires **Run as administrator**; routine screensaver execution does not. Uninstall the older per-user install first; the MSI refuses overlap. Automatic updates are absent from the all-users MSI pending a reviewed redesign; use verified manual packages. Windows binaries remain unsigned.
 
-Earlier v0.4.2-rc.1 exact source 684a63bd4c21428d126f04aa4d3156bdcea232c9 retests report three bounded source Xvfb smoke passes, measured resize and held-Escape exit. Owner manual GNOME XWayland resize and Escape passed. Reviewed recovery logs show LIVE to STALE to OFFLINE to LIVE with increasing records. The earlier timeout was not reproduced; cause remains unconfirmed. Instant synthetic Escape may be missed because input is polled per frame. These results do not establish fresh 0.4.4 acceptance.
+## Known bugs and test limits
 
-Linux remains a windowed X11/XWayland preview, without idle/lock integration. Physical GPU, multimonitor and broader desktop acceptance remain untested. Final source/package hashes and exact-source CI evidence must accompany publication. No synthetic threats or TLS bypasses.
+- Lock-on-resume and installation from a browser-downloaded MSI, including Zone.Identifier/SmartScreen behavior, remain UNTESTED. The owner explicitly accepts release with these notes.
+- Native Settings listing, small/full preview and one-minute idle start are owner-reported for the earlier MSI candidate. Layout, real per-user refusal and uninstall were checked by the testing agent. These are prior-candidate results, not fresh 0.4.5 native runs.
+- Between-version installer upgrade and post-uninstall Settings state remain untested.
+- Linux prior-source retests passed bounded Xvfb smoke, measured resize and held Escape. Owner manual GNOME XWayland resize/Escape passed. Very short Escape taps can be missed because key state is polled per frame. Earlier smoke timeout was not reproduced; its cause remains unconfirmed.
+- Physical GPU, multimonitor, broad desktop/hardware and soak acceptance remain untested. Linux is a windowed viewer, not idle/lock integration.
+- OS DNS resolution can delay feed-worker shutdown. No immediate-zero-background-traffic guarantee is made.
+
+No simulated threats or TLS validation bypasses. Displayed records are real provider receipts, not verified unique attacks.
