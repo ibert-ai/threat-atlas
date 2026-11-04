@@ -16,6 +16,10 @@ The build checks the reviewed Cloudflare licence against current published terms
 
 Extract the ZIP into a user-owned folder and launch `AtlasSOC.exe`. No administrator rights, screensaver selection, startup task, sleep inhibition or lock preference change is required. The EXE is unsigned; ordinary Windows reputation/trust checks apply. Do not disable those protections. Close the app before replacing its portable folder. Uninstall by removing that extracted folder; settings remain in `%LOCALAPPDATA%/ThreatAtlasSOC` for subsequent versions. There is no standalone MSI or auto-updater in this increment. Existing screensaver installers are not standalone SOC installers. The full required installer scope/shortcut behavior is specified separately in [ATLAS-SOC-INSTALLER.md](ATLAS-SOC-INSTALLER.md).
 
+## Installer (review build)
+
+`./scripts/build-windows-soc-installer.ps1` wraps the portable package with Inno Setup 6. The installer offers **Just me** (default, `%LocalAppData%\Programs\AtlasSOC`, no elevation) or **Everyone** (`%ProgramFiles%\AtlasSOC`, administrator approval), plus separate desktop and Start menu shortcut choices. It refuses to install over the other scope. The app always runs unelevated, and settings and consent stay in each user's profile and survive uninstall. It never touches the screensaver or its settings. No updater, startup task or schedule is added.
+
 ## Consent and network behavior
 
 The first normal launch shows the Cloudflare Radar data notice, CC BY-NC 4.0 attribution/noncommercial restriction, legal/source URLs and reviewed fingerprints. **No** is the default; declining quits without a feed. Only the person reviewing the terms may choose Yes. Acceptance does not grant commercial-use permission. Acceptance is bound to full app version/build plus notice/legal hashes; any change requires reconfirmation. Settings reset does not accept or erase consent.

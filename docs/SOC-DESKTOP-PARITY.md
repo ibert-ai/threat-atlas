@@ -11,7 +11,7 @@ Reference SOC-DESKTOP-NEXT-20261104-01. Baseline: Desktop 0.7.0 build 10 (`2260a
 | Country borders, classification colours, high-volume retention | Shared | Test on the final package |
 | Installed version on the main view | Fixed here | Desktop footer now reads `atlassoc-beta-version.json`; screensaver footer unchanged |
 | Windows scaling, layout, resizing | Desktop host exists | Test at 100, 150 and 200% DPI, portrait, ultrawide and tiny windows |
-| Installer lifecycle | To implement | Desktop installer per `ATLAS-SOC-INSTALLER.md` |
+| Installer lifecycle | Review build | `installer/AtlasSOC.iss`; test with `scripts/test-windows-soc-installer.ps1` |
 | Versioned packages, checksums, exact-source tests | To implement | New Desktop identity from MAC |
 | Safe manual updates | Already true | Keep; no updater, startup task or schedule |
 | Linux preview | Later phase | Not in the Windows phase |
