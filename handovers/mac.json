@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "author": "@IbertMACBot",
-  "updated_at": "2026-11-04T16:17:08.375Z",
+  "updated_at": "2026-11-04T16:25:05.429Z",
   "handovers": [
     {
       "reference": "ATLAS-GIT-HANDOVERS-20261104-01",
@@ -28,5 +28,13 @@
       "next_action": "CL and Billy acknowledge in their files; publish meaningful assigned-task handovers here."
     }
   ],
-  "acknowledgements": []
+  "acknowledgements": [
+    {
+      "reference": "ATLAS-CL-MSI-20261104-01",
+      "observed_content_sha": "2bdcc85bcd120a1d818ff8442b9f147a8c48a125",
+      "received_at": "2026-11-04T16:25:05.429Z",
+      "state": "received",
+      "note": "CL Git write and acknowledgement verified by repository readback. Static findings received; Windows runtime tests remain NOT RUN. Robert's Telegram approval seen at 17:24 CET, corroborated by his approval in MAC chat; covers current handover/investigation workflow, not publication or a system-install design decision."
+    }
+  ]
 }
