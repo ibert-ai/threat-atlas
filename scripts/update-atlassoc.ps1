@@ -162,8 +162,9 @@ if ($asset.Digest -notmatch '^sha256:([0-9a-fA-F]{64})$') {
 }
 $expected = $Matches[1].ToUpperInvariant()
 
-$folder = Join-Path $env:TEMP 'AtlasSOC-Update'
-New-Item -ItemType Directory -Path $folder -Force | Out-Null
+# A fresh folder per run, so a concurrent run cannot replace the file after its hash check.
+$folder = Join-Path $env:TEMP ('AtlasSOC-Update-' + [guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $folder -ErrorAction Stop | Out-Null
 $target = Join-Path $folder $asset.Name
 
 Write-Host "Downloading $($asset.Name)..."
@@ -172,7 +173,7 @@ Invoke-WebRequest -Uri $asset.Url -Headers @{ 'User-Agent' = $Headers['User-Agen
 
 $actual = (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash
 if ($actual -ne $expected) {
-    Remove-Item -LiteralPath $target -Force
+    Remove-Item -LiteralPath $folder -Recurse -Force
     throw "Checksum mismatch. Expected $expected but got $actual. The file was deleted."
 }
 Write-Host "Checksum OK: $actual"
@@ -200,6 +201,6 @@ $process = Start-Process @start
 if ($process.ExitCode -ne 0) {
     throw "The installer ended with code $($process.ExitCode). The installed version was kept."
 }
-Remove-Item -LiteralPath $target -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath $folder -Recurse -Force -ErrorAction SilentlyContinue
 if ($Silent) { Start-AtlasSOC }
 Write-Host 'Done.'
