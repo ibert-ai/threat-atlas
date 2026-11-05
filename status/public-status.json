@@ -90,7 +90,7 @@
     {
       "name": "Widgets cannot be moved in the Atlas Screensaver or Atlas SOC views. Reordering works in All Atlas Projects.",
       "priority": "Bug",
-      "status": "Open"
+      "status": "Fixed"
     }
   ],
   "build": {
