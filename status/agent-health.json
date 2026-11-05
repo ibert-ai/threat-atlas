@@ -1,25 +1,25 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-05T23:36:33.020857Z",
+  "updated_at": "2026-11-05T23:51:32.044072Z",
   "monitoring_started_at": "2026-11-04T23:16:11.309183Z",
   "agents": [
     {
       "id": "mac",
       "name": "MAC",
-      "last_reported_at": "2026-11-05T23:36:33.020857Z",
-      "last_heartbeat_at": "2026-11-05T23:36:33.020857Z"
+      "last_reported_at": "2026-11-05T23:51:32.044072Z",
+      "last_heartbeat_at": "2026-11-05T23:51:32.044072Z"
     },
     {
       "id": "cl",
       "name": "CL",
-      "last_reported_at": "2026-11-05T23:26:25Z",
-      "last_heartbeat_at": "2026-11-05T23:26:25Z"
+      "last_reported_at": "2026-11-05T23:41:26Z",
+      "last_heartbeat_at": "2026-11-05T23:41:26Z"
     },
     {
       "id": "billy",
       "name": "Billy",
-      "last_reported_at": "2026-11-05T23:30:40.453800Z",
-      "last_heartbeat_at": "2026-11-05T23:30:40.453800Z"
+      "last_reported_at": "2026-11-05T23:45:41.729036Z",
+      "last_heartbeat_at": "2026-11-05T23:45:41.729036Z"
     }
   ]
 }
