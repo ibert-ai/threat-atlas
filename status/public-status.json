@@ -86,7 +86,13 @@
     "known_vulnerabilities": 0,
     "checked_at": "2026-11-02T12:51:03.622428+00:00"
   },
-  "wishlist": [],
+  "wishlist": [
+    {
+      "name": "Widgets cannot be moved in the Atlas Screensaver or Atlas SOC views. Reordering works in All Atlas Projects.",
+      "priority": "Bug",
+      "status": "Open"
+    }
+  ],
   "build": {
     "name": "Screensaver 0.4.5 stable / build 13",
     "status": "Stable published · all downloads verified",
