@@ -22,6 +22,13 @@
 .PARAMETER DownloadOnly
     Downloads and verifies the installer, but does not start it.
 
+.PARAMETER Silent
+    Upgrades without the installer wizard, in the existing install scope, and
+    opens AtlasSOC afterwards. Windows prompts still appear. The app uses this.
+
+.PARAMETER WaitPid
+    Waits for this process to end before installing. The app passes its own ID.
+
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File .\update-atlassoc.ps1 -Channel beta
 #>
@@ -30,7 +37,9 @@ param(
     [ValidateSet('stable', 'beta')]
     [string]$Channel,
     [switch]$Force,
-    [switch]$DownloadOnly
+    [switch]$DownloadOnly,
+    [switch]$Silent,
+    [int]$WaitPid = 0
 )
 
 $ErrorActionPreference = 'Stop'
@@ -43,6 +52,27 @@ $AssetPattern = '^AtlasSOC-Setup-(\d+\.\d+\.\d+)-build(\d+)\.exe$'
 $Headers = @{
     'User-Agent' = 'AtlasSOC-Updater'
     'Accept'     = 'application/vnd.github+json'
+}
+
+$ProgramFilesExe = Join-Path $env:ProgramFiles 'AtlasSOC\AtlasSOC.exe'
+$PerUserExe = Join-Path $env:LOCALAPPDATA 'Programs\AtlasSOC\AtlasSOC.exe'
+
+function Start-AtlasSOC {
+    foreach ($path in @($ProgramFilesExe, $PerUserExe)) {
+        if (Test-Path -LiteralPath $path) {
+            Start-Process -FilePath $path
+            return
+        }
+    }
+}
+
+trap {
+    Write-Host "Update failed: $_"
+    if ($Silent) {
+        Start-AtlasSOC
+        Read-Host 'Press Enter to close'
+    }
+    exit 1
 }
 
 function Select-Channel {
@@ -91,11 +121,7 @@ function Get-LatestInstaller([string]$SelectedChannel) {
 }
 
 function Get-InstalledVersion {
-    $paths = @(
-        (Join-Path $env:ProgramFiles 'AtlasSOC\AtlasSOC.exe'),
-        (Join-Path $env:LOCALAPPDATA 'Programs\AtlasSOC\AtlasSOC.exe')
-    )
-    $found = foreach ($path in $paths) {
+    $found = foreach ($path in @($ProgramFilesExe, $PerUserExe)) {
         if (Test-Path -LiteralPath $path) {
             $text = (Get-Item -LiteralPath $path).VersionInfo.FileVersion
             $parsed = $null
@@ -156,10 +182,24 @@ if ($DownloadOnly) {
     exit 0
 }
 
-Write-Host 'Starting the installer. Windows may warn because the file is unsigned.'
-$process = Start-Process -FilePath $target -PassThru -Wait
-if ($process.ExitCode -ne 0) {
-    Write-Host "The installer ended with code $($process.ExitCode)."
-    exit $process.ExitCode
+if ($WaitPid -gt 0) {
+    Write-Host 'Waiting for AtlasSOC to close...'
+    Wait-Process -Id $WaitPid -Timeout 30 -ErrorAction SilentlyContinue
 }
+
+Write-Host 'Starting the installer. Windows may warn because the file is unsigned.'
+$arguments = @()
+if ($Silent) {
+    # Inno Setup refuses to change scope, so stay in the scope that is installed now.
+    $scope = if (Test-Path -LiteralPath $ProgramFilesExe) { '/ALLUSERS' } else { '/CURRENTUSER' }
+    $arguments = @('/SILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CLOSEAPPLICATIONS', $scope)
+}
+$start = @{ FilePath = $target; PassThru = $true; Wait = $true }
+if ($arguments.Count -gt 0) { $start.ArgumentList = $arguments }
+$process = Start-Process @start
+if ($process.ExitCode -ne 0) {
+    throw "The installer ended with code $($process.ExitCode). The installed version was kept."
+}
+Remove-Item -LiteralPath $target -Force -ErrorAction SilentlyContinue
+if ($Silent) { Start-AtlasSOC }
 Write-Host 'Done.'

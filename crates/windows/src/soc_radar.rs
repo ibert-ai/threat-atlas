@@ -130,11 +130,11 @@ impl Drop for Handle {
     }
 }
 
-struct Reply {
-    status: u16,
+pub(crate) struct Reply {
+    pub(crate) status: u16,
     retry_after_s: Option<u64>,
     quota_reset_s: Option<u64>,
-    body: Vec<u8>,
+    pub(crate) body: Vec<u8>,
 }
 
 fn header(request: &Handle, name: &str) -> Option<String> {
@@ -157,13 +157,22 @@ fn header(request: &Handle, name: &str) -> Option<String> {
 }
 
 fn fetch(token: &str) -> Option<Reply> {
+    let headers = format!("Authorization: Bearer {token}\r\nAccept: application/json\r\n");
+    https_get(
+        radar_poll::HOST,
+        radar_poll::PATH,
+        &headers,
+        radar::MAX_BYTES,
+    )
+}
+
+/// HTTPS GET with redirects and cookies off. A failed option stops before anything is sent.
+pub(crate) fn https_get(host: &str, path: &str, headers: &str, max_bytes: usize) -> Option<Reply> {
     let agent = wide("AtlasSOC/Windows");
-    let host = wide(radar_poll::HOST);
-    let path = wide(radar_poll::PATH);
+    let host = wide(host);
+    let path = wide(path);
     let verb = wide("GET");
-    let headers = wide(&format!(
-        "Authorization: Bearer {token}\r\nAccept: application/json\r\n"
-    ));
+    let headers = wide(headers);
     // SAFETY: strings outlive the calls; handles are closed by `Handle` in reverse order.
     unsafe {
         let session = Handle(WinHttpOpen(
@@ -195,7 +204,7 @@ fn fetch(token: &str) -> Option<Reply> {
         }
         let never: u32 = WINHTTP_OPTION_REDIRECT_POLICY_NEVER;
         let no_cookies: u32 = WINHTTP_DISABLE_COOKIES;
-        // The token must never follow a redirect or sit in a cookie store, so a failed option stops here.
+        // A token must never follow a redirect or sit in a cookie store, so a failed option stops here.
         if WinHttpSetOption(
             request.0,
             WINHTTP_OPTION_REDIRECT_POLICY,
@@ -252,7 +261,7 @@ fn fetch(token: &str) -> Option<Reply> {
             if read == 0 {
                 break;
             }
-            if body.len() + read as usize > radar::MAX_BYTES {
+            if body.len() + read as usize > max_bytes {
                 return None;
             }
             body.extend_from_slice(&chunk[..read as usize]);

@@ -50,6 +50,10 @@ Mirrored fullscreen windows are implemented. Per-display log/metrics roles, sele
 
 ## Update to the latest version
 
+When it starts, after licence consent, AtlasSOC asks `api.github.com` once whether a newer installer exists on its channel. A pre-release build follows beta and a full release follows stable. The right-click menu shows the result. Choosing **Update available** asks for confirmation, closes the app and runs the embedded script, which verifies the download, upgrades silently in the existing scope and reopens the app. UAC appears for an install for everyone, and the new version asks for licence consent again. Nothing installs without that choice.
+
+The script can also be run by hand:
+
 Run this in PowerShell. It asks for stable or beta, verifies the installer's SHA256 against GitHub, and starts the normal installer. Windows may show a UAC prompt or an unsigned-file warning.
 
 ```powershell

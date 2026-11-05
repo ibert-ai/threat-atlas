@@ -4,6 +4,7 @@ pub mod feed;
 pub mod radar;
 pub mod radar_poll;
 pub mod render;
+pub mod update;
 use feed::{Feed, Snapshot};
 use std::sync::Arc;
 pub const WIDTH: u32 = 1440;

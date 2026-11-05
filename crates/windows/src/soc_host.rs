@@ -1,5 +1,6 @@
 use crate::soc_config::{self, Motion, Settings, Terms, BUILD, VERSION};
 use crate::soc_radar::Radar;
+use crate::soc_update::{self, Status as UpdateStatus, Updater};
 use std::{
     error::Error,
     num::NonZeroU32,
@@ -48,7 +49,7 @@ fn consent(path: &std::path::Path) -> Result<bool, Box<dyn Error>> {
         return Ok(true);
     }
     let text = format!(
-        "Threat Atlas SOC {VERSION} (build {BUILD})\n\nCloudflare Radar data licence: CC BY-NC 4.0 (Attribution-NonCommercial).\n{}\n\n{}\n{}\n\n{}\nAcceptance does not grant commercial-use permission.\n\nGreyNoise public threat-map records are received records, not unique attacks; no endorsement implied. Windows connects to GreyNoise. If you save your own Cloudflare token, it also reads Radar aggregates from api.cloudflare.com, at most every 15 minutes.\n\nNo feed or worker starts until acceptance. Acceptance is required again for each new version/build or reviewed terms change.\n\nNotice fingerprint: {}\nLegal fingerprint: {}\n\nYES: I have read the linked notice/legal code and accept these terms for this version/build.\nNO: Decline and quit. The default is NO.",
+        "Threat Atlas SOC {VERSION} (build {BUILD})\n\nCloudflare Radar data licence: CC BY-NC 4.0 (Attribution-NonCommercial).\n{}\n\n{}\n{}\n\n{}\nAcceptance does not grant commercial-use permission.\n\nGreyNoise public threat-map records are received records, not unique attacks; no endorsement implied. Windows connects to GreyNoise. If you save your own Cloudflare token, it also reads Radar aggregates from api.cloudflare.com, at most every 15 minutes. When it starts, it asks api.github.com whether a newer version exists.\n\nNo feed or worker starts until acceptance. Acceptance is required again for each new version/build or reviewed terms change.\n\nNotice fingerprint: {}\nLegal fingerprint: {}\n\nYES: I have read the linked notice/legal code and accept these terms for this version/build.\nNO: Decline and quit. The default is NO.",
         terms.notice, terms.notice_url, terms.license_url, terms.scope, terms.notice_sha256, terms.legal_sha256
     );
     let result = unsafe {
@@ -141,7 +142,13 @@ fn help(window: &Window) {
     }
 }
 
-fn menu(window: &Window, settings: &Settings, paused: bool, radar: Option<&Radar>) -> u32 {
+fn menu(
+    window: &Window,
+    settings: &Settings,
+    paused: bool,
+    radar: Option<&Radar>,
+    update: Option<&UpdateStatus>,
+) -> u32 {
     unsafe {
         let menu = CreatePopupMenu();
         if menu.is_null() {
@@ -171,7 +178,6 @@ fn menu(window: &Window, settings: &Settings, paused: bool, radar: Option<&Radar
             (20, "Show Cloudflare Radar on the map", settings.radar_layer),
             (14, "Reset display settings", false),
             (15, "Controls and limitations (F1)", false),
-            (16, "Exit", false),
         ];
         for (id, text, checked) in options {
             AppendMenuW(
@@ -181,6 +187,16 @@ fn menu(window: &Window, settings: &Settings, paused: bool, radar: Option<&Radar
                 wide(text).as_ptr(),
             );
         }
+        if let Some(update) = update {
+            let enabled = matches!(update, UpdateStatus::Available(_));
+            AppendMenuW(
+                menu,
+                MF_STRING | if enabled { 0 } else { MF_GRAYED },
+                21,
+                wide(&update.label()).as_ptr(),
+            );
+        }
+        AppendMenuW(menu, MF_STRING, 16, wide("Exit").as_ptr());
         let mut point: POINT = std::mem::zeroed();
         GetCursorPos(&mut point);
         let chosen = TrackPopupMenu(
@@ -194,6 +210,32 @@ fn menu(window: &Window, settings: &Settings, paused: bool, radar: Option<&Radar
         ) as u32;
         DestroyMenu(menu);
         chosen
+    }
+}
+
+/// Asks first, then hands over to the update script. Returns true when the app should close.
+fn start_update(window: &Window, update: &UpdateStatus) -> bool {
+    let text = format!(
+        "{}\n\nAtlasSOC will close, download the installer from GitHub, check it and replace this version. Windows may ask for approval. The app then opens again and asks you to review the licence for the new version.\n\nContinue?",
+        update.label().trim_end_matches("...")
+    );
+    let answer = unsafe {
+        MessageBoxW(
+            window.hwnd() as HWND,
+            wide(&text).as_ptr(),
+            wide("Update AtlasSOC").as_ptr(),
+            MB_YESNO | MB_ICONQUESTION,
+        )
+    };
+    if answer != IDYES {
+        return false;
+    }
+    match soc_update::launch() {
+        Ok(()) => true,
+        Err(error) => {
+            show_error(&format!("Cannot start the update: {error}"));
+            false
+        }
     }
 }
 
@@ -273,6 +315,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         Some(Feed::shared())
     };
     let radar = (!smoke).then(|| Radar::start(state_dir.clone()));
+    let updater = (!smoke).then(Updater::start);
     let path = state_dir.join("settings.json");
     let (mut settings, warning) = if smoke {
         (Settings::default(), None)
@@ -310,7 +353,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                         let detail = frame_point(&display.window, position).and_then(|(x, y)| view.inspect(x, y, None)).and_then(|json| soc_config::inspection_label(&json));
                         display.window.set_title(&format!("AtlasSOC {VERSION}/{BUILD} by Ibert Consulting · {} · {}", if smoke { "OFFLINE TEST - NO NETWORK" } else if paused { "DISPLAY FROZEN - FEED CONTINUES" } else { "right-click or F1: controls" }, detail.unwrap_or_default()));
                     }
-                    WindowEvent::MouseInput { state: ElementState::Released, button: MouseButton::Right, .. } => action = menu(&display.window, &settings, paused, radar.as_ref()),
+                    WindowEvent::MouseInput { state: ElementState::Released, button: MouseButton::Right, .. } => action = menu(&display.window, &settings, paused, radar.as_ref(), updater.as_ref().map(Updater::status).as_ref()),
                     WindowEvent::MouseInput { state: ElementState::Released, button: MouseButton::Left, .. } => {
                         if let Some((x, y)) = frame_point(&display.window, cursor) {
                             let hit = view.country_at(x, y);
@@ -348,9 +391,16 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                     19 => { if let Some(radar) = &radar { radar.remove_token(); } }
                     20 => settings.radar_layer = !settings.radar_layer,
                     16 => *flow = ControlFlow::Exit,
+                    21 => {
+                        if let Some(update) = updater.as_ref().map(Updater::status) {
+                            if start_update(&display.window, &update) {
+                                *flow = ControlFlow::Exit;
+                            }
+                        }
+                    }
                     _ => {}
                 }
-                if action != 0 && action != 15 && action != 16 { dirty = true; }
+                if action != 0 && action != 15 && action != 16 && action != 21 { dirty = true; }
             }
             Event::MainEventsCleared => {
                 if monitor_check.elapsed() >= Duration::from_secs(2) {
