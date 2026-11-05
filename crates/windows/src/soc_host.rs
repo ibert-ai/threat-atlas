@@ -1,4 +1,5 @@
 use crate::soc_config::{self, Motion, Settings, Terms, BUILD, VERSION};
+use crate::soc_radar::Radar;
 use std::{
     error::Error,
     num::NonZeroU32,
@@ -140,7 +141,7 @@ fn help(window: &Window) {
     }
 }
 
-fn menu(window: &Window, settings: &Settings, paused: bool) -> u32 {
+fn menu(window: &Window, settings: &Settings, paused: bool, radar: Option<&Radar>) -> u32 {
     unsafe {
         let menu = CreatePopupMenu();
         if menu.is_null() {
@@ -160,6 +161,14 @@ fn menu(window: &Window, settings: &Settings, paused: bool) -> u32 {
             (11, "5 frames/second", settings.fps == 5),
             (12, "10 frames/second", settings.fps == 10),
             (13, "20 frames/second", settings.fps == 20),
+            (
+                17,
+                "Collect Cloudflare Radar data",
+                radar.is_some_and(Radar::collecting),
+            ),
+            (18, "Set Cloudflare Radar token...", false),
+            (19, "Remove Cloudflare Radar token", false),
+            (20, "Show Cloudflare Radar on the map", settings.radar_layer),
             (14, "Reset display settings", false),
             (15, "Controls and limitations (F1)", false),
             (16, "Exit", false),
@@ -263,6 +272,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         }
         Some(Feed::shared())
     };
+    let radar = (!smoke).then(|| Radar::start(state_dir.clone()));
     let path = state_dir.join("settings.json");
     let (mut settings, warning) = if smoke {
         (Settings::default(), None)
@@ -300,7 +310,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                         let detail = frame_point(&display.window, position).and_then(|(x, y)| view.inspect(x, y, None)).and_then(|json| soc_config::inspection_label(&json));
                         display.window.set_title(&format!("AtlasSOC {VERSION}/{BUILD} by Ibert Consulting · {} · {}", if smoke { "OFFLINE TEST - NO NETWORK" } else if paused { "DISPLAY FROZEN - FEED CONTINUES" } else { "right-click or F1: controls" }, detail.unwrap_or_default()));
                     }
-                    WindowEvent::MouseInput { state: ElementState::Released, button: MouseButton::Right, .. } => action = menu(&display.window, &settings, paused),
+                    WindowEvent::MouseInput { state: ElementState::Released, button: MouseButton::Right, .. } => action = menu(&display.window, &settings, paused, radar.as_ref()),
                     WindowEvent::MouseInput { state: ElementState::Released, button: MouseButton::Left, .. } => {
                         if let Some((x, y)) = frame_point(&display.window, cursor) {
                             let hit = view.country_at(x, y);
@@ -333,6 +343,10 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                     11 => settings.fps = 5, 12 => settings.fps = 10, 13 => settings.fps = 20,
                     14 => { settings = Settings::default(); rebuild = true; }
                     15 => help(&display.window),
+                    17 => { if let Some(radar) = &radar { radar.toggle_collecting(); } }
+                    18 => { if let Some(radar) = &radar { radar.set_token(display.window.hwnd() as HWND); } }
+                    19 => { if let Some(radar) = &radar { radar.remove_token(); } }
+                    20 => settings.radar_layer = !settings.radar_layer,
                     16 => *flow = ControlFlow::Exit,
                     _ => {}
                 }
@@ -362,7 +376,10 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                         view.options.severities = settings.severities;
                         let snapshot = feed.as_ref().map_or_else(|| offline.snapshot(feed::now_ms()), |f| f.snapshot());
                         let counts = feed.as_ref().map_or_else(|| offline.counts(feed::now_ms()), |f| f.counts());
-                        rgba = view.draw(&snapshot, counts, None, 0).to_vec();
+                        view.options.radar_layer = settings.radar_layer;
+                        let (radar_data, radar_received) = radar.as_ref().map_or((None, 0), Radar::data);
+                        view.options.radar_note = radar.as_ref().map(Radar::note);
+                        rgba = view.draw(&snapshot, counts, radar_data.as_deref(), radar_received).to_vec();
                     }
                     for window in &mut windows {
                         if let Err(error) = paint(window, &rgba) { show_error(&error.to_string()); *flow = ControlFlow::Exit; break; }

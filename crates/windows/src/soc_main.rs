@@ -2,6 +2,8 @@
 mod soc_config;
 #[cfg(windows)]
 mod soc_host;
+#[cfg(windows)]
+mod soc_radar;
 
 fn main() {
     #[cfg(windows)]

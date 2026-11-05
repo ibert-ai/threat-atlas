@@ -22,7 +22,7 @@ Reference SOC-DESKTOP-NEXT-20261104-01. Baseline: Desktop 0.7.0 build 10 (`2260a
 - Realtime (default), Calm and Still; freeze with the feed continuing; bounded motion.
 - Severity filters; country hover, inspection and focus; record list; counters; rate chart; timestamps and provider meaning.
 - Saved window size, fullscreen, always-on-top, keyboard and help, mirroring with one feed, monitor changes, reset.
-- macOS Radar: aggregate view, Keychain token, attribution, consent identity, cache, 15-minute floor, cooldown, backoff, single worker. Windows has no Radar worker.
+- Radar: aggregate view, OS credential store token (Keychain, Credential Manager), attribution, consent identity, cache, 15-minute floor, cooldown, backoff, single worker. Windows Radar added at the owner's request on 5 November 2026.
 - Current icon, separate settings, portable use and rollback, privacy, verified TLS.
 
 ## Not part of this phase

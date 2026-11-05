@@ -20,6 +20,12 @@ Extract the ZIP into a user-owned folder and launch `AtlasSOC.exe`. No administr
 
 `./scripts/build-windows-soc-installer.ps1` wraps the portable package with Inno Setup 6. The installer offers **Just me** (default, `%LocalAppData%\Programs\AtlasSOC`, no elevation) or **Everyone** (`%ProgramFiles%\AtlasSOC`, administrator approval), plus separate desktop and Start menu shortcut choices. It refuses to install over the other scope. The app always runs unelevated, and settings and consent stay in each user's profile and survive uninstall. It never touches the screensaver or its settings. No updater, startup task or schedule is added.
 
+## Cloudflare Radar
+
+Radar is optional and needs your own Cloudflare API token with Account / Radar / Read. Right-click and choose **Set Cloudflare Radar token...**. The Windows credential prompt saves it in Credential Manager for your user; AtlasSOC never writes it to a file. **Remove Cloudflare Radar token** deletes it.
+
+With a saved token, collection starts by itself after consent and reads `api.cloudflare.com` at most every 15 minutes, keeping that wait across restarts. It respects Retry-After and backs off on failures. A refused token is not retried until you save a new one, and Pause is remembered. Only one worker runs. Data is a past-day aggregate, not live events or routes, and the latest validated response is cached in your profile. Uninstalling keeps the token and settings; remove the token first if you want it gone.
+
 ## Consent and network behavior
 
 The first normal launch shows the Cloudflare Radar data notice, CC BY-NC 4.0 attribution/noncommercial restriction, legal/source URLs and reviewed fingerprints. **No** is the default; declining quits without a feed. Only the person reviewing the terms may choose Yes. Acceptance does not grant commercial-use permission. Acceptance is bound to full app version/build plus notice/legal hashes; any change requires reconfirmation. Settings reset does not accept or erase consent.

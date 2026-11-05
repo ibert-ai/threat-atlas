@@ -1,4 +1,4 @@
-//! Disk state has no tokens or telemetry. Consent is independent of resettable UI settings.
+//! Disk state has no tokens or live telemetry; the Radar cache is Cloudflare's published aggregate. Consent is independent of resettable UI settings.
 #![cfg_attr(not(windows), allow(dead_code))]
 use serde::{Deserialize, Serialize};
 use std::{fs, io, path::Path};
@@ -50,6 +50,7 @@ pub struct Settings {
     pub severities: [bool; 3],
     pub motion: Motion,
     pub mirror_all_displays: bool,
+    pub radar_layer: bool,
 }
 impl Default for Settings {
     fn default() -> Self {
@@ -63,6 +64,7 @@ impl Default for Settings {
             severities: [true; 3],
             motion: Motion::Realtime,
             mirror_all_displays: false,
+            radar_layer: true,
         }
     }
 }

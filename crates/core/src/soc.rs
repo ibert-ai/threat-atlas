@@ -65,6 +65,8 @@ pub struct Options {
     /// Cloudflare Radar icon layer on/off, and origin codes (upper case) the viewer has hidden.
     pub radar_layer: bool,
     pub radar_hidden: Vec<String>,
+    /// Host status shown while there is no Radar data; hosts know why, the view does not.
+    pub radar_note: Option<String>,
 }
 impl Default for Options {
     fn default() -> Self {
@@ -75,6 +77,7 @@ impl Default for Options {
             focus: None,
             radar_layer: true,
             radar_hidden: Vec::new(),
+            radar_note: None,
         }
     }
 }
@@ -597,7 +600,10 @@ impl SocView {
                 1044,
                 590,
                 12,
-                "NO RADAR DATA (PRESS START IN THE APP)",
+                self.options
+                    .radar_note
+                    .as_deref()
+                    .unwrap_or("NO RADAR DATA YET (SEE STATUS IN THE APP)"),
                 MUTED,
             ),
         }
