@@ -1,3 +1,10 @@
+## AtlasSOC Desktop 0.7.0 beta.2 / build 11 (Windows x64)
+
+- Publish the Windows installer and standalone ZIP. The owner confirmed a fresh Cloudflare Radar fetch, and both package checksums were independently verified.
+- Stop the Windows Radar request before sending the token if WinHTTP security options cannot be set.
+- Windows packages are unsigned. F11 fullscreen switching has a known issue. Physical GPU, multi-monitor and extended soak tests remain pending.
+- [Release notes, downloads and checksums](https://github.com/ibert-ai/threat-atlas/releases/tag/atlassoc-v0.7.0-beta.2)
+
 ## 0.4.5 — 4 November 2026
 
 - Promote the owner-approved 0.4.4 RC implementation to stable for Windows x64 and Linux x86_64 preview.
