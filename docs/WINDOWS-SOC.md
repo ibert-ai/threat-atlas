@@ -40,6 +40,10 @@ Right-click for native controls; F1 shows help. F11 toggles fullscreen; Escape l
 
 Settings are bounded, versioned JSON under `%LOCALAPPDATA%/ThreatAtlasSOC/settings.json`, separate from `consent.json`. Invalid or oversized settings fall back to defaults and report the problem. Changes use atomic replacements. Mirror windows recover from monitor geometry/list changes; the feed and renderer remain shared. There is a 16-window cap and a 34-megapixel limit per display.
 
+## Known issues
+
+F11 does not enter fullscreen. Use the right-click menu to enter it; F11 then returns to windowed. Planned for the next version.
+
 ## Acceptance limits
 
 Mirrored fullscreen windows are implemented. Per-display log/metrics roles, selected-display layouts, spanning canvases, login startup, standalone MSI/upgrade integration and an eight-hour physical wall soak remain pending. Automated native smoke covers window creation, drawing and exit without networking; it does not prove physical mixed-DPI/hotplug behavior, live feed delivery, idle/lock acceptance, signature trust or installation on another machine. MAC owns final cross-platform integration, product identity, documentation and publication. Preserve stable screensaver releases and keep the combined beta blocked until required gates pass.

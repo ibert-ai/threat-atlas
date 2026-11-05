@@ -28,3 +28,7 @@ Reference SOC-DESKTOP-NEXT-20261104-01. Baseline: Desktop 0.7.0 build 10 (`2260a
 ## Not part of this phase
 
 SOC wall roles and spanning, Zero Wire, signing, trusted updates, and physical multi-monitor or soak testing stay listed as open work.
+
+## Known issues
+
+F11 does not enter fullscreen on Windows; the right-click menu does, and F11 then leaves it. The owner accepted this for the next version on 5 November 2026.
