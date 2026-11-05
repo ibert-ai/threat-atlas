@@ -104,7 +104,6 @@ struct Line {
     received_ms: u64,
 }
 pub struct SocView {
-    radar_available: bool,
     renderer: Renderer,
     pub options: Options,
     arcs: VecDeque<Arc>,
@@ -139,7 +138,7 @@ pub fn lon_lat(x: f32, y: f32) -> Option<(f64, f64)> {
     ))
 }
 impl Renderer {
-    pub fn new_soc(radar_available: bool) -> Self {
+    pub fn new_soc() -> Self {
         let mut r = Self::blank();
         r.base_map();
         r.text(35, 28, 30, "THREAT ATLAS", [223, 241, 249]);
@@ -147,11 +146,7 @@ impl Renderer {
             36,
             70,
             14,
-            if radar_available {
-                "SECURITY OPERATIONS / GREYNOISE LIVE + CLOUDFLARE RADAR"
-            } else {
-                "SECURITY OPERATIONS / GREYNOISE LIVE"
-            },
+            "SECURITY OPERATIONS / GREYNOISE LIVE + CLOUDFLARE RADAR",
             MUTED,
         );
         r.text(1044, 225, 15, "LATEST SELECTED RECORDS", INFO);
@@ -160,11 +155,7 @@ impl Renderer {
             35,
             875,
             12,
-            if radar_available {
-                "GREYNOISE: RECEIVED RECORDS, NOT UNIQUE ATTACKS | RADAR: AGGREGATE SHARES | TIMES UTC"
-            } else {
-                "GREYNOISE: RECEIVED RECORDS, NOT UNIQUE ATTACKS | TIMES UTC"
-            },
+            "GREYNOISE: RECEIVED RECORDS, NOT UNIQUE ATTACKS | RADAR: AGGREGATE SHARES | TIMES UTC",
             MUTED,
         );
         r.desktop_version_label();
@@ -174,20 +165,9 @@ impl Renderer {
 }
 impl SocView {
     pub fn new() -> Self {
-        Self::build(true)
-    }
-    /// For hosts with no Radar worker: the view never mentions Radar controls they lack.
-    pub fn without_radar() -> Self {
-        Self::build(false)
-    }
-    fn build(radar_available: bool) -> Self {
         Self {
-            renderer: Renderer::new_soc(radar_available),
-            radar_available,
-            options: Options {
-                radar_layer: radar_available,
-                ..Options::default()
-            },
+            renderer: Renderer::new_soc(),
+            options: Options::default(),
             arcs: VecDeque::new(),
             last_sequence: 0,
             tokens: 1.,
@@ -465,11 +445,7 @@ impl SocView {
             1044,
             80,
             13,
-            &if self.radar_available {
-                format!("GREYNOISE {} | RADAR {}", s.status, radar_label)
-            } else {
-                format!("GREYNOISE {}", s.status)
-            },
+            &format!("GREYNOISE {} | RADAR {}", s.status, radar_label),
             INFO,
         );
         let total = self.counts.1;
@@ -568,26 +544,19 @@ impl SocView {
         }
 
         // Right panel, lower half: Cloudflare Radar rows as supplied (informational).
-        if !self.radar_available {
-            r.text(1044, 560, 15, "CLOUDFLARE RADAR", INFO);
-            r.text(1044, 590, 12, "NOT AVAILABLE IN THIS VERSION", MUTED);
-        }
         let layer = if self.options.radar_layer {
             ""
         } else {
             " (LAYER OFF)"
         };
-        if self.radar_available {
-            r.text(
-                1044,
-                560,
-                15,
-                &format!("CLOUDFLARE RADAR / TOP ROWS{layer}"),
-                INFO,
-            );
-        }
+        r.text(
+            1044,
+            560,
+            15,
+            &format!("CLOUDFLARE RADAR / TOP ROWS{layer}"),
+            INFO,
+        );
         match radar_data {
-            _ if !self.radar_available => {}
             Some(data) => {
                 for (i, row) in data.rows.iter().take(8).enumerate() {
                     let y = 590 + i as i32 * 26;
@@ -628,7 +597,7 @@ impl SocView {
                 1044,
                 590,
                 12,
-                "NO RADAR DATA YET (SEE STATUS IN THE APP)",
+                "NO RADAR DATA (PRESS START IN THE APP)",
                 MUTED,
             ),
         }
@@ -649,10 +618,8 @@ impl SocView {
             r.rect(640., y as f32 + 3., 12., 10., *colour, 200);
             r.text(660, y, 12, label, TEXT);
         }
-        let radar_legend = [(false, "RADAR ORIGIN"), (true, "RADAR TARGET")];
-        for (i, (target, label)) in radar_legend
+        for (i, (target, label)) in [(false, "RADAR ORIGIN"), (true, "RADAR TARGET")]
             .into_iter()
-            .take(if self.radar_available { 2 } else { 0 })
             .enumerate()
         {
             let y = 816 + i as i32 * 18;
@@ -671,22 +638,16 @@ impl SocView {
         } else {
             "ARCS: MAX 2/S, FADE 8 S"
         };
-        let notes: &[&str] = if self.radar_available {
-            &[
-                "TINT: TOP CLASS, 5 MIN",
-                arcs_note,
-                "PIE AREA = RADAR SHARE",
-                "TARGETS ONLY IF SUPPLIED",
-                "CLICK COUNTRY TO FOCUS",
-            ]
-        } else {
-            &[
-                "TINT: TOP CLASS, 5 MIN",
-                arcs_note,
-                "CLICK COUNTRY TO FOCUS",
-            ]
-        };
-        for (i, note) in notes.iter().enumerate() {
+        for (i, note) in [
+            "TINT: TOP CLASS, 5 MIN",
+            arcs_note,
+            "PIE AREA = RADAR SHARE",
+            "TARGETS ONLY IF SUPPLIED",
+            "CLICK COUNTRY TO FOCUS",
+        ]
+        .iter()
+        .enumerate()
+        {
             r.text(820, 762 + i as i32 * 18, 11, note, MUTED);
         }
         if s.status != "LIVE" && !s.error.is_empty() {
@@ -932,13 +893,6 @@ fn draw_icon(pixmap: &mut Pixmap, icon: &Icon, alpha: f32) {
 }
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn views_without_a_radar_worker_do_not_offer_radar() {
-        let (with, without) = (SocView::new(), SocView::without_radar());
-        assert!(with.options.radar_layer && with.radar_available);
-        assert!(!without.options.radar_layer && !without.radar_available);
-    }
-
     #[test]
     fn desktop_footer_shows_the_desktop_identity_not_the_screensaver() {
         let read = |file: &str| -> serde_json::Value {
