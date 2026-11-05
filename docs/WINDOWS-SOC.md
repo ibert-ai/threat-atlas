@@ -30,7 +30,7 @@ With a saved token, collection starts by itself after consent and reads `api.clo
 
 The first normal launch shows the Cloudflare Radar data notice, CC BY-NC 4.0 attribution/noncommercial restriction, legal/source URLs and reviewed fingerprints. **No** is the default; declining quits without a feed. Only the person reviewing the terms may choose Yes. Acceptance does not grant commercial-use permission. Acceptance is bound to full app version/build plus notice/legal hashes; any change requires reconfirmation. Settings reset does not accept or erase consent.
 
-After consent, one background worker connects with verified TLS to `wss://threat-map-api.greynoise.io/ws`. Counts are received records, not unique attacks; timestamps describe receipt and do not establish upstream event age or attacker identity. No raw telemetry, credentials or API tokens are saved in settings. Windows has no Cloudflare request worker or token store in this increment; Radar aggregates are not fabricated or inferred from GreyNoise records.
+After consent, one background worker connects with verified TLS to `wss://threat-map-api.greynoise.io/ws`. With a saved token, a second worker reads `api.cloudflare.com`. Counts are received records, not unique attacks; timestamps describe receipt and do not establish upstream event age or attacker identity. No raw telemetry, credentials or API tokens are saved in settings. Windows has no Cloudflare request worker or token store in this increment; Radar aggregates are not fabricated or inferred from GreyNoise records.
 
 `--smoke-test REPORT.json` is an offline rendering/lifecycle test. It constructs no feed, does not read or change real consent and displays no synthetic attack records. It does not prove live telemetry or accept licence terms.
 
