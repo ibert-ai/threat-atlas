@@ -274,4 +274,27 @@ mod tests {
         assert!(inspection_label("not json").is_none());
         assert!(inspection_label("{}").is_none());
     }
+    #[test]
+    fn every_window_shape_keeps_the_frame_inside_and_centered() {
+        // Tiny, portrait, ultrawide, 4K, and the persisted size limits.
+        for (w, h) in [
+            (640, 400),
+            (800, 2000),
+            (1080, 1920),
+            (3440, 1440),
+            (5120, 1440),
+            (3840, 2160),
+            (2160, 3840),
+        ] {
+            let (dw, dh, x, y) = layout(w, h);
+            assert!(dw > 0 && dh > 0, "{w}x{h}");
+            assert!(x + dw <= w && y + dh <= h, "{w}x{h}");
+            assert!(
+                x.abs_diff(w - dw - x) <= 1 && y.abs_diff(h - dh - y) <= 1,
+                "{w}x{h}"
+            );
+            let ratio = f64::from(dw) / f64::from(dh);
+            assert!((ratio - 1.6).abs() < 0.01, "{w}x{h}: {ratio}");
+        }
+    }
 }

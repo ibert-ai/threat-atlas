@@ -1,5 +1,5 @@
 # Lifecycle test for a disposable machine or CI runner. Everyone cases need an elevated shell.
-param([string]$Setup, [switch]$JustMeOnly)
+param([string]$Setup, [string]$NextSetup, [switch]$JustMeOnly)
 $ErrorActionPreference = 'Stop'
 Set-Location (Join-Path $PSScriptRoot '..')
 $identity = Get-Content -Raw -LiteralPath 'windows-soc-version.json' | ConvertFrom-Json
@@ -71,6 +71,22 @@ try {
         if (Test-Path -LiteralPath (Join-Path $env:ProgramFiles 'AtlasSOC\AtlasSOC.exe')) { throw 'Refused install wrote files' }
         Uninstall-Scope $scopes.JustMe
         Write-Output 'PASS scope conflict refused'
+    }
+    if ($NextSetup) {
+        $NextSetup = (Resolve-Path -LiteralPath $NextSetup).Path
+        foreach ($name in $order) {
+            $scope = $scopes[$name]
+            if (Run-Setup @($scope.Flag, '/TASKS="startmenu"')) { throw 'Upgrade base install failed' }
+            $code = (Start-Process -FilePath $NextSetup -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', $scope.Flag -Wait -PassThru).ExitCode
+            if ($code) { throw "$name upgrade failed: $code" }
+            $entry = Get-ItemProperty -LiteralPath $scope.Hive
+            if ($entry.DisplayVersion -eq $identity.version) { throw 'Upgrade kept the old version' }
+            Assert-Shortcut (Join-Path $scope.Menu 'AtlasSOC.lnk') $true
+            Assert-Shortcut (Join-Path $scope.Desktop 'AtlasSOC.lnk') $false
+            if (-not (Test-Path -LiteralPath $marker)) { throw 'Upgrade removed user data' }
+            Write-Output "PASS $name upgrade keeps shortcut choices and user data"
+            Uninstall-Scope $scope
+        }
     }
     $after = Get-ItemProperty 'HKCU:\Control Panel\Desktop'
     foreach ($property in $desktopPrefs) { if ($before.$property -ne $after.$property) { throw "Installer changed $property" } }
