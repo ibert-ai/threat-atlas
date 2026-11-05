@@ -26,6 +26,8 @@ use windows_sys::Win32::{
 const TARGET: &str = "AtlasSOC/CloudflareRadar";
 const ACCOUNT: &str = "RadarRead";
 const TICK: Duration = Duration::from_secs(30);
+/// CREDUI_MAX_PASSWORD_LENGTH in wincred.h; windows-sys does not export it.
+const MAX_SECRET_LENGTH: u32 = 256;
 
 fn wide(text: &str) -> Vec<u16> {
     text.encode_utf16().chain(Some(0)).collect()
@@ -83,7 +85,7 @@ fn prompt_token(owner: HWND) -> Option<String> {
     let target = wide(TARGET);
     let mut user = wide(ACCOUNT);
     user.resize(CREDUI_MAX_USERNAME_LENGTH as usize + 1, 0);
-    let mut secret = vec![0u16; CREDUI_MAX_PASSWORD_LENGTH as usize + 1];
+    let mut secret = vec![0u16; MAX_SECRET_LENGTH as usize + 1];
     // SAFETY: buffers are sized as declared and outlive the call; a zeroed info struct is valid.
     let result = unsafe {
         let mut info: CREDUI_INFOW = std::mem::zeroed();
@@ -99,7 +101,7 @@ fn prompt_token(owner: HWND) -> Option<String> {
             user.as_mut_ptr(),
             CREDUI_MAX_USERNAME_LENGTH + 1,
             secret.as_mut_ptr(),
-            CREDUI_MAX_PASSWORD_LENGTH + 1,
+            MAX_SECRET_LENGTH + 1,
             std::ptr::null_mut(),
             CREDUI_FLAGS_GENERIC_CREDENTIALS
                 | CREDUI_FLAGS_DO_NOT_PERSIST
