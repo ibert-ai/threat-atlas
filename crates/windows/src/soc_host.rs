@@ -274,8 +274,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     }
     let event_loop = EventLoop::new();
     let mut windows = displays(&event_loop, &settings)?;
-    let mut view = SocView::new();
-    view.options.radar_layer = false;
+    let mut view = SocView::without_radar();
     let offline = State::default();
     let mut paused = false;
     let mut rgba = Vec::new();
