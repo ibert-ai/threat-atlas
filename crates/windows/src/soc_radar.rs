@@ -195,18 +195,22 @@ fn fetch(token: &str) -> Option<Reply> {
         }
         let never: u32 = WINHTTP_OPTION_REDIRECT_POLICY_NEVER;
         let no_cookies: u32 = WINHTTP_DISABLE_COOKIES;
-        WinHttpSetOption(
+        // The token must never follow a redirect or sit in a cookie store, so a failed option stops here.
+        if WinHttpSetOption(
             request.0,
             WINHTTP_OPTION_REDIRECT_POLICY,
             (&never as *const u32).cast(),
             4,
-        );
-        WinHttpSetOption(
-            request.0,
-            WINHTTP_OPTION_DISABLE_FEATURE,
-            (&no_cookies as *const u32).cast(),
-            4,
-        );
+        ) == 0
+            || WinHttpSetOption(
+                request.0,
+                WINHTTP_OPTION_DISABLE_FEATURE,
+                (&no_cookies as *const u32).cast(),
+                4,
+            ) == 0
+        {
+            return None;
+        }
         if WinHttpAddRequestHeaders(
             request.0,
             headers.as_ptr(),
