@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-06T11:21:37.602135Z",
+  "updated_at": "2026-11-06T11:36:43.125981Z",
   "monitoring_started_at": "2026-11-04T23:16:11.309183Z",
   "agents": [
     {
       "id": "mac",
       "name": "MAC",
-      "last_reported_at": "2026-11-06T11:21:37.602135Z",
-      "last_heartbeat_at": "2026-11-06T11:21:37.602135Z"
+      "last_reported_at": "2026-11-06T11:36:43.125981Z",
+      "last_heartbeat_at": "2026-11-06T11:36:43.125981Z"
     },
     {
       "id": "cl",
@@ -18,8 +18,8 @@
     {
       "id": "billy",
       "name": "Billy",
-      "last_reported_at": "2026-11-06T11:16:02.468969Z",
-      "last_heartbeat_at": "2026-11-06T11:16:02.468969Z"
+      "last_reported_at": "2026-11-06T11:30:53.088265Z",
+      "last_heartbeat_at": "2026-11-06T11:30:53.088265Z"
     }
   ]
 }
