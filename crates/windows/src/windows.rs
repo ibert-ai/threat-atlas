@@ -116,6 +116,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     let windowed = command == "--windowed";
     let event_loop = EventLoop::new();
     let mut panorama_size = None;
+    let mut panorama_origin = None;
     let mut builder = WindowBuilder::new()
         .with_title("Threat Atlas")
         .with_decorations(windowed)
@@ -152,7 +153,10 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             {
                 let size = PhysicalSize::new(left.size().width * 2, left.size().height);
                 panorama_size = Some(size);
+                panorama_origin = Some(left.position());
+                // A resizable window keeps an invisible frame that offsets the picture.
                 builder
+                    .with_resizable(false)
                     .with_position(left.position())
                     .with_inner_size(size)
                     .with_always_on_top(true)
@@ -161,6 +165,14 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         };
     }
     let window = Rc::new(builder.build(&event_loop)?);
+    if let Some(origin) = panorama_origin {
+        if let (Ok(inner), Ok(outer)) = (window.inner_position(), window.outer_position()) {
+            window.set_outer_position(PhysicalPosition::new(
+                outer.x + origin.x - inner.x,
+                outer.y + origin.y - inner.y,
+            ));
+        }
+    }
     if !windowed && !preview {
         window.set_cursor_visible(false);
     }
