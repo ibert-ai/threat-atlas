@@ -23,6 +23,13 @@ impl Session {
             renderer: render::Renderer::new(),
         }
     }
+    /// Session with the wide two-display layout for a window of this physical size.
+    pub fn panorama(width: u32, height: u32) -> Self {
+        Self {
+            feed: Feed::shared(),
+            renderer: render::Renderer::new_panorama(width, height),
+        }
+    }
     pub fn frame(&mut self) -> &[u8] {
         let snap = self.feed.snapshot();
         self.renderer.draw(&snap)
