@@ -16,8 +16,8 @@ if any(n > maximum for n, maximum in zip(map(int, VERSION.split('.')), (255, 255
     raise ValueError('Version exceeds Windows MSI limits')
 if type(BUILD) is not int or not 1 <= BUILD <= 2147483647:
     raise ValueError('Build must be a positive integer')
-if PRERELEASE is not None and (not isinstance(PRERELEASE, str) or not re.fullmatch(r'rc\.[1-9][0-9]*', PRERELEASE)):
-    raise ValueError('Prerelease must be rc.N or null for stable')
+if PRERELEASE is not None and (not isinstance(PRERELEASE, str) or not re.fullmatch(r'(?:beta|rc)\.[1-9][0-9]*', PRERELEASE)):
+    raise ValueError('Prerelease must be beta.N, rc.N or null for stable')
 TAG = 'v' + VERSION + ('-' + PRERELEASE if PRERELEASE else '')
 MSI_NAME = 'ThreatAtlas-' + VERSION + '-x64.msi'
 
