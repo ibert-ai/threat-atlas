@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-04T22:46:47.117Z",
-  "source_updated_at": "2026-11-04T22:46:47.117Z",
+  "generated_at": "2026-11-07T14:19:13Z",
+  "source_updated_at": "2026-11-05T15:42:19Z",
   "title": "Atlas — Project status",
   "state": "Screensaver 0.4.5 stable · Windows + Linux",
   "summary": "Owner-approved stable0.4.5/build13 published. All7 exact-source baseline checks and all7 public download verifications PASS. Windows MSI/ZIP and Linux windowed preview included. macOS excluded pending Gatekeeper trust. Signing and accepted manual test limits remain documented.",
@@ -131,73 +131,43 @@
     ]
   },
   "standalone_release": {
-    "name": "AtlasSOC 0.7.0 beta 1 / build 10",
-    "decision": "PUBLISHED BETA",
-    "published_at": "2026-11-02T21:06:45Z",
-    "url": "https://github.com/ibert-ai/threat-atlas/releases/tag/atlassoc-v0.7.0-beta.1",
+    "name": "AtlasSOC Desktop 0.7.0 beta.2 / build 11",
+    "decision": "PUBLISHED BETA · Windows x64",
+    "published_at": "2026-11-05T13:12:26Z",
+    "url": "https://github.com/ibert-ai/threat-atlas/releases/tag/atlassoc-v0.7.0-beta.2",
     "downloads": [
       {
-        "name": "AtlasSOC-macOS-universal-v0.7.0-build10.zip",
-        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/AtlasSOC-macOS-universal-v0.7.0-build10.zip",
-        "sha256": "665af1efd546cdbab9d53265ddd5f7523e1000e479cdb295b1413558d1f86d8c"
+        "name": "AtlasSOC-Setup-0.7.0-build11.exe",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.2/AtlasSOC-Setup-0.7.0-build11.exe",
+        "sha256": "282f050404bcb800dd465f34b2b8dee7b67facb79aacb4c26ea9414eaa19f694"
       },
       {
-        "name": "AtlasSOC-VERIFICATION.json",
-        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/AtlasSOC-VERIFICATION.json",
-        "sha256": "8a62d9804a4e2910fd29f8fbd323444d990d20cfc435bdf9f9b74d6867eb36a0"
-      },
-      {
-        "name": "AtlasSOC-Windows-x64-v0.7.0-build10.zip",
-        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/AtlasSOC-Windows-x64-v0.7.0-build10.zip",
-        "sha256": "866da4052e30eafe7530593d9613db910a6252c59e003b3c886cfc627f2ed0cb"
-      },
-      {
-        "name": "INSTALL-PRIVACY-LIMITS.md",
-        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/INSTALL-PRIVACY-LIMITS.md",
-        "sha256": "1ed35583bede2474e287975ce100af8d330258c0e51cae1ff7817bcf1df6826e"
-      },
-      {
-        "name": "SHA256SUMS.txt",
-        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/SHA256SUMS.txt",
-        "sha256": "c6275d06ee1ba2e6a08c7394aa57c2534f94f1a8a8a63acca7fadfbff210b5f8"
+        "name": "AtlasSOC-Windows-x64-v0.7.0-build11.zip",
+        "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.2/AtlasSOC-Windows-x64-v0.7.0-build11.zip",
+        "sha256": "c9527f34ef579aa57087f280cb031cff5d90bc4be825a626e006856efbdc2715"
       }
     ]
   },
   "desktop": {
     "name": "AtlasSOC Desktop",
-    "state": "Next version · requirements assigned",
-    "summary": "Published Desktop beta remains available for Windows and macOS. Next work preserves current features and accounts for stable screensaver0.4.5 changes, with Windows implementation and testing first. No next Desktop build or release is claimed; Linux Desktop is a later phase.",
-    "updated_at": "2026-11-04T22:43:13.287Z",
+    "state": "Windows beta.2 published",
+    "summary": "Windows x64 beta.2 (build 11) includes an installer and a standalone ZIP. Packages are unsigned and fullscreen switching with F11 has a known issue. Beta.1 remains available for macOS. Linux Desktop is a later phase.",
+    "updated_at": "2026-11-05T13:12:26Z",
     "release": {
-      "name": "AtlasSOC 0.7.0 beta 1 / build 10",
-      "decision": "PUBLISHED BETA",
-      "published_at": "2026-11-02T21:06:45Z",
-      "url": "https://github.com/ibert-ai/threat-atlas/releases/tag/atlassoc-v0.7.0-beta.1",
+      "name": "AtlasSOC Desktop 0.7.0 beta.2 / build 11",
+      "decision": "PUBLISHED BETA · Windows x64",
+      "published_at": "2026-11-05T13:12:26Z",
+      "url": "https://github.com/ibert-ai/threat-atlas/releases/tag/atlassoc-v0.7.0-beta.2",
       "downloads": [
         {
-          "name": "AtlasSOC-macOS-universal-v0.7.0-build10.zip",
-          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/AtlasSOC-macOS-universal-v0.7.0-build10.zip",
-          "sha256": "665af1efd546cdbab9d53265ddd5f7523e1000e479cdb295b1413558d1f86d8c"
+          "name": "AtlasSOC-Setup-0.7.0-build11.exe",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.2/AtlasSOC-Setup-0.7.0-build11.exe",
+          "sha256": "282f050404bcb800dd465f34b2b8dee7b67facb79aacb4c26ea9414eaa19f694"
         },
         {
-          "name": "AtlasSOC-VERIFICATION.json",
-          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/AtlasSOC-VERIFICATION.json",
-          "sha256": "8a62d9804a4e2910fd29f8fbd323444d990d20cfc435bdf9f9b74d6867eb36a0"
-        },
-        {
-          "name": "AtlasSOC-Windows-x64-v0.7.0-build10.zip",
-          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/AtlasSOC-Windows-x64-v0.7.0-build10.zip",
-          "sha256": "866da4052e30eafe7530593d9613db910a6252c59e003b3c886cfc627f2ed0cb"
-        },
-        {
-          "name": "INSTALL-PRIVACY-LIMITS.md",
-          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/INSTALL-PRIVACY-LIMITS.md",
-          "sha256": "1ed35583bede2474e287975ce100af8d330258c0e51cae1ff7817bcf1df6826e"
-        },
-        {
-          "name": "SHA256SUMS.txt",
-          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.1/SHA256SUMS.txt",
-          "sha256": "c6275d06ee1ba2e6a08c7394aa57c2534f94f1a8a8a63acca7fadfbff210b5f8"
+          "name": "AtlasSOC-Windows-x64-v0.7.0-build11.zip",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0-beta.2/AtlasSOC-Windows-x64-v0.7.0-build11.zip",
+          "sha256": "c9527f34ef579aa57087f280cb031cff5d90bc4be825a626e006856efbdc2715"
         }
       ]
     },
