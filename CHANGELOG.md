@@ -1,3 +1,11 @@
+## 0.4.6-beta.1 — release candidate, 7 November 2026, build 14
+
+- Add an owner-approved Windows panorama layout for two matching side-by-side displays.
+- Keep the map undistorted, place the seam over the Atlantic and keep information panels on one display.
+- Correct the panorama window position after physical testing found an eight-pixel left-edge gap.
+- Preserve the standard single-display rendering and fall back to it for unsupported display layouts.
+- Prepare Windows-only beta packaging; macOS and Linux packages are excluded from this candidate.
+
 ## 0.4.5 — 4 November 2026
 
 - Promote the owner-approved 0.4.4 RC implementation to stable for Windows x64 and Linux x86_64 preview.

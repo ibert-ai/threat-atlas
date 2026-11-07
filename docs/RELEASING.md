@@ -2,8 +2,9 @@
 
 `version.json` is the authoritative release manifest. The official unsigned
 release is 0.4.0, build 8. Stable status does not imply trusted signatures.
-The current manifest prepares the 0.4.2-rc.1 beta, build 10. It will be published as a
-prerelease after exact-source automated checks and package validation; 0.4.0 stays latest stable. Historical 0.4.0 assets remain unchanged.
+The current manifest prepares the Windows-only 0.4.6-beta.1 candidate, build 14.
+It may be published as a prerelease only after exact-source automated checks and
+package validation; 0.4.5 stays latest stable. Historical assets remain unchanged.
 
 The maintainer authorized unsigned publication on 29 October 2026. For 0.4.0,
 the signing and manual acceptance gates below remain incomplete and must be
@@ -13,8 +14,8 @@ published commit. Keep updater signature enforcement unchanged.
 - `version`: numeric major.minor.patch shared by Rust, macOS and MSI. It must fit
   MSI limits (255.255.65535). Increase it for every new public installer version.
 - `build`: monotonically increasing positive integer for macOS CFBundleVersion.
-- `prerelease`: `rc.N` for a preview, or JSON `null` for a stable release. The tag
-  is derived as `v<version>-rc.N` or `v<version>`.
+- `prerelease`: `beta.N` or `rc.N` for a preview, or JSON `null` for a stable
+  release. The tag is derived as `v<version>-<prerelease>` or `v<version>`.
 
 After editing the manifest, run `python3 scripts/version.py --write`, then
 `python3 scripts/version.py --check`. Commit the manifest and generated Cargo,
@@ -49,11 +50,10 @@ Windows ZIP names include the derived tag. See UPDATES.md for signature/key rule
 Do not overwrite old release assets with new payloads under an old tag/version.
 Keep previous downloads available and publish a new preview when the checks pass.
 
-The current manual publication job is deliberately restricted to v0.4.2-rc.1
-and sets the GitHub prerelease flag without replacing latest stable.
-Preparing a new version does not authorize that job to publish it. Before the
-next publication, review its version guard, release notes, prerelease flag and
-acceptance evidence together; do not reuse the 0.4.0 notes for a new tag.
+The current manual publication job is restricted to v0.4.6-beta.1 and creates a
+Windows-only prerelease without replacing latest stable. Preparing or merging
+the version does not authorize publication. Review its exact tag guard, release
+notes, prerelease flag and acceptance evidence before manually dispatching it.
 
 ## Known bugs in every release
 
