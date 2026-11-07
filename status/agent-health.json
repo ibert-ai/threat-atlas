@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-07T02:25:58.840828Z",
+  "updated_at": "2026-11-07T02:43:58.089222Z",
   "monitoring_started_at": "2026-11-04T23:16:11.309183Z",
   "agents": [
     {
       "id": "mac",
       "name": "MAC",
-      "last_reported_at": "2026-11-07T02:25:58.840828Z",
-      "last_heartbeat_at": "2026-11-07T02:25:58.840828Z"
+      "last_reported_at": "2026-11-07T02:43:58.089222Z",
+      "last_heartbeat_at": "2026-11-07T02:43:58.089222Z"
     },
     {
       "id": "cl",
