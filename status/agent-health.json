@@ -1,25 +1,31 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-07T07:01:08.965947Z",
+  "updated_at": "2026-11-07T07:12:58.732353Z",
   "monitoring_started_at": "2026-11-04T23:16:11.309183Z",
   "agents": [
     {
       "id": "mac",
-      "name": "MAC",
-      "last_reported_at": "2026-11-07T07:01:08.965947Z",
-      "last_heartbeat_at": "2026-11-07T07:01:08.965947Z"
+      "name": "MacGyver",
+      "last_reported_at": "2026-11-07T07:12:58.732353Z",
+      "last_heartbeat_at": "2026-11-07T07:12:58.732353Z",
+      "capacity": "unknown",
+      "capacity_reported_at": null
     },
     {
       "id": "cl",
-      "name": "CL",
+      "name": "Jean-Claude Van Damme",
       "last_reported_at": "2026-11-07T07:00:49Z",
-      "last_heartbeat_at": "2026-11-07T06:47:51Z"
+      "last_heartbeat_at": "2026-11-07T06:47:51Z",
+      "capacity": "unknown",
+      "capacity_reported_at": null
     },
     {
       "id": "billy",
-      "name": "Billy",
+      "name": "BillyBadass",
       "last_reported_at": "2026-11-06T19:01:06.926956Z",
-      "last_heartbeat_at": "2026-11-06T19:01:06.926956Z"
+      "last_heartbeat_at": "2026-11-06T19:01:06.926956Z",
+      "capacity": "unknown",
+      "capacity_reported_at": null
     }
   ]
 }
