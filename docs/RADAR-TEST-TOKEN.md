@@ -5,8 +5,10 @@ development tests. Shipping versions must never contain it.
 
 ## Rules
 
-- **Scope:** custom Cloudflare API token with one permission, Account · Radar · Read, and a
-  short expiry (30 days). Robert creates, rotates and revokes it in the Cloudflare dashboard.
+- **Scope:** custom Cloudflare API token with one permission, Account · Radar · Read. Robert
+  (owner), 9 November 2026: no end date, because it is read-only and used only for our testing;
+  if it is ever exposed or broken, Robert revokes or rolls it. He creates, rotates and revokes it
+  in the Cloudflare dashboard.
 - **Storage:** only in the testing Mac's Keychain, service `IbertConsulting.CL.CloudflareRadarTest`,
   account `radar-read-test`. Robert types the value into Keychain himself. It is separate from the
   app's own user token item (`ThreatAtlas.PrivateRadarBeta` / `RadarRead`).
