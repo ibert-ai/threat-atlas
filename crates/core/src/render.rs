@@ -40,7 +40,14 @@ pub struct Renderer {
     country_classes: Vec<Option<usize>>,
     country_overlay: Pixmap,
     panorama: Option<panorama::View>,
+    /// Wide SOC frame (macOS window wider than 16:10): extra pixels inserted at `WIDE_SPLIT`.
+    /// Everything drawn at x >= WIDE_SPLIT moves right by this amount unless `wide_raw` is set.
+    /// Zero for the screensaver and the standard 1440x900 SOC frame, which stay unchanged.
+    pub(crate) wide_dx: f32,
+    pub(crate) wide_raw: bool,
 }
+/// Column boundary between the map and the right-hand panels in the 1440x900 layout.
+pub(crate) const WIDE_SPLIT: f32 = 1015.;
 impl Default for Renderer {
     fn default() -> Self {
         Self::new()
@@ -100,7 +107,25 @@ impl Renderer {
             country_classes: Vec::new(),
             country_overlay: Pixmap::new(width, height).unwrap(),
             panorama: None,
+            wide_dx: 0.,
+            wide_raw: false,
         }
+    }
+    /// Frame x for a layout x: right-hand column shifted in a wide SOC frame.
+    pub(crate) fn wx(&self, x: f32) -> f32 {
+        if !self.wide_raw && self.wide_dx > 0. && x >= WIDE_SPLIT {
+            x + self.wide_dx
+        } else {
+            x
+        }
+    }
+    /// Resize the frame for the wide SOC layout (height stays 900); callers repaint the base.
+    pub(crate) fn resize_wide(&mut self, width: u32) {
+        let width = width.max(WIDTH);
+        self.pix = Pixmap::new(width, HEIGHT).unwrap();
+        self.base = self.pix.clone();
+        self.country_overlay = Pixmap::new(width, HEIGHT).unwrap();
+        self.wide_dx = (width - WIDTH) as f32;
     }
     /// Frame size in pixels; `WIDTH` x `HEIGHT` except in the panorama layout.
     pub fn size(&self) -> (u32, u32) {
@@ -371,6 +396,7 @@ impl Renderer {
         self.pix.data()
     }
     fn rect(&mut self, x: f32, y: f32, w: f32, h: f32, c: [u8; 3], a: u8) {
+        let x = self.wx(x);
         let mut p = Paint::default();
         p.set_color_rgba8(c[0], c[1], c[2], a);
         if let Some(rect) = Rect::from_xywh(x, y, w, h) {
@@ -379,6 +405,7 @@ impl Renderer {
     }
     #[allow(clippy::too_many_arguments)] // Explicit coordinates keep drawing call sites readable.
     fn line(&mut self, x: f32, y: f32, xx: f32, yy: f32, c: [u8; 3], w: f32, a: u8) {
+        let (x, xx) = (self.wx(x), self.wx(xx));
         let mut b = PathBuilder::new();
         b.move_to(x, y);
         b.line_to(xx, yy);
@@ -398,6 +425,7 @@ impl Renderer {
         }
     }
     fn dot(&mut self, x: f32, y: f32, r: f32, c: [u8; 3], a: u8) {
+        let x = self.wx(x);
         if let Some(path) = PathBuilder::from_circle(x, y, r) {
             let mut p = Paint::default();
             p.set_color_rgba8(c[0], c[1], c[2], a);
@@ -406,7 +434,7 @@ impl Renderer {
         }
     }
     fn text(&mut self, x: i32, y: i32, size: u16, text: &str, c: [u8; 3]) {
-        let mut pen = x;
+        let mut pen = self.wx(x as f32) as i32;
         let (width, height) = self.size();
         // A network peer must not grow the glyph cache with arbitrary Unicode.
         // Limit work to visible text; unsupported/control characters render as '?'.

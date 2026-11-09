@@ -111,6 +111,58 @@ const DASH_TILES: [(f32, f32, f32, f32, &str); 11] = [
     (595., 740., 200., 115., "10 SEVERITY MIX / 5 MIN"),
     (805., 740., 200., 115., "11 LEGEND"),
 ];
+/// Wide frames: with at least this much extra width a "top countries" column fills the space
+/// between the map and the right-hand panels; less is added to the map and legend panels.
+const WIDE_COLUMN_MIN: f32 = 150.;
+/// Panel colour of the classic layout.
+const CLASSIC_PANEL: [u8; 3] = [10, 23, 36];
+/// The five header tiles across the frame width: (x, w). Identical to the 1440 layout at dx = 0.
+fn header_tiles(dx: f32) -> [(f32, f32); 5] {
+    if dx <= 0. {
+        return [
+            (35., 265.),
+            (315., 265.),
+            (595., 265.),
+            (875., 265.),
+            (1155., 260.),
+        ];
+    }
+    let w = (1380. + dx - 4. * 15.) / 5.;
+    std::array::from_fn(|i| (35. + i as f32 * (w + 15.), w))
+}
+/// Extra width that widens the map and legend panels (narrow wide frames) and the extra column
+/// rectangle (wider frames), both in frame coordinates.
+fn wide_split(dx: f32) -> (f32, Option<(f32, f32, f32, f32)>) {
+    if dx >= WIDE_COLUMN_MIN {
+        (0., Some((1025., 205., dx - 20., 650.)))
+    } else {
+        (dx.max(0.), None)
+    }
+}
+/// Dashboard tiles in frame coordinates for a frame `dx` pixels wider than 1440.
+fn dash_tiles(dx: f32) -> Vec<(f32, f32, f32, f32, &'static str)> {
+    let (grow, column) = wide_split(dx);
+    let head = header_tiles(dx);
+    let mut tiles: Vec<_> = DASH_TILES
+        .iter()
+        .enumerate()
+        .map(|(i, &(x, y, w, h, label))| match i {
+            0..=4 => (head[i].0, y, head[i].1, h, label),
+            5 | 10 => (x, y, w + grow, h, label),
+            6 | 7 => (x + dx.max(0.), y, w, h, label),
+            _ => (x, y, w, h, label),
+        })
+        .collect();
+    if let Some((x, y, w, h)) = column {
+        let label = if w < 220. {
+            "12 TOP COUNTRIES"
+        } else {
+            "12 TOP COUNTRIES / 5 MIN"
+        };
+        tiles.push((x, y, w, h, label));
+    }
+    tiles
+}
 /// A static Cloudflare Radar map icon: an origin badge sized by its largest share, or a target
 /// diamond (only for targets the provider supplied). Never connected by lines.
 struct Icon {
@@ -183,6 +235,22 @@ impl Renderer {
         match theme {
             Theme::Classic => {
                 self.base_map();
+                let (grow, column) = wide_split(self.wide_dx);
+                self.wide_raw = true;
+                if grow > 0. {
+                    self.rect(1005., 205., grow, 510., CLASSIC_PANEL, 255);
+                    self.rect(1005., 735., grow, 120., CLASSIC_PANEL, 255);
+                }
+                if let Some((x, y, w, h)) = column {
+                    self.rect(x, y, w, h, CLASSIC_PANEL, 255);
+                    let title = if w < 220. {
+                        "TOP COUNTRIES"
+                    } else {
+                        "TOP COUNTRIES / 5 MIN"
+                    };
+                    self.text(x as i32 + 19, 225, 15, title, INFO);
+                }
+                self.wide_raw = false;
                 self.text(35, 28, 30, "THREAT ATLAS", [223, 241, 249]);
                 self.text(
                     36,
@@ -208,6 +276,8 @@ impl Renderer {
     }
     fn dashboard_base(&mut self) {
         let (w, h) = (self.pix.width(), self.pix.height());
+        let tiles = dash_tiles(self.wide_dx);
+        self.wide_raw = true;
         self.pix
             .fill(Color::from_rgba8(DASH_BG[0], DASH_BG[1], DASH_BG[2], 255));
         // Fine frame grid behind everything.
@@ -217,7 +287,7 @@ impl Renderer {
         for y in (0..=h).step_by(40) {
             self.line(0., y as f32, w as f32, y as f32, DASH_GRID, 1., 70);
         }
-        for &(x, y, tw, th, _) in &DASH_TILES {
+        for &(x, y, tw, th, _) in &tiles {
             self.rect(x, y, tw, th, DASH_PANEL, 255);
         }
         // Graticule every 15 degrees, then the shared land polygons.
@@ -232,7 +302,7 @@ impl Renderer {
             self.line(a, b, c, d, DASH_GRID, 1., 200);
         }
         Self::draw_land(&mut self.pix, Transform::identity(), 0.7);
-        for &(x, y, tw, th, label) in &DASH_TILES {
+        for &(x, y, tw, th, label) in &tiles {
             self.tile_frame(x, y, tw, th);
             self.text(x as i32 + 10, y as i32 + 8, 11, label, ACCENT);
         }
@@ -244,6 +314,7 @@ impl Renderer {
             "SOC / DASHBOARD LAYOUT / GREYNOISE LIVE + CLOUDFLARE RADAR",
             ACCENT_DIM,
         );
+        self.wide_raw = false;
     }
     /// Thin tile outline with brighter corner ticks.
     fn tile_frame(&mut self, x: f32, y: f32, w: f32, h: f32) {
@@ -282,6 +353,23 @@ impl SocView {
             counts: (Vec::new(), [0; 3]),
             base_theme: Theme::Classic,
         }
+    }
+    /// Frame width in pixels (height is always 900).
+    pub fn width(&self) -> u32 {
+        self.renderer.size().0
+    }
+    /// Lay the frame out `width` pixels wide (at least 1440, at most 3x): the map keeps its size,
+    /// the right-hand panels move to the right edge and the space between holds a top-countries
+    /// column. Returns the width in use.
+    pub fn set_width(&mut self, width: u32) -> u32 {
+        let width = width.clamp(crate::WIDTH, crate::WIDTH * 3);
+        if width != self.width() {
+            self.renderer.resize_wide(width);
+            self.renderer.paint_soc_base(self.base_theme);
+            self.composed = Pixmap::new(width, crate::HEIGHT).unwrap();
+            self.overlay_key = None;
+        }
+        width
     }
     pub fn arc_count(&self) -> usize {
         self.arcs.len()
@@ -620,9 +708,13 @@ impl SocView {
             Motion::Still => "STILL",
             Motion::Realtime => "REALTIME",
         };
-        for i in 0..5 {
-            let x = 35 + i as i32 * 280;
-            r.rect(x as f32, 112., 265., 70., [12, 28, 42], 255);
+        let head = header_tiles(r.wide_dx);
+        r.wide_raw = true;
+        for (i, &(tx, tw)) in head.iter().enumerate() {
+            let x = tx as i32;
+            // The 1440 layout keeps its original five equal 265 px boxes.
+            let tw = if r.wide_dx > 0. { tw } else { 265. };
+            r.rect(tx, 112., tw, 70., [12, 28, 42], 255);
             let (label, value, colour) = match i {
                 0..=2 if selected[i] => (
                     format!("{} / 5 MIN", CLASS_NAMES[i]),
@@ -646,6 +738,10 @@ impl SocView {
                 colour,
             );
         }
+        if let (_, Some(column)) = wide_split(r.wide_dx) {
+            top_countries(r, &self.counts.0, selected, column, 252, TEXT);
+        }
+        r.wide_raw = false;
 
         // Right panel: latest selected records.
         for (i, line) in self.list.iter().enumerate() {
@@ -856,7 +952,12 @@ impl Dashboard<'_> {
             Motion::Still => "STILL",
             Motion::Realtime => "REALTIME",
         };
-        for (i, &(x, y, _, _, _)) in DASH_TILES.iter().take(5).enumerate() {
+        let tiles = dash_tiles(r.wide_dx);
+        r.wide_raw = true;
+        if let Some(&(x, y, w, h, _)) = tiles.get(11) {
+            top_countries(r, &self.counts.0, selected, (x, y, w, h), 232, TEXT);
+        }
+        for (i, &(x, y, _, _, _)) in tiles.iter().take(5).enumerate() {
             let (value, colour, note) = match i {
                 0..=2 if selected[i] => (total[i].to_string(), severity(i), ""),
                 0..=2 => (total[i].to_string(), MUTED, "HIDDEN"),
@@ -875,6 +976,7 @@ impl Dashboard<'_> {
                 r.text(x as i32 + 190, y as i32 + 8, 11, note, MUTED);
             }
         }
+        r.wide_raw = false;
 
         // 06: map tile hints, focused-country callout, status line under the map.
         let arcs_note = if o.motion == Motion::Realtime {
@@ -1093,6 +1195,91 @@ impl Dashboard<'_> {
             ),
             TEXT,
         );
+    }
+}
+
+/// Common short form of a formal country name for narrow lists ("Kingdom of Spain" -> "SPAIN").
+fn short_name(name: &str) -> String {
+    const PREFIXES: [&str; 12] = [
+        "FEDERAL REPUBLIC OF ",
+        "PEOPLE'S REPUBLIC OF ",
+        "ISLAMIC REPUBLIC OF ",
+        "UNITED REPUBLIC OF ",
+        "DEMOCRATIC REPUBLIC OF THE ",
+        "REPUBLIC OF THE ",
+        "REPUBLIC OF ",
+        "KINGDOM OF THE ",
+        "KINGDOM OF ",
+        "COMMONWEALTH OF THE ",
+        "COMMONWEALTH OF ",
+        "STATE OF ",
+    ];
+    let upper = name.to_uppercase();
+    PREFIXES
+        .iter()
+        .find_map(|p| upper.strip_prefix(p))
+        .filter(|rest| !rest.is_empty())
+        .map_or(upper.clone(), str::to_string)
+}
+/// Wide frames only: countries ranked by received records of the selected classes in the count
+/// window, with a severity bar. Drawn in frame coordinates (`wide_raw`), inside `area`.
+fn top_countries(
+    r: &mut Renderer,
+    counts: &[(usize, [u64; 3])],
+    selected: [bool; 3],
+    area: (f32, f32, f32, f32),
+    top: i32,
+    text: [u8; 3],
+) {
+    let (x, _, w, h) = area;
+    let total = |c: &[u64; 3]| (0..3).filter(|&k| selected[k]).map(|k| c[k]).sum::<u64>();
+    let mut ranked: Vec<_> = counts.iter().filter(|(_, c)| total(c) > 0).collect();
+    ranked.sort_by_key(|(index, c)| (std::cmp::Reverse(total(c)), *index));
+    let rows = ((h - (top as f32 - area.1) - 16.) / 28.).max(0.) as usize;
+    let peak = ranked.first().map_or(1, |(_, c)| total(c)).max(1) as f32;
+    let left = x as i32 + 19;
+    let chars = ((w - 38.) / 7.5).max(4.) as usize;
+    if ranked.is_empty() {
+        r.text(left, top, 12, "NO SELECTED RECORDS YET", MUTED);
+    }
+    for (i, (index, c)) in ranked.into_iter().take(rows).enumerate() {
+        let y = top + i as i32 * 28;
+        let sum = total(c);
+        let count = sum.to_string();
+        let room = chars.saturating_sub(count.len() + 1);
+        // Narrow column: the code alone rather than a name cut mid-word.
+        let name = r
+            .countries
+            .label(*index)
+            .map_or(String::from("?"), |(code, name)| {
+                if chars >= 20 {
+                    format!("{code} {}", short_name(name))
+                } else {
+                    code.to_string()
+                }
+            });
+        r.text(
+            left,
+            y,
+            12,
+            &name.chars().take(room).collect::<String>(),
+            text,
+        );
+        r.text(
+            left + (chars.saturating_sub(count.len()) as f32 * 7.5) as i32,
+            y,
+            12,
+            &count,
+            INFO,
+        );
+        // Severity mix bar, length relative to the busiest country.
+        let full = (w - 38.) * sum as f32 / peak;
+        let mut bx = left as f32;
+        for k in (0..3).filter(|&k| selected[k]) {
+            let part = full * c[k] as f32 / sum as f32;
+            r.rect(bx, y as f32 + 17., part, 4., severity(k), 200);
+            bx += part;
+        }
     }
 }
 
@@ -1681,6 +1868,118 @@ mod tests {
     fn still_frame(view: &mut SocView, state: &State, now: u64) -> Vec<u8> {
         view.draw(&state.snapshot(now), counts(state, now), None, 0)
             .to_vec()
+    }
+    fn busy_state() -> State {
+        let mut state = State::default();
+        for (i, (src, dst)) in [("NL", "US"), ("CN", "DE"), ("BR", "US"), ("NL", "FR")]
+            .iter()
+            .cycle()
+            .take(40)
+            .enumerate()
+        {
+            state.ingest(
+                &row(src, dst, ["malicious", "suspicious", "benign"][i % 3]),
+                1000 + i as u64,
+            );
+        }
+        state
+    }
+    #[test]
+    fn wide_frames_keep_the_map_and_move_the_right_panels() {
+        let state = busy_state();
+        let now = 5_000;
+        for theme in [Theme::Classic, Theme::Dashboard] {
+            let mut standard = SocView::new();
+            standard.options.motion = Motion::Still;
+            standard.options.theme = theme;
+            let base = still_frame(&mut standard, &state, now);
+            for width in [1500u32, 1900, 2560] {
+                let mut view = SocView::new();
+                view.options.motion = Motion::Still;
+                view.options.theme = theme;
+                assert_eq!(view.set_width(width), width);
+                let frame = still_frame(&mut view, &state, now);
+                assert_eq!(frame.len(), width as usize * crate::HEIGHT as usize * 4);
+                // The map (with tints) is pixel-identical: same size, same place, same clicks.
+                for y in (240..700).step_by(7) {
+                    for x in (60..980).step_by(7) {
+                        let a = (y * crate::WIDTH as usize + x) * 4;
+                        let b = (y * width as usize + x) * 4;
+                        assert_eq!(
+                            base[a..a + 3],
+                            frame[b..b + 3],
+                            "{theme:?} {width} map at {x},{y}"
+                        );
+                    }
+                }
+                // The right-hand panels moved to the right edge, unchanged.
+                let dx = (width - crate::WIDTH) as usize;
+                for y in (210..850).step_by(9) {
+                    for x in (1030..1410).step_by(9) {
+                        let a = (y * crate::WIDTH as usize + x) * 4;
+                        let b = (y * width as usize + x + dx) * 4;
+                        // Dashboard background grid stays on its 40 px raster between tiles.
+                        let dark = |p: &[u8]| p[..3].iter().all(|&c| c < 20);
+                        if theme == Theme::Dashboard && dark(&base[a..]) && dark(&frame[b..]) {
+                            continue;
+                        }
+                        assert_eq!(
+                            base[a..a + 3],
+                            frame[b..b + 3],
+                            "{theme:?} {width} panel at {x},{y}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+    #[test]
+    fn short_country_names_for_the_top_list() {
+        assert_eq!(short_name("Kingdom of Spain"), "SPAIN");
+        assert_eq!(short_name("Kingdom of the Netherlands"), "NETHERLANDS");
+        assert_eq!(short_name("Democratic Republic of the Congo"), "CONGO");
+        assert_eq!(short_name("Canada"), "CANADA");
+        assert_eq!(short_name("Republic of "), "REPUBLIC OF ");
+    }
+    #[test]
+    fn wide_frames_fill_the_extra_space_and_restore_exactly() {
+        let state = busy_state();
+        let now = 5_000;
+        let mut reference = SocView::new();
+        reference.options.motion = Motion::Still;
+        let classic = still_frame(&mut reference, &state, now);
+        let mut view = SocView::new();
+        view.options.motion = Motion::Still;
+        let px = |frame: &[u8], width: u32, x: usize, y: usize| {
+            let i = (y * width as usize + x) * 4;
+            [frame[i], frame[i + 1], frame[i + 2]]
+        };
+        // Small extra width: the map panel grows; no column.
+        view.set_width(1540);
+        let frame = still_frame(&mut view, &state, now);
+        assert_eq!(px(&frame, 1540, 1060, 400), CLASSIC_PANEL);
+        // Enough for a column: a top-countries panel with text between map and right panels.
+        view.set_width(1900);
+        let frame = still_frame(&mut view, &state, now);
+        let column: Vec<_> = (1030..1460)
+            .flat_map(|x| (240..300).map(move |y| (x, y)))
+            .map(|(x, y)| px(&frame, 1900, x, y))
+            .collect();
+        assert!(column.contains(&CLASSIC_PANEL), "column panel painted");
+        assert!(
+            column.iter().any(|p| p.iter().all(|&c| c > 150)),
+            "country rows written"
+        );
+        // Back to 1440: exactly the standard frame again; out-of-range widths are clamped.
+        assert_eq!(view.set_width(100), crate::WIDTH);
+        assert_eq!(still_frame(&mut view, &state, now), classic);
+        assert_eq!(view.set_width(u32::MAX), crate::WIDTH * 3);
+        view.options.theme = Theme::Dashboard;
+        let frame = still_frame(&mut view, &state, now);
+        assert_eq!(
+            frame.len(),
+            (crate::WIDTH * 3) as usize * crate::HEIGHT as usize * 4
+        );
     }
     #[test]
     fn classic_is_the_default_theme_and_switching_back_restores_it_exactly() {

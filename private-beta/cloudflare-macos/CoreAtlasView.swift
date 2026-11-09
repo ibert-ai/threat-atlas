@@ -50,7 +50,8 @@ struct CountryInfo: Decodable, Equatable {
 }
 
 final class CoreAtlas {
-    static let size = CGSize(width: 1440, height: 900)
+    /// Frame size: 900 high; as wide as the view's shape needs (at least the standard 1440).
+    private(set) var size = CGSize(width: 1440, height: 900)
     private let session = ta_soc_new()
     private var handed: Date?            // receipt time of the Radar snapshot last given to the core
     private(set) var accepted = true     // false when the core rejected that snapshot
@@ -66,6 +67,14 @@ final class CoreAtlas {
     func setRadarLayer(on: Bool, hidden: Set<String>) {
         let codes = Array(hidden.sorted().joined(separator: ",").utf8)
         codes.withUnsafeBufferPointer { ta_soc_set_radar_layer(session, on ? 1 : 0, $0.baseAddress, $0.count) }
+    }
+    /// Match the frame's shape to the view so the layout fills it edge to edge: the map keeps its
+    /// size, the right-hand panels sit at the right edge and a top-countries column fills the rest.
+    func fit(_ view: CGSize) {
+        guard let session, view.width > 0, view.height > 0 else { return }
+        let wanted = UInt32((900 * view.width / view.height / 8).rounded() * 8)   // steps of 8 px
+        guard wanted != UInt32(size.width) else { return }
+        size.width = CGFloat(ta_soc_set_width(session, max(1440, wanted)))
     }
     func toggleFocus(at point: CGPoint) { focused = ta_soc_focus_at(session, Float(point.x), Float(point.y)) }
     func clearFocus() { focused = ta_soc_focus_at(session, -1, -1) }
@@ -88,7 +97,7 @@ final class CoreAtlas {
             } ?? false
         }
         guard let pixels = ta_soc_frame(session) else { return nil }
-        let width = Int(ta_width()), height = Int(ta_height())
+        let width = Int(ta_soc_width(session)), height = Int(ta_height())
         // Copy now: the core reuses its buffer on the next frame.
         guard let provider = CGDataProvider(data: Data(bytes: pixels, count: width * height * 4) as CFData)
         else { return nil }
@@ -101,13 +110,13 @@ final class CoreAtlas {
     }
 }
 
-/// Aspect-fit placement of the 1440x900 frame inside a view, and the inverse mapping for the mouse.
+/// Aspect-fit placement of the frame inside a view, and the inverse mapping for the mouse.
 struct FrameFit {
     let scale: CGFloat, origin: CGPoint
-    init(_ size: CGSize) {
-        scale = min(size.width / CoreAtlas.size.width, size.height / CoreAtlas.size.height)
-        origin = CGPoint(x: (size.width - CoreAtlas.size.width * scale) / 2,
-                         y: (size.height - CoreAtlas.size.height * scale) / 2)
+    init(_ size: CGSize, frame: CGSize) {
+        scale = min(size.width / frame.width, size.height / frame.height)
+        origin = CGPoint(x: (size.width - frame.width * scale) / 2,
+                         y: (size.height - frame.height * scale) / 2)
     }
     func framePoint(_ p: CGPoint) -> CGPoint { CGPoint(x: (p.x - origin.x) / scale, y: (p.y - origin.y) / scale) }
 }
@@ -151,14 +160,16 @@ struct CoreAtlasView: View {
         VStack(alignment: .leading, spacing: 8) {
             if showControls { controls }
             // Calm 8 frames/s, Realtime 15 frames/s; Still or paused 1 frame/s for the clocks.
-            TimelineView(.periodic(from: .now, by: paused ? 1 : motion.frameInterval)) { _ in
+            GeometryReader { geo in
+              TimelineView(.periodic(from: .now, by: paused ? 1 : motion.frameInterval)) { _ in
+                let _ = atlas.fit(geo.size)
                 let image = paused ? atlas.last : atlas.frame(result: result, received: received)
-                GeometryReader { geo in
-                    let fit = FrameFit(geo.size)
+                // Fit and mouse mapping follow the image actually shown (a paused frame may be older).
+                let fit = FrameFit(geo.size, frame: image.map { CGSize(width: $0.width, height: $0.height) } ?? atlas.size)
                     ZStack(alignment: .topLeading) {
                         if let image {
                             Image(decorative: image, scale: 1).resizable().interpolation(.high)
-                                .frame(width: CoreAtlas.size.width * fit.scale, height: CoreAtlas.size.height * fit.scale)
+                                .frame(width: CGFloat(image.width) * fit.scale, height: CGFloat(image.height) * fit.scale)
                                 .offset(x: fit.origin.x, y: fit.origin.y)
                         } else {
                             Text("Shared renderer unavailable. No data shown.").foregroundStyle(.secondary)
