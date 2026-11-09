@@ -40,16 +40,22 @@ fn valid_token(token: &str) -> bool {
 fn read_token() -> Option<String> {
     let target = wide(TARGET);
     let mut found: *mut CREDENTIALW = std::ptr::null_mut();
-    // SAFETY: `found` is released with CredFree, and the blob is copied before that.
+    // SAFETY: `found` is checked for null, an empty or missing blob is never turned into a slice
+    // (a null pointer is not a valid slice pointer even for length 0), the blob is copied before
+    // CredFree, and `found` is released exactly once.
     unsafe {
-        if CredReadW(target.as_ptr(), CRED_TYPE_GENERIC, 0, &mut found) == 0 {
+        if CredReadW(target.as_ptr(), CRED_TYPE_GENERIC, 0, &mut found) == 0 || found.is_null() {
             return None;
         }
-        let blob = std::slice::from_raw_parts(
+        let (data, size) = (
             (*found).CredentialBlob,
             (*found).CredentialBlobSize as usize,
         );
-        let token = String::from_utf8(blob.to_vec()).ok();
+        let token = if data.is_null() || size == 0 {
+            None
+        } else {
+            String::from_utf8(std::slice::from_raw_parts(data, size).to_vec()).ok()
+        };
         CredFree(found.cast());
         token.filter(|t| valid_token(t))
     }
