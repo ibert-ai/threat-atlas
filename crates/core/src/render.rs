@@ -1,6 +1,9 @@
 use crate::{feed::Snapshot, HEIGHT, WIDTH};
 use std::collections::{HashMap, VecDeque};
 use tiny_skia::*;
+/// Wide two-display layout; a child module so it shares the renderer's drawing helpers.
+#[path = "panorama.rs"]
+pub mod panorama;
 /// Calm interactive SOC view; a child module so it shares the renderer's map and helpers.
 #[path = "soc.rs"]
 pub mod soc;
@@ -36,7 +39,15 @@ pub struct Renderer {
     countries: crate::countries::CountryMap,
     country_classes: Vec<Option<usize>>,
     country_overlay: Pixmap,
+    panorama: Option<panorama::View>,
+    /// Wide SOC frame (macOS window wider than 16:10): extra pixels inserted at `WIDE_SPLIT`.
+    /// Everything drawn at x >= WIDE_SPLIT moves right by this amount unless `wide_raw` is set.
+    /// Zero for the screensaver and the standard 1440x900 SOC frame, which stay unchanged.
+    pub(crate) wide_dx: f32,
+    pub(crate) wide_raw: bool,
 }
+/// Column boundary between the map and the right-hand panels in the 1440x900 layout.
+pub(crate) const WIDE_SPLIT: f32 = 1015.;
 impl Default for Renderer {
     fn default() -> Self {
         Self::new()
@@ -90,7 +101,10 @@ impl Renderer {
         r
     }
     fn blank() -> Self {
-        let pix = Pixmap::new(WIDTH, HEIGHT).unwrap();
+        Self::blank_sized(WIDTH, HEIGHT)
+    }
+    fn blank_sized(width: u32, height: u32) -> Self {
+        let pix = Pixmap::new(width, height).unwrap();
         let base = pix.clone();
         let font = fontdue::Font::from_bytes(
             include_bytes!("../../../assets/mono.ttf") as &[u8],
@@ -106,8 +120,31 @@ impl Renderer {
             last: 0,
             countries: crate::countries::CountryMap::new(),
             country_classes: Vec::new(),
-            country_overlay: Pixmap::new(WIDTH, HEIGHT).unwrap(),
+            country_overlay: Pixmap::new(width, height).unwrap(),
+            panorama: None,
+            wide_dx: 0.,
+            wide_raw: false,
         }
+    }
+    /// Frame x for a layout x: right-hand column shifted in a wide SOC frame.
+    pub(crate) fn wx(&self, x: f32) -> f32 {
+        if !self.wide_raw && self.wide_dx > 0. && x >= WIDE_SPLIT {
+            x + self.wide_dx
+        } else {
+            x
+        }
+    }
+    /// Resize the frame for the wide SOC layout (height stays 900); callers repaint the base.
+    pub(crate) fn resize_wide(&mut self, width: u32) {
+        let width = width.max(WIDTH);
+        self.pix = Pixmap::new(width, HEIGHT).unwrap();
+        self.base = self.pix.clone();
+        self.country_overlay = Pixmap::new(width, HEIGHT).unwrap();
+        self.wide_dx = (width - WIDTH) as f32;
+    }
+    /// Frame size in pixels; `WIDTH` x `HEIGHT` except in the panorama layout.
+    pub fn size(&self) -> (u32, u32) {
+        (self.pix.width(), self.pix.height())
     }
     fn version_label(&mut self) {
         self.draw_release_label(include_str!("../../../version.json"));
@@ -139,6 +176,10 @@ impl Renderer {
             let (c, d) = xy(180., lat as f64);
             self.line(a, b, c, d, [22, 43, 57], 1., 180);
         }
+        Self::draw_land(&mut self.pix, Transform::identity(), 0.7);
+    }
+    /// Bundled land polygons, transformed from `xy` coordinates into `target`.
+    fn draw_land(target: &mut Pixmap, transform: Transform, outline: f32) {
         let land: serde_json::Value =
             serde_json::from_str(include_str!("../../../assets/land.json")).unwrap();
         for feature in land["features"].as_array().unwrap() {
@@ -165,22 +206,16 @@ impl Renderer {
                     if let Some(path) = pb.finish() {
                         let mut paint = Paint::default();
                         paint.set_color_rgba8(22, 49, 63, 255);
-                        self.pix.fill_path(
-                            &path,
-                            &paint,
-                            FillRule::EvenOdd,
-                            Transform::identity(),
-                            None,
-                        );
+                        target.fill_path(&path, &paint, FillRule::EvenOdd, transform, None);
                         paint.set_color_rgba8(48, 90, 106, 220);
-                        self.pix.stroke_path(
+                        target.stroke_path(
                             &path,
                             &paint,
                             &Stroke {
-                                width: 0.7,
+                                width: outline,
                                 ..Default::default()
                             },
-                            Transform::identity(),
+                            transform,
                             None,
                         );
                     }
@@ -366,6 +401,7 @@ impl Renderer {
         self.pix.data()
     }
     fn rect(&mut self, x: f32, y: f32, w: f32, h: f32, c: [u8; 3], a: u8) {
+        let x = self.wx(x);
         let mut p = Paint::default();
         p.set_color_rgba8(c[0], c[1], c[2], a);
         if let Some(rect) = Rect::from_xywh(x, y, w, h) {
@@ -374,6 +410,7 @@ impl Renderer {
     }
     #[allow(clippy::too_many_arguments)] // Explicit coordinates keep drawing call sites readable.
     fn line(&mut self, x: f32, y: f32, xx: f32, yy: f32, c: [u8; 3], w: f32, a: u8) {
+        let (x, xx) = (self.wx(x), self.wx(xx));
         let mut b = PathBuilder::new();
         b.move_to(x, y);
         b.line_to(xx, yy);
@@ -393,6 +430,7 @@ impl Renderer {
         }
     }
     fn dot(&mut self, x: f32, y: f32, r: f32, c: [u8; 3], a: u8) {
+        let x = self.wx(x);
         if let Some(path) = PathBuilder::from_circle(x, y, r) {
             let mut p = Paint::default();
             p.set_color_rgba8(c[0], c[1], c[2], a);
@@ -401,7 +439,8 @@ impl Renderer {
         }
     }
     fn text(&mut self, x: i32, y: i32, size: u16, text: &str, c: [u8; 3]) {
-        let mut pen = x;
+        let mut pen = self.wx(x as f32) as i32;
+        let (width, height) = self.size();
         // A network peer must not grow the glyph cache with arbitrary Unicode.
         // Limit work to visible text; unsupported/control characters render as '?'.
         for ch in text.chars().take(160) {
@@ -418,9 +457,9 @@ impl Renderer {
                 for xx in 0..m.width {
                     let px = pen + m.xmin + xx as i32;
                     let py = y + size as i32 - m.ymin - m.height as i32 + yy as i32;
-                    if px >= 0 && py >= 0 && px < WIDTH as i32 && py < HEIGHT as i32 {
+                    if px >= 0 && py >= 0 && px < width as i32 && py < height as i32 {
                         let a = b[yy * m.width + xx] as u32;
-                        let i = (py as usize * WIDTH as usize + px as usize) * 4;
+                        let i = (py as usize * width as usize + px as usize) * 4;
                         let data = self.pix.data_mut();
                         for k in 0..3 {
                             data[i + k] =
@@ -432,22 +471,8 @@ impl Renderer {
             pen += m.advance_width.round() as i32;
         }
     }
-    pub fn draw(&mut self, s: &Snapshot) -> &[u8] {
-        self.pix.data_mut().copy_from_slice(self.base.data());
-        let classes = self.countries.classes(s);
-        if classes != self.country_classes {
-            self.countries
-                .highlights(&mut self.country_overlay, &classes);
-            self.country_classes = classes;
-        }
-        self.pix.draw_pixmap(
-            0,
-            0,
-            self.country_overlay.as_ref(),
-            &PixmapPaint::default(),
-            Transform::identity(),
-            None,
-        );
+    /// Take a bounded sample of new records as routes and expire routes older than six seconds.
+    fn update_routes(&mut self, s: &Snapshot, project: impl Fn(f64, f64) -> (f32, f32)) {
         let fresh: Vec<_> = s
             .recent
             .iter()
@@ -455,8 +480,8 @@ impl Renderer {
             .collect();
         for r in fresh.iter().step_by((fresh.len() / 8).max(1)).take(10) {
             self.routes.push_back(Route {
-                a: xy(r.record.source.longitude, r.record.source.latitude),
-                b: xy(
+                a: project(r.record.source.longitude, r.record.source.latitude),
+                b: project(
                     r.record.destination.longitude,
                     r.record.destination.latitude,
                 ),
@@ -470,16 +495,19 @@ impl Renderer {
         while self.routes.len() > 240 {
             self.routes.pop_front();
         }
+    }
+    /// Animated arcs, kept below `top` and raised by at most `lift` pixels.
+    fn draw_routes(&mut self, now_ms: u64, top: f32, lift: f32) {
         let routes: Vec<_> = self
             .routes
             .iter()
             .map(|r| (r.a, r.b, r.time, r.class))
             .collect();
         for (a, b, t, class) in routes {
-            let age = s.now_ms.saturating_sub(t) as f32 / 6000.;
+            let age = now_ms.saturating_sub(t) as f32 / 6000.;
             let c = color(class);
             let alpha = ((1. - age) * 160.) as u8;
-            let cy = (a.1.min(b.1) - ((b.0 - a.0).abs() * 0.18).min(100.)).max(212.);
+            let cy = (a.1.min(b.1) - ((b.0 - a.0).abs() * 0.18).min(lift)).max(top);
             let point = |t: f32| {
                 let q = 1. - t;
                 (
@@ -497,6 +525,28 @@ impl Renderer {
             self.dot(p.0, p.1, 3., c, 240);
             self.dot(b.0, b.1, 2., c, alpha);
         }
+    }
+    pub fn draw(&mut self, s: &Snapshot) -> &[u8] {
+        if self.panorama.is_some() {
+            return self.draw_panorama(s);
+        }
+        self.pix.data_mut().copy_from_slice(self.base.data());
+        let classes = self.countries.classes(s);
+        if classes != self.country_classes {
+            self.countries
+                .highlights(&mut self.country_overlay, &classes);
+            self.country_classes = classes;
+        }
+        self.pix.draw_pixmap(
+            0,
+            0,
+            self.country_overlay.as_ref(),
+            &PixmapPaint::default(),
+            Transform::identity(),
+            None,
+        );
+        self.update_routes(s, xy);
+        self.draw_routes(s.now_ms, 212., 100.);
         let (utc, local) = crate::clock::labels(s.now_ms);
         self.text(1044, 24, 18, &utc, [218, 236, 242]);
         self.text(1044, 50, 18, &local, [218, 236, 242]);

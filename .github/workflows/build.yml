@@ -108,20 +108,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1 (Node 24)
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2 (Node 24)
         with:
-          name: ThreatAtlas-macOS
-          path: release
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2 (Node 24)
-        with:
           name: ThreatAtlas-Windows-MSI
           path: release
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2 (Node 24)
         with:
           name: ThreatAtlas-Windows-binary
           path: release/windows
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2 (Node 24)
-        with:
-          name: ThreatAtlas-Linux-preview
-          path: release
       - name: Publish exact-commit artifacts
         env:
           GH_TOKEN: ${{ github.token }}
@@ -129,12 +121,12 @@ jobs:
           set -euo pipefail
           python3 scripts/version.py --check
           TAG=$(python3 scripts/version.py --tag)
-          test "$TAG" = v0.4.2-rc.1
+          test "$TAG" = v0.4.6-beta.1
           test -f "release/$(python3 scripts/version.py --msi-name)"
           cp README.md LICENSE SECURITY.md PRIVACY.md THIRD-PARTY-NOTICES.txt version.json release/windows/
           (cd release/windows && zip -r "../ThreatAtlas-Windows-$TAG.zip" .)
           rm -rf release/windows
           git archive --format=zip --prefix=ThreatAtlas/ HEAD > "release/ThreatAtlas-source-$TAG.zip"
-          (cd release && sha256sum *.msi *.zip *.tar.gz > "ThreatAtlas-$TAG-SHA256SUMS.txt")
-          printf '\nSource commit: `%s`\nMac build: %s\n' "$GITHUB_SHA" "$(python3 scripts/version.py --build)" >> docs/RELEASE-NOTES.md
-          gh release create "$TAG" release/* --target "$GITHUB_SHA" --title 'Threat Atlas SOC 0.4.2-rc.1 — Beta' --notes-file docs/RELEASE-NOTES.md --prerelease --latest=false
+          (cd release && sha256sum *.msi *.zip > "ThreatAtlas-$TAG-SHA256SUMS.txt")
+          printf '\nSource commit: `%s`\nProduct build: %s\n' "$GITHUB_SHA" "$(python3 scripts/version.py --build)" >> docs/RELEASE-NOTES.md
+          gh release create "$TAG" release/* --target "$GITHUB_SHA" --title 'Threat Atlas screensaver 0.4.6-beta.1 — Windows panorama beta' --notes-file docs/RELEASE-NOTES.md --prerelease --latest=false

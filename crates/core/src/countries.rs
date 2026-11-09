@@ -342,6 +342,9 @@ impl CountryMap {
         self.borders(pixmap);
     }
     pub fn borders(&self, pixmap: &mut Pixmap) {
+        self.borders_with(pixmap, Transform::identity(), 0.65);
+    }
+    fn borders_with(&self, pixmap: &mut Pixmap, transform: Transform, width: f32) {
         let mut paint = Paint::default();
         paint.set_color_rgba8(70, 108, 124, 190);
         for paths in &self.paths {
@@ -350,16 +353,26 @@ impl CountryMap {
                     path,
                     &paint,
                     &Stroke {
-                        width: 0.65,
+                        width,
                         ..Default::default()
                     },
-                    Transform::identity(),
+                    transform,
                     None,
                 );
             }
         }
     }
     pub fn highlights(&self, pixmap: &mut Pixmap, classes: &[Option<usize>]) {
+        self.highlights_with(pixmap, classes, Transform::identity(), 0.65);
+    }
+    /// `highlights` for a map drawn at another position or scale.
+    pub fn highlights_with(
+        &self,
+        pixmap: &mut Pixmap,
+        classes: &[Option<usize>],
+        transform: Transform,
+        border: f32,
+    ) {
         pixmap.fill(tiny_skia::Color::TRANSPARENT);
         for (paths, class) in self.paths.iter().zip(classes) {
             if let Some(class) = class {
@@ -367,12 +380,12 @@ impl CountryMap {
                 let mut paint = Paint::default();
                 paint.set_color_rgba8(rgb[0], rgb[1], rgb[2], 85);
                 for path in paths {
-                    pixmap.fill_path(path, &paint, FillRule::EvenOdd, Transform::identity(), None);
+                    pixmap.fill_path(path, &paint, FillRule::EvenOdd, transform, None);
                 }
             }
         }
         // Borders remain visible above shaded country polygons.
-        self.borders(pixmap);
+        self.borders_with(pixmap, transform, border);
     }
 }
 #[cfg(test)]

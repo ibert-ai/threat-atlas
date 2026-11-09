@@ -1,6 +1,6 @@
 Threat Atlas SOC - Windows installation
 
-The 0.4.2-rc.1 MSI download is withdrawn; the standalone Windows ZIP remains available for manual evaluation. These steps describe the corrected 0.4.5 stable release. Download the matching 0.4.5 package.
+The 0.4.2-rc.1 MSI download is withdrawn; the standalone Windows ZIP remains available for manual evaluation. These steps describe the corrected all-users installer used by the 0.4.6-beta.1 Windows candidate. Download only the package matching the release version you intend to install.
 
 1. Double-click the MSI and approve the administrator prompt. It installs one 64-bit ThreatAtlas.scr into System32 and these documents into Program Files\Threat Atlas.
 2. Open Start > Threat Atlas SOC > Set up Threat Atlas.

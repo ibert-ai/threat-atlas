@@ -52,6 +52,14 @@ Review the notarization log, validate the final archive, and test it with Gateke
 on a clean Mac. ZIP files cannot themselves be stapled; distribute a supported
 stapled app/DMG/PKG as appropriate. Test screensaver-host loading as well as the app.
 
+## AtlasSOC Desktop (standalone app)
+Same identities as above. macOS: `MACOS_SIGN_IDENTITY="Developer ID Application: ..." private-beta/cloudflare-macos/build.sh`
+signs with hardened runtime and a timestamp; adding `MACOS_NOTARY_PROFILE=<profile>` also
+notarizes and staples the app. Windows: set `ATLAS_SIGN_THUMBPRINT` before
+`scripts/build-windows-soc.ps1` to sign `AtlasSOC.exe` through `scripts/sign-windows.ps1`; the
+package manifest then records `signature: authenticode`. Without these the builds stay
+ad-hoc (Mac) and unsigned (Windows), as disclosed in the release notes.
+
 References:
 - https://developer.apple.com/help/account/certificates/create-developer-id-certificates/
 - https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution

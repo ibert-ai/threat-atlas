@@ -30,11 +30,14 @@ func check(_ ok: Bool, _ what: String) { precondition(ok, what); print("ok  " + 
 
         // CoreAtlas opens the live GreyNoise feed (ta_soc_new), so it is not created in offline tests;
         // its SOC behaviour is covered by the Rust soc tests. Check the offline pieces around it.
-        let fit = FrameFit(CGSize(width: 1000, height: 1000))   // letterboxed vertically
+        let fit = FrameFit(CGSize(width: 1000, height: 1000), frame: CGSize(width: 1440, height: 900))   // letterboxed vertically
         let corner = fit.framePoint(CGPoint(x: 0, y: fit.origin.y))
         check(abs(corner.x) < 0.001 && abs(corner.y) < 0.001 && fit.origin.x == 0, "view point maps to frame origin")
         let far = fit.framePoint(CGPoint(x: 1000, y: fit.origin.y + 900 * fit.scale))
         check(abs(far.x - 1440) < 0.01 && abs(far.y - 900) < 0.01, "view point maps to frame corner")
+        // Wide frame (e.g. 1900x900 for a wide window): fills a view of the same shape exactly.
+        let wide = FrameFit(CGSize(width: 1900, height: 900), frame: CGSize(width: 1900, height: 900))
+        check(wide.origin == .zero && wide.scale == 1, "wide frame fills a view of its shape edge to edge")
         let info = try JSONDecoder().decode(CountryInfo.self, from: Data(#"{"index":3,"code":"NL","name":"Netherlands","window_minutes":5,"malicious":1,"suspicious":2,"benign":3,"radar_rows":[{"rank":2,"target":null,"value":"4.4%"}]}"#.utf8))
         check(info.code == "NL" && info.benign == 3 && info.radar_rows.first?.target == nil, "core inspect JSON decodes, missing target stays nil")
         print("PASS: Swift/core boundary")

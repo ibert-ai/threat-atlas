@@ -42,7 +42,7 @@ let validBody = Data(#"{"success":true,"result":{"meta":{"lastUpdated":"2026-01-
     func model(_ dir: String, defaults: UserDefaults? = nil, token: @escaping () -> String?,
                saved: @escaping (String) -> Bool = { _ in true }) -> RadarModel {
         RadarModel(directory: root.appendingPathComponent(dir, isDirectory: true), defaults: defaults ?? self.defaults(),
-                   token: token, saveToken: saved, protocolClasses: [StubProtocol.self])
+                   token: token, tokenExists: { token() != nil }, saveToken: saved, protocolClasses: [StubProtocol.self])
     }
     /// Runs one startup path (which starts its own refresh task) and returns the requests it made.
     func requests(_ stubs: [Stub], _ action: () -> Void) async -> Int {
@@ -207,6 +207,24 @@ func check(_ ok: Bool, _ what: String) { precondition(ok, what); print("ok  " + 
         let firstRun = h.model("start-first-run", token: { current }, saved: { _ in false }); h.watched.append(firstRun)
         check(await h.requests([]) { firstRun.save(token: "x") } == 0 && firstRun.message.contains("Keychain save failed"),
               "Keychain save failure: no request, visible reason")
+
+        // Compact window state: a 200 marks the saved token as working (persisted); a 401/403 or a
+        // newly saved token clears it, so the setup area shows again until Cloudflare accepts it.
+        let cd = h.defaults()
+        let setup = h.model("configured", defaults: cd); h.watched.append(setup)
+        check(!setup.configured, "fresh token: setup shown until Cloudflare accepts it")
+        _ = await h.poll(setup, [.http(200, [:], validBody)])
+        check(setup.configured, "200: token marked working, compact window")
+        let compact = h.model("configured-relaunch", defaults: cd); h.watched.append(compact)
+        let relaunchRequests = await h.requests([.http(200, [:], validBody)]) { compact.autoStart(consented: true) }
+        check(relaunchRequests == 0 && compact.configured,
+              "relaunch after consent: compact window from the persisted verification, 15-minute floor honoured")
+        _ = await h.poll(compact, [.http(401, [:], Data())])
+        check(!compact.configured && !h.model("configured-denied", defaults: cd).configured,
+              "401: setup shown again, also after relaunch")
+        compact.save(token: "replacement-fake-token")
+        check(compact.hasToken && !compact.configured, "new token saved: unverified until Cloudflare accepts it")
+        StubProtocol.queue = []
 
         check(Set(StubProtocol.hosts) == ["api.cloudflare.com"], "every intercepted request targeted api.cloudflare.com only")
         print("PASS: \(StubProtocol.hosts.count) stubbed requests, 0 network requests")

@@ -1,10 +1,10 @@
-# Threat Atlas screensaver 0.4.5 — Stable for Windows and Linux
+# Threat Atlas screensaver 0.4.6-beta.1 — Windows panorama beta
 
-Product 0.4.5, build 13. Robert approved stable publication on 4 November 2026 after reviewing 0.4.4-rc.1. Application implementation is unchanged from approved RC source 47fdc290f03b64ceb441f495c6c4fa2a15138677; numeric version advances to preserve MSI upgrade identity, and the manifest prerelease is null. Final exact-source checks and package hashes accompany downloads. Older releases and RC1 remain available.
+Product 0.4.6, build 14. Robert approved the physical two-display result, visual layout and version/build identity on 7 November 2026. The candidate adds an undistorted panorama for two matching side-by-side displays, places the seam over the Atlantic and keeps each information panel on one display. Unsupported display layouts retain the standard renderer. The final edge-placement correction is included. Publication remains pending exact-package checks and successful CI on the reviewed integration commit.
 
 ## Included and excluded platforms
 
-Windows 10/11 x64: all-users MSI and portable ZIP. Linux x86_64: windowed X11/XWayland preview, without idle screensaver or lock-screen integration. No macOS package: normal quarantined installation remains blocked by Gatekeeper; trusted signing/notarization is unresolved. Stable does not imply trusted publisher signing or universal platform acceptance.
+Windows 10/11 x64 only: all-users MSI and portable ZIP. No Linux package is included because this is a Windows-specific panorama beta. No macOS package is included because normal quarantined installation remains blocked by Gatekeeper and trusted signing/notarization is unresolved. The packages remain unsigned.
 
 ## Windows installation and updates
 
@@ -12,11 +12,11 @@ The MSI installs one x64 SCR into System32, documents into Program Files and thr
 
 ## Known bugs and test limits
 
-- Lock-on-resume and installation from a browser-downloaded MSI, including Zone.Identifier/SmartScreen behavior, remain UNTESTED. The owner explicitly accepts release with these notes.
-- Native Settings listing, small/full preview and one-minute idle start are owner-reported for the earlier MSI candidate. Layout, real per-user refusal and uninstall were checked by the testing agent. These are prior-candidate results, not fresh 0.4.5 native runs.
-- Between-version installer upgrade and post-uninstall Settings state remain untested.
-- Linux prior-source retests passed bounded Xvfb smoke, measured resize and held Escape. Owner manual GNOME XWayland resize/Escape passed. Very short Escape taps can be missed because key state is polled per frame. Earlier smoke timeout was not reproduced; its cause remains unconfirmed.
-- Physical GPU, multimonitor, broad desktop/hardware and soak acceptance remain untested. Linux is a windowed viewer, not idle/lock integration.
+- The owner approved physical two-display panorama behavior and the corrected visual layout. Exact-package reinstallation and upgrade checks remain pending.
+- Panorama is limited to two matching side-by-side displays. Mixed resolution, mixed DPI/scaling, hot-plug and extended soak testing remain untested.
+- Lock-on-resume and installation from a browser-downloaded MSI, including Zone.Identifier/SmartScreen behavior, remain untested.
+- Native Settings listing, small/full preview, one-minute idle start, upgrade from 0.4.5 and post-uninstall Settings state require final candidate verification.
+- Windows binaries remain unsigned and may trigger a trust warning.
 - OS DNS resolution can delay feed-worker shutdown. No immediate-zero-background-traffic guarantee is made.
 
 No simulated threats or TLS validation bypasses. Displayed records are real provider receipts, not verified unique attacks.

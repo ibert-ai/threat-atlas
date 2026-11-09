@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import CoreGraphics
 
 // Live SOC view drawn by the shared Rust core (crates/core, ta_soc_*): the screensaver's renderer,
@@ -28,6 +29,12 @@ enum Motion: UInt32, CaseIterable {
     /// Seconds between frames: Calm needs slow fades, Realtime moving heads, Still only the clocks.
     var frameInterval: Double { [0.125, 1, 1.0 / 15][Int(rawValue)] }
 }
+/// Layout theme around the shared map (ATLAS-SOC-LAYOUT-001). Classic stays the default;
+/// the choice is remembered in user defaults.
+enum LayoutTheme: Int, CaseIterable {
+    case classic = 0, dashboard = 1
+    var name: String { ["Classic", "Dashboard"][rawValue] }
+}
 let infoColor = Color(red: 116 / 255, green: 151 / 255, blue: 189 / 255)
 
 /// Country details from the core's hover inspection (counts are received records, not unique attacks).
@@ -43,7 +50,8 @@ struct CountryInfo: Decodable, Equatable {
 }
 
 final class CoreAtlas {
-    static let size = CGSize(width: 1440, height: 900)
+    /// Frame size: 900 high; as wide as the view's shape needs (at least the standard 1440).
+    private(set) var size = CGSize(width: 1440, height: 900)
     private let session = ta_soc_new()
     private var handed: Date?            // receipt time of the Radar snapshot last given to the core
     private(set) var accepted = true     // false when the core rejected that snapshot
@@ -55,9 +63,20 @@ final class CoreAtlas {
         let mask = severities.enumerated().reduce(UInt32(0)) { $0 | ($1.element ? 1 << UInt32($1.offset) : 0) }
         ta_soc_set_options(session, mask, motion.rawValue)
     }
+    func setTheme(_ theme: LayoutTheme) { ta_soc_set_theme(session, UInt32(theme.rawValue)) }
     func setRadarLayer(on: Bool, hidden: Set<String>) {
         let codes = Array(hidden.sorted().joined(separator: ",").utf8)
         codes.withUnsafeBufferPointer { ta_soc_set_radar_layer(session, on ? 1 : 0, $0.baseAddress, $0.count) }
+    }
+    /// Match the frame's shape to the view so the layout fills it edge to edge: the map keeps its
+    /// size, the right-hand panels sit at the right edge and a top-countries column fills the rest.
+    func fit(_ view: CGSize) {
+        guard let session, view.width > 0, view.height > 0 else { return }
+        // Steps of 8 px; at most 2160 (2.4:1, covers 21:9 ultrawide). Wider windows keep side margins
+        // rather than an oversized countries column.
+        let wanted = min(2160, UInt32((900 * view.width / view.height / 8).rounded() * 8))
+        guard wanted != UInt32(size.width) else { return }
+        size.width = CGFloat(ta_soc_set_width(session, max(1440, wanted)))
     }
     func toggleFocus(at point: CGPoint) { focused = ta_soc_focus_at(session, Float(point.x), Float(point.y)) }
     func clearFocus() { focused = ta_soc_focus_at(session, -1, -1) }
@@ -80,7 +99,7 @@ final class CoreAtlas {
             } ?? false
         }
         guard let pixels = ta_soc_frame(session) else { return nil }
-        let width = Int(ta_width()), height = Int(ta_height())
+        let width = Int(ta_soc_width(session)), height = Int(ta_height())
         // Copy now: the core reuses its buffer on the next frame.
         guard let provider = CGDataProvider(data: Data(bytes: pixels, count: width * height * 4) as CFData)
         else { return nil }
@@ -93,13 +112,13 @@ final class CoreAtlas {
     }
 }
 
-/// Aspect-fit placement of the 1440x900 frame inside a view, and the inverse mapping for the mouse.
+/// Aspect-fit placement of the frame inside a view, and the inverse mapping for the mouse.
 struct FrameFit {
     let scale: CGFloat, origin: CGPoint
-    init(_ size: CGSize) {
-        scale = min(size.width / CoreAtlas.size.width, size.height / CoreAtlas.size.height)
-        origin = CGPoint(x: (size.width - CoreAtlas.size.width * scale) / 2,
-                         y: (size.height - CoreAtlas.size.height * scale) / 2)
+    init(_ size: CGSize, frame: CGSize) {
+        scale = min(size.width / frame.width, size.height / frame.height)
+        origin = CGPoint(x: (size.width - frame.width * scale) / 2,
+                         y: (size.height - frame.height * scale) / 2)
     }
     func framePoint(_ p: CGPoint) -> CGPoint { CGPoint(x: (p.x - origin.x) / scale, y: (p.y - origin.y) / scale) }
 }
@@ -107,9 +126,16 @@ struct FrameFit {
 struct CoreAtlasView: View {
     let result: RadarResult?
     let received: Date?
+    /// False in SOC fullscreen: only the map, edge to edge; settings stay as they were set.
+    var showControls = true
+    /// When set (compact window), the app's status and buttons share the one controls row:
+    /// `leading` goes before the map options, `trailing` after them; the hint becomes a tooltip.
+    var leading: AnyView? = nil
+    var trailing: AnyView? = nil
     @State private var atlas = CoreAtlas()
     @State private var severities = [true, true, true]
     @State private var motion = Motion.realtime
+    @AppStorage("atlasSOC.layoutTheme") private var theme = LayoutTheme.classic
     @State private var paused = false
     @State private var focused = false
     @State private var hover: CountryInfo?
@@ -129,21 +155,29 @@ struct CoreAtlasView: View {
             if value >= (seen[code]?.best ?? -1) { seen[code] = (row.originCountryName, value, row.value) }
         }
         let unit = result?.meta.normalization.uppercased() == "PERCENTAGE" ? "%" : ""
-        return order.map { (code: $0, name: seen[$0]!.name, value: seen[$0]!.value + unit) }
+        // Shares with two decimals like the map (display only); other units keep the provider string.
+        return order.map { code in
+            let entry = seen[code]!
+            let shown = unit == "%" ? (entry.best > 0 && entry.best < 0.005 ? "<0.01%" : String(format: "%.2f%%", entry.best))
+                                    : entry.value
+            return (code: code, name: entry.name, value: shown)
+        }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            controls
+            if showControls { controls }
             // Calm 8 frames/s, Realtime 15 frames/s; Still or paused 1 frame/s for the clocks.
-            TimelineView(.periodic(from: .now, by: paused ? 1 : motion.frameInterval)) { _ in
+            GeometryReader { geo in
+              TimelineView(.periodic(from: .now, by: paused ? 1 : motion.frameInterval)) { _ in
+                let _ = atlas.fit(geo.size)
                 let image = paused ? atlas.last : atlas.frame(result: result, received: received)
-                GeometryReader { geo in
-                    let fit = FrameFit(geo.size)
+                // Fit and mouse mapping follow the image actually shown (a paused frame may be older).
+                let fit = FrameFit(geo.size, frame: image.map { CGSize(width: $0.width, height: $0.height) } ?? atlas.size)
                     ZStack(alignment: .topLeading) {
                         if let image {
                             Image(decorative: image, scale: 1).resizable().interpolation(.high)
-                                .frame(width: CoreAtlas.size.width * fit.scale, height: CoreAtlas.size.height * fit.scale)
+                                .frame(width: CGFloat(image.width) * fit.scale, height: CGFloat(image.height) * fit.scale)
                                 .offset(x: fit.origin.x, y: fit.origin.y)
                         } else {
                             Text("Shared renderer unavailable. No data shown.").foregroundStyle(.secondary)
@@ -172,65 +206,117 @@ struct CoreAtlasView: View {
                     }
                 }
             }
-            if !atlas.accepted {
+            if showControls && !atlas.accepted {
                 Text("Shared core rejected the latest Radar snapshot; earlier core data, if any, is kept.")
                     .font(.caption).foregroundStyle(.orange)
             }
         }
         .onAppear {
             atlas.setOptions(severities: severities, motion: motion)
+            atlas.setTheme(theme)
             atlas.setRadarLayer(on: radarOn, hidden: hidden)
         }
+        .onChange(of: theme) { _, value in atlas.setTheme(value) }
         .onChange(of: radarOn) { _, value in atlas.setRadarLayer(on: value, hidden: hidden) }
         .onChange(of: hidden) { _, value in atlas.setRadarLayer(on: radarOn, hidden: value) }
         .onChange(of: severities) { _, value in atlas.setOptions(severities: value, motion: motion) }
         .onChange(of: motion) { _, value in atlas.setOptions(severities: severities, motion: value) }
     }
 
+    /// One row when it fits; on narrower windows (e.g. a 1440-point laptop screen) the same controls
+    /// wrap onto two rows instead of truncating labels or pushing the window content off screen.
     private var controls: some View {
-        HStack(spacing: 10) {
-            ForEach(Severity.allCases, id: \.rawValue) { severity in
-                Toggle(isOn: $severities[severity.rawValue]) {
-                    HStack(spacing: 5) {
-                        Circle().fill(severity.color).frame(width: 9, height: 9)
-                        Text(severity.name)
-                    }
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                if let leading { leading; Divider().frame(height: 18) }
+                viewControls
+                Divider().frame(height: 18)
+                layerControls
+                Spacer(minLength: 10)
+                trailingControls
+            }
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 10) {
+                    if let leading { leading; Divider().frame(height: 18) }
+                    viewControls
+                    Spacer(minLength: 0)
                 }
-                .toggleStyle(.button)
+                HStack(spacing: 10) {
+                    layerControls
+                    Spacer(minLength: 10)
+                    trailingControls
+                }
             }
-            Divider().frame(height: 18)
-            Picker("Motion", selection: $motion) {
-                ForEach(Motion.allCases, id: \.rawValue) { Text($0.name).tag($0) }
-            }
-            .pickerStyle(.segmented).frame(width: 230).labelsHidden()
-            .help("Realtime (default): up to 40 arcs/s as records arrive. Calm: few slow arcs. Still: no arcs.")
-            Button(paused ? "Resume" : "Pause") { paused.toggle() }
-            Divider().frame(height: 18)
-            Toggle(isOn: $radarOn) {
+        }
+        .help(trailing == nil ? "" : "Hover the map for details · click a country to focus")
+    }
+
+    /// Severity filters, motion and pause.
+    @ViewBuilder private var viewControls: some View {
+        ForEach(Severity.allCases, id: \.rawValue) { severity in
+            Toggle(isOn: $severities[severity.rawValue]) {
                 HStack(spacing: 5) {
-                    Image(systemName: "circle.circle").foregroundStyle(infoColor)
-                    Text("Cloudflare")
+                    Circle().fill(severity.color).frame(width: 9, height: 9)
+                    Text(severity.name)
                 }
             }
             .toggleStyle(.button)
-            .help("Show or hide the whole Cloudflare Radar icon layer")
-            Menu("Countries (\(origins.count - hidden.intersection(origins.map(\.code)).count)/\(origins.count))") {
-                Button("Show all") { hidden.removeAll() }
-                Button("Hide all") { hidden = Set(origins.map(\.code)) }
-                Divider()
-                ForEach(origins, id: \.code) { origin in
-                    Toggle("\(origin.code)  \(origin.name)  \(origin.value)", isOn: Binding(
-                        get: { !hidden.contains(origin.code) },
-                        set: { visible in if visible { hidden.remove(origin.code) } else { hidden.insert(origin.code) } }))
-                }
-            }
             .fixedSize()
-            .disabled(!radarOn || origins.isEmpty)
-            .help("Show or hide individual Cloudflare origin countries (their targets follow)")
-            if focused {
-                Button("Clear focus") { atlas.clearFocus(); focused = false }
+        }
+        Divider().frame(height: 18)
+        Picker("Motion", selection: $motion) {
+            ForEach(Motion.allCases, id: \.rawValue) { Text($0.name).tag($0) }
+        }
+        .pickerStyle(.segmented).frame(width: 230).labelsHidden()
+        .help("Realtime (default): up to 40 arcs/s as records arrive. Calm: few slow arcs. Still: no arcs.")
+        Button(paused ? "Resume" : "Pause") { paused.toggle() }.fixedSize()
+    }
+
+    /// Layout, Cloudflare layer, countries, focus and fullscreen.
+    @ViewBuilder private var layerControls: some View {
+        Picker("Layout", selection: $theme) {
+            ForEach(LayoutTheme.allCases, id: \.rawValue) { Text($0.name).tag($0) }
+        }
+        .pickerStyle(.segmented).frame(width: 170).labelsHidden()
+        .help("Classic (default) or Dashboard layout. Same map and data; remembered between launches.")
+        Divider().frame(height: 18)
+        Toggle(isOn: $radarOn) {
+            HStack(spacing: 5) {
+                Image(systemName: "circle.circle").foregroundStyle(infoColor)
+                Text("Cloudflare")
             }
-            Spacer()
+        }
+        .toggleStyle(.button)
+        .fixedSize()
+        .help("Show or hide the whole Cloudflare Radar icon layer")
+        Menu("Countries (\(origins.count - hidden.intersection(origins.map(\.code)).count)/\(origins.count))") {
+            Button("Show all") { hidden.removeAll() }
+            Button("Hide all") { hidden = Set(origins.map(\.code)) }
+            Divider()
+            ForEach(origins, id: \.code) { origin in
+                Toggle("\(origin.code)  \(origin.name)  \(origin.value)", isOn: Binding(
+                    get: { !hidden.contains(origin.code) },
+                    set: { visible in if visible { hidden.remove(origin.code) } else { hidden.insert(origin.code) } }))
+            }
+        }
+        .fixedSize()
+        .disabled(!radarOn || origins.isEmpty)
+        .help("Show or hide individual Cloudflare origin countries (their targets follow)")
+        if focused {
+            Button("Clear focus") { atlas.clearFocus(); focused = false }.fixedSize()
+        }
+        Button {
+            NSApp.keyWindow?.toggleFullScreen(nil)
+        } label: { Label("SOC fullscreen", systemImage: "arrow.up.left.and.arrow.down.right") }
+        .fixedSize()
+        .help("Map only, edge to edge. Esc or ⌃⌘F returns to these controls.")
+    }
+
+    @ViewBuilder private var trailingControls: some View {
+        if let trailing {
+            if paused { Text("PAUSED").font(.caption).foregroundStyle(.secondary).fixedSize() }
+            trailing
+        } else {
             Text(paused ? "PAUSED · live feed keeps running" : "Hover for details · click a country to focus").lineLimit(1)
                 .font(.caption).foregroundStyle(.secondary)
         }

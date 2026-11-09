@@ -36,6 +36,9 @@ with tempfile.TemporaryDirectory(prefix='threatatlas-versions-') as folder:
     info = plistlib.loads((stage/'macos/Info.plist').read_bytes())
     assert (info['CFBundleShortVersionString'], info['CFBundleVersion']) == ('0.4.1', '8')
     assert 'Name="DocsVersion" Value="0.4.1"' in (stage/'installer/ThreatAtlas.wxs').read_text()
+    manifest['prerelease'] = 'beta.3'
+    (stage/'version.json').write_text(json.dumps(manifest))
+    assert run('--tag') == 'v0.4.1-beta.3'
     manifest['prerelease'] = None
     (stage/'version.json').write_text(json.dumps(manifest))
     assert run('--tag') == 'v0.4.1'

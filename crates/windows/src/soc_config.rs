@@ -38,6 +38,20 @@ pub enum Motion {
     Realtime,
 }
 
+/// Layout theme around the shared map (ATLAS-SOC-LAYOUT-001). Classic stays the default.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum Theme {
+    #[default]
+    Classic,
+    Dashboard,
+}
+impl Theme {
+    pub fn is_classic(&self) -> bool {
+        *self == Theme::Classic
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Settings {
@@ -50,6 +64,9 @@ pub struct Settings {
     pub severities: [bool; 3],
     pub motion: Motion,
     pub mirror_all_displays: bool,
+    /// Omitted while Classic, so settings files stay readable by earlier builds.
+    #[serde(skip_serializing_if = "Theme::is_classic")]
+    pub theme: Theme,
     pub radar_layer: bool,
 }
 impl Default for Settings {
@@ -64,6 +81,7 @@ impl Default for Settings {
             severities: [true; 3],
             motion: Motion::Realtime,
             mirror_all_displays: false,
+            theme: Theme::Classic,
             radar_layer: true,
         }
     }
@@ -175,13 +193,30 @@ pub fn write_atomic(path: &Path, bytes: &[u8]) -> io::Result<()> {
 }
 
 /// UI mapping uses integer bounds so tiny/minimized and letterboxed windows are safe.
+/// Standard 1440x900 fit; the host uses `layout_frame` with the current frame width.
+#[cfg(test)]
 pub fn layout(width: u32, height: u32) -> (u32, u32, u32, u32) {
-    let (w, h) = if u64::from(width) * 900 <= u64::from(height) * 1440 {
-        (width, (u64::from(width) * 900 / 1440) as u32)
+    layout_frame(width, height, 1440, 900)
+}
+/// Aspect-fit a `frame_w` x `frame_h` frame inside a `width` x `height` window: (w, h, x, y).
+pub fn layout_frame(width: u32, height: u32, frame_w: u32, frame_h: u32) -> (u32, u32, u32, u32) {
+    let (fw, fh) = (u64::from(frame_w.max(1)), u64::from(frame_h.max(1)));
+    let (w, h) = if u64::from(width) * fh <= u64::from(height) * fw {
+        (width, (u64::from(width) * fh / fw) as u32)
     } else {
-        ((u64::from(height) * 1440 / 900) as u32, height)
+        ((u64::from(height) * fw / fh) as u32, height)
     };
     (w, h, (width - w) / 2, (height - h) / 2)
+}
+/// SOC frame width for a window's shape (height 900): at least the standard 1440, at most 2160
+/// (2.4:1, covers 21:9 ultrawide), in steps of 8 px. Wider windows keep side margins rather than
+/// an oversized countries column.
+pub fn frame_width(width: u32, height: u32) -> u32 {
+    if width == 0 || height == 0 {
+        return 1440;
+    }
+    let wanted = (u64::from(width) * 900 / u64::from(height) / 8 * 8) as u32;
+    wanted.clamp(1440, 2160)
 }
 
 pub fn inspection_label(body: &str) -> Option<String> {
@@ -252,6 +287,32 @@ mod tests {
         fs::remove_file(path).unwrap();
     }
     #[test]
+    fn layout_theme_persists_and_classic_files_stay_readable_by_older_builds() {
+        let path = scratch("theme.json");
+        // Classic is the default and is not written, so pre-theme builds still accept the file.
+        Settings::default().save(&path).unwrap();
+        let text = fs::read_to_string(&path).unwrap();
+        assert!(!text.contains("theme"), "{text}");
+        let dashboard = Settings {
+            theme: Theme::Dashboard,
+            ..Settings::default()
+        };
+        dashboard.save(&path).unwrap();
+        assert!(fs::read_to_string(&path)
+            .unwrap()
+            .contains(r#""theme": "dashboard""#));
+        assert_eq!(Settings::load(&path), (dashboard, None));
+        // Files from earlier builds (no theme key) load as Classic.
+        fs::write(&path, br#"{"schema_version":1,"motion":"calm"}"#).unwrap();
+        assert_eq!(Settings::load(&path).0.theme, Theme::Classic);
+        fs::write(&path, br#"{"schema_version":1,"theme":"neon"}"#).unwrap();
+        assert!(
+            Settings::load(&path).1.is_some(),
+            "unknown theme falls back to defaults"
+        );
+        fs::remove_file(path).unwrap();
+    }
+    #[test]
     fn resolution_mapping_fits_portrait_ultrawide_and_tiny_windows() {
         for (w, h) in [
             (1, 1),
@@ -265,6 +326,19 @@ mod tests {
             assert!(dw + x <= w && dh + y <= h);
             assert!(w - dw - x <= x + 1 && h - dh - y <= y + 1);
         }
+    }
+
+    #[test]
+    fn wide_windows_get_a_frame_of_their_shape() {
+        assert_eq!(frame_width(1440, 900), 1440);
+        assert_eq!(frame_width(1280, 1024), 1440); // narrower than 16:10: standard frame, letterboxed
+        assert_eq!(frame_width(1920, 1080), 1600); // 16:9 fills edge to edge
+        assert_eq!(frame_width(3440, 1440), 2144); // 21:9 ultrawide fills
+        assert_eq!(frame_width(5120, 1440), 2160); // 32:9 super-ultrawide: capped
+        assert_eq!(frame_width(0, 0), 1440);
+        assert_eq!(frame_width(100_000, 10), 2160); // 32:9 and wider: margins
+        assert_eq!(layout_frame(1920, 1080, 1600, 900), (1920, 1080, 0, 0));
+        assert_eq!(layout_frame(1920, 1080, 1440, 900), layout(1920, 1080));
     }
 
     #[test]
