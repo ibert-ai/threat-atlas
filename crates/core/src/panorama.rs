@@ -141,7 +141,7 @@ impl Renderer {
         self.text(x, 225, 17, "RECENT OBSERVATIONS", CYAN);
         self.text(45, 492, 14, "RECEIVED RECORDS / SECOND", MUTED);
         self.text(35, 875, 12, "GREYNOISE PUBLIC THREAT MAP | RECEIPT TIMES UTC | COUNTS ARE RECEIVED RECORDS, NOT UNIQUE ATTACKS", MUTED);
-        let label = Self::version_text();
+        let label = super::release_label(include_str!("../../../version.json"));
         self.text(x + 76, 875, 12, &label, MUTED);
         self.base = self.pix.clone();
     }

@@ -2,7 +2,7 @@ import Foundation
 // Offline request-policy lifecycle tests for RadarModel. StubProtocol replaces every URL protocol in the
 // worker's session, so nothing reaches the network. Each model uses a temporary directory, a private
 // defaults suite and a fixed fake token: no Keychain, no real app data, no Cloudflare request.
-// Run: xcrun swiftc -parse-as-library RadarCore.swift RadarModel.swift LifecycleTests.swift -o /private/tmp/radar-lifecycle-tests && /private/tmp/radar-lifecycle-tests
+// Run: xcrun swiftc -parse-as-library RadarCore.swift RadarModel.swift LicenseConsent.swift LifecycleTests.swift -o /private/tmp/radar-lifecycle-tests && /private/tmp/radar-lifecycle-tests
 
 enum Stub { case http(Int, [String: String], Data); case failure(URLError) }
 final class StubProtocol: URLProtocol {
@@ -36,9 +36,25 @@ let validBody = Data(#"{"success":true,"result":{"meta":{"lastUpdated":"2026-01-
         suites.append(name); return UserDefaults(suiteName: name)!
     }
     func model(_ dir: String, defaults: UserDefaults? = nil, token: String? = "fake-test-token") -> RadarModel {
-        RadarModel(directory: root.appendingPathComponent(dir, isDirectory: true), defaults: defaults ?? self.defaults(),
-                   token: { token }, protocolClasses: [StubProtocol.self])
+        model(dir, defaults: defaults, token: { token })
     }
+    /// Variant with a changeable token source; saving goes to `saved`, never to the Keychain.
+    func model(_ dir: String, defaults: UserDefaults? = nil, token: @escaping () -> String?,
+               saved: @escaping (String) -> Bool = { _ in true }) -> RadarModel {
+        RadarModel(directory: root.appendingPathComponent(dir, isDirectory: true), defaults: defaults ?? self.defaults(),
+                   token: token, tokenExists: { token() != nil }, saveToken: saved, protocolClasses: [StubProtocol.self])
+    }
+    /// Runs one startup path (which starts its own refresh task) and returns the requests it made.
+    func requests(_ stubs: [Stub], _ action: () -> Void) async -> Int {
+        StubProtocol.queue = stubs; let before = StubProtocol.hosts.count
+        action()
+        try? await Task.sleep(nanoseconds: 300_000_000)
+        for _ in 0..<50 { if StubProtocol.hosts.count == before || !busyModels() { break }; try? await Task.sleep(nanoseconds: 100_000_000) }
+        StubProtocol.queue = []
+        return StubProtocol.hosts.count - before
+    }
+    var watched: [RadarModel] = []
+    func busyModels() -> Bool { watched.contains { $0.busy } }
     /// One eligible poll: clears the persisted interval, enables polling and returns the requests it made.
     func poll(_ m: RadarModel, _ stubs: [Stub]) async -> Int {
         StubProtocol.queue = stubs; let before = StubProtocol.hosts.count
@@ -122,6 +138,92 @@ func check(_ ok: Bool, _ what: String) { precondition(ok, what); print("ok  " + 
         let relaunched = h.model("wake-relaunch", defaults: d)
         relaunched.enabled = true; await relaunched.refresh()
         check(StubProtocol.hosts.count == before, "relaunch: persisted next-request time is honoured")
+        StubProtocol.queue = []
+
+        // SOC-DATA-001 startup flow: licence acceptance plus a saved token is enough; no hidden Start step.
+        let terms = LicenseTerms(version: "0.7.0", build: "11", notice: "Synthetic notice.", noticeSHA256: "aaa",
+                                 legalSHA256: "bbb", noticeURL: URL(string: "https://example.invalid/n")!,
+                                 licenseURL: URL(string: "https://example.invalid/l")!, scope: "test")
+        let consent = ConsentStore(defaults: h.defaults())
+
+        let declined = h.model("start-declined"); h.watched.append(declined)
+        check(await h.requests([.http(200, [:], validBody)]) { declined.autoStart(consented: consent.isAccepted(terms)) } == 0
+              && !declined.enabled, "not accepted (or declined): no worker start, no request")
+
+        consent.accept(terms)
+        let configured = h.model("start-configured"); h.watched.append(configured)
+        check(configured.status == .needsToken, "before startup: no token state known, nothing running")
+        check(await h.requests([.http(200, [:], validBody)]) { configured.autoStart(consented: consent.isAccepted(terms)) } == 1,
+              "accepted + saved token: starts automatically with exactly one request")
+        check(configured.enabled && configured.status == .current, "accepted + saved token: data shown as current")
+
+        let newBuild = LicenseTerms(version: "0.7.0", build: "12", notice: terms.notice, noticeSHA256: "aaa", legalSHA256: "bbb",
+                                    noticeURL: terms.noticeURL, licenseURL: terms.licenseURL, scope: terms.scope)
+        let changed = h.model("start-new-build"); h.watched.append(changed)
+        check(await h.requests([.http(200, [:], validBody)]) { changed.autoStart(consented: consent.isAccepted(newBuild)) } == 0
+              && !changed.enabled, "new build/terms identity: no start until accepted again")
+
+        let unconfigured = h.model("start-unconfigured", token: nil); h.watched.append(unconfigured)
+        check(await h.requests([]) { unconfigured.autoStart(consented: true) } == 0, "accepted, no token: no request")
+        check(unconfigured.status == .needsToken && unconfigured.message.contains("Add a Cloudflare Radar Read token"),
+              "accepted, no token: explains what is required")
+
+        let cooldownDefaults = h.defaults()
+        let cooling = h.model("start-cooldown", defaults: cooldownDefaults); h.watched.append(cooling)
+        cooling.setNext(Date().addingTimeInterval(600))
+        check(await h.requests([.http(200, [:], validBody)]) { cooling.autoStart(consented: true) } == 0,
+              "accepted + token inside persisted cooldown: no request on relaunch")
+        if case .waiting = cooling.status { check(cooling.enabled, "cooldown: enabled and shown as waiting") }
+        else { check(false, "cooldown: enabled and shown as waiting") }
+
+        let holder = h.model("start-conflict"); _ = holder
+        let blocked = h.model("start-conflict"); h.watched.append(blocked)
+        check(await h.requests([.http(200, [:], validBody)]) { blocked.autoStart(consented: true) } == 0
+              && blocked.status == .otherWorker, "second window: refused worker never starts or requests")
+
+        // Pause is remembered across relaunch; Start resumes.
+        let pauseDefaults = h.defaults()
+        let paused = h.model("start-paused", defaults: pauseDefaults); h.watched.append(paused)
+        paused.autoStart(consented: true); paused.stop()
+        let pausedAgain = h.model("start-paused-relaunch", defaults: pauseDefaults); h.watched.append(pausedAgain)
+        check(await h.requests([.http(200, [:], validBody)]) { pausedAgain.autoStart(consented: true) } == 0
+              && pausedAgain.status == .paused, "paused by the user: stays paused after relaunch")
+
+        // A refused token is not retried on relaunch; saving a new token starts collection directly.
+        let deniedDefaults = h.defaults()
+        var current: String? = "refused-test-token"
+        let refused = h.model("start-denied", defaults: deniedDefaults, token: { current }); h.watched.append(refused)
+        check(await h.requests([.http(403, [:], Data())]) { refused.autoStart(consented: true) } == 1
+              && refused.status == .denied, "403 at startup: one request, shown as refused")
+        let relaunchedDenied = h.model("start-denied-relaunch", defaults: deniedDefaults, token: { current })
+        h.watched.append(relaunchedDenied)
+        relaunchedDenied.setNext(.distantPast)
+        check(await h.requests([.http(200, [:], validBody)]) { relaunchedDenied.autoStart(consented: true) } == 0
+              && relaunchedDenied.status == .denied, "refused token: no automatic retry after relaunch, even when eligible")
+        check(await h.requests([.http(200, [:], validBody)]) {
+            relaunchedDenied.save(token: "replacement-test-token"); current = "replacement-test-token"
+        } == 1 && relaunchedDenied.status == .current, "saving a new token starts collection at once, no Start press")
+
+        let firstRun = h.model("start-first-run", token: { current }, saved: { _ in false }); h.watched.append(firstRun)
+        check(await h.requests([]) { firstRun.save(token: "x") } == 0 && firstRun.message.contains("Keychain save failed"),
+              "Keychain save failure: no request, visible reason")
+
+        // Compact window state: a 200 marks the saved token as working (persisted); a 401/403 or a
+        // newly saved token clears it, so the setup area shows again until Cloudflare accepts it.
+        let cd = h.defaults()
+        let setup = h.model("configured", defaults: cd); h.watched.append(setup)
+        check(!setup.configured, "fresh token: setup shown until Cloudflare accepts it")
+        _ = await h.poll(setup, [.http(200, [:], validBody)])
+        check(setup.configured, "200: token marked working, compact window")
+        let compact = h.model("configured-relaunch", defaults: cd); h.watched.append(compact)
+        let relaunchRequests = await h.requests([.http(200, [:], validBody)]) { compact.autoStart(consented: true) }
+        check(relaunchRequests == 0 && compact.configured,
+              "relaunch after consent: compact window from the persisted verification, 15-minute floor honoured")
+        _ = await h.poll(compact, [.http(401, [:], Data())])
+        check(!compact.configured && !h.model("configured-denied", defaults: cd).configured,
+              "401: setup shown again, also after relaunch")
+        compact.save(token: "replacement-fake-token")
+        check(compact.hasToken && !compact.configured, "new token saved: unverified until Cloudflare accepts it")
         StubProtocol.queue = []
 
         check(Set(StubProtocol.hosts) == ["api.cloudflare.com"], "every intercepted request targeted api.cloudflare.com only")

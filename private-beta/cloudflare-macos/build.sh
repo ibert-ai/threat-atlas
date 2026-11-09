@@ -1,8 +1,9 @@
 #!/bin/sh
 set -eu
 cd "$(dirname "$0")"
-VERSION=0.7.0
-BUILD=10
+# One Desktop identity: the core footer reads the same file, so title, consent and footer agree.
+VERSION=$(python3 -I -c "import json; print(json.load(open('../../atlassoc-beta-version.json'))['version'])")
+BUILD=$(python3 -I -c "import json; print(json.load(open('../../atlassoc-beta-version.json'))['build'])")
 OUT="${ATLAS_BETA_OUTPUT:-/private/tmp/ThreatAtlas-Radar-PrivateBeta}"
 mkdir -p "$OUT/AtlasSOC.app/Contents/MacOS" "$OUT/AtlasSOC.app/Contents/Resources"
 APP="$OUT/AtlasSOC.app"
@@ -50,5 +51,30 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 PLIST
 cp ../../assets/atlassoc/sentinel/AtlasSOC.icns "$APP/Contents/Resources/AtlasSOC.icns"
 /usr/libexec/PlistBuddy -c "Add :CFBundleIconFile string AtlasSOC.icns" "$APP/Contents/Info.plist"
-codesign --force --sign - "$APP"
+# Customer guide for creating and adding a Cloudflare Radar token, rendered as a read-only HTML page
+# (opens in the browser) from the Markdown source; opened by "How to get a token…".
+rm -f "$APP/Contents/Resources/Cloudflare-Radar-Token-Guide.md" "$APP/Contents/Resources/Cloudflare-Radar-Token-Guide.html"
+python3 -I ../../scripts/render-token-guide.py ../../docs/CLOUDFLARE-RADAR-TOKEN-GUIDE.md "$APP/Contents/Resources/Cloudflare-Radar-Token-Guide.html"
+chmod 444 "$APP/Contents/Resources/Cloudflare-Radar-Token-Guide.html"
+# Signing: ad-hoc by default. With MACOS_SIGN_IDENTITY (a Developer ID Application identity in the
+# local Keychain) the app gets a hardened-runtime, timestamped signature; with MACOS_NOTARY_PROFILE
+# (an existing `notarytool store-credentials` profile) it is also notarized and stapled.
+# No identity, password or key is stored in the repository. See docs/SIGNING.md.
+if [ -n "${MACOS_SIGN_IDENTITY:-}" ]; then
+  codesign --force --options runtime --timestamp --sign "$MACOS_SIGN_IDENTITY" "$APP"
+  codesign --verify --strict --verbose=2 "$APP"
+  if [ -n "${MACOS_NOTARY_PROFILE:-}" ]; then
+    ditto -c -k --keepParent "$APP" "$OUT/AtlasSOC-notarize.zip"
+    xcrun notarytool submit "$OUT/AtlasSOC-notarize.zip" --keychain-profile "$MACOS_NOTARY_PROFILE" --wait
+    xcrun stapler staple "$APP"
+    rm -f "$OUT/AtlasSOC-notarize.zip"
+  fi
+else
+  codesign --force --sign - "$APP"
+fi
+# The CL Cloudflare Radar TEST token must never ship. On a machine whose Keychain holds it, fail the
+# build if its bytes appear in the app; elsewhere the check reports SKIP (exit 2) and the build goes on.
+token_check=0
+python3 -I ../../scripts/check-test-token-absent.py "$APP" || token_check=$?
+if [ "$token_check" -eq 1 ]; then echo "Build rejected: test token found in $APP" >&2; exit 1; fi
 printf '%s\n' "$APP"

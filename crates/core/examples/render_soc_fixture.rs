@@ -1,6 +1,11 @@
 //! Offline visual QA only: deterministic synthetic records and Radar rows, never production telemetry.
 use std::{fs, path::Path};
-use threat_atlas_core::{feed::State, radar, render::soc::SocView, HEIGHT, WIDTH};
+use threat_atlas_core::{
+    feed::State,
+    radar,
+    render::soc::{SocView, Theme},
+    HEIGHT, WIDTH,
+};
 const RADAR: &str = r#"{"success":true,"result":{"meta":{"lastUpdated":"2026-01-01T00:00:00Z","normalization":"PERCENTAGE","dateRange":[{"startTime":"2025-12-31T00:00:00Z","endTime":"2026-01-01T00:00:00Z"}]},"top_0":[{"originCountryAlpha2":"BR","originCountryName":"Brazil","targetCountryAlpha2":"US","targetCountryName":"United States","value":"7.4"},{"originCountryAlpha2":"CN","originCountryName":"China","targetCountryAlpha2":"DE","targetCountryName":"Germany","value":"3.2"},{"originCountryAlpha2":"US","originCountryName":"United States","value":"4.5"},{"originCountryAlpha2":"HK","originCountryName":"Hong Kong","value":"2.1"},{"originCountryAlpha2":"BR","originCountryName":"Brazil","value":"2.5"}]}}"#;
 fn main() {
     let output = std::env::args().nth(1).expect("output directory");
@@ -19,6 +24,12 @@ fn main() {
     ];
     let mut state = State::default();
     let mut view = SocView::new();
+    // Optional: `dashboard` theme and a country code to focus (shows the dashboard callout).
+    let dashboard = std::env::args().nth(2).as_deref() == Some("dashboard");
+    if dashboard {
+        view.options.theme = Theme::Dashboard;
+    }
+    let focus = std::env::args().nth(3);
     let radar_data = radar::parse(RADAR.as_bytes()).unwrap();
     let start = 1_767_225_600_000u64; // 2026-01-01T00:00:00Z
     for frame in 0..80u64 {
@@ -32,6 +43,20 @@ fn main() {
                 s.1, s.2, s.0, d.1, d.2, d.0
             );
             state.ingest(&row, now);
+        }
+        if frame == 0 {
+            view.options.focus = focus.as_deref().and_then(|code| {
+                (0..1440)
+                    .step_by(4)
+                    .flat_map(|x| (230..700).step_by(4).map(move |y| (x, y)))
+                    .find_map(|(x, y)| {
+                        let index = view.country_at(x as f32, y as f32)?;
+                        (view
+                            .inspect(x as f32, y as f32, None)?
+                            .contains(&format!("\"code\":\"{code}\"")))
+                        .then_some(index)
+                    })
+            });
         }
         let pixels = view
             .draw(
@@ -47,8 +72,12 @@ fn main() {
                 tiny_skia::IntSize::from_wh(WIDTH, HEIGHT).unwrap(),
             )
             .unwrap();
-            pix.save_png(Path::new(&output).join("soc-calm-test-fixture.png"))
-                .unwrap();
+            pix.save_png(Path::new(&output).join(if dashboard {
+                "soc-dashboard-test-fixture.png"
+            } else {
+                "soc-calm-test-fixture.png"
+            }))
+            .unwrap();
         }
     }
 }

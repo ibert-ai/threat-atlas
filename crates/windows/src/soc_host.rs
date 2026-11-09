@@ -1,4 +1,6 @@
-use crate::soc_config::{self, Motion, Settings, Terms, BUILD, VERSION};
+use crate::soc_config::{self, Motion, Settings, Terms, Theme, BUILD, VERSION};
+use crate::soc_radar::Radar;
+use crate::soc_update::{self, Status as UpdateStatus, Updater};
 use std::{
     error::Error,
     num::NonZeroU32,
@@ -16,13 +18,13 @@ use tao::{
 };
 use threat_atlas_core::{
     feed::{self, Feed, State},
-    render::soc::{Motion as CoreMotion, SocView},
-    HEIGHT, WIDTH,
+    render::soc::{Motion as CoreMotion, SocView, Theme as CoreTheme},
+    HEIGHT,
 };
 use windows_sys::Win32::{
     Foundation::{HWND, POINT},
     System::LibraryLoader::GetModuleHandleW,
-    UI::WindowsAndMessaging::*,
+    UI::{Shell::ShellExecuteW, WindowsAndMessaging::*},
 };
 
 fn wide(text: &str) -> Vec<u16> {
@@ -47,7 +49,7 @@ fn consent(path: &std::path::Path) -> Result<bool, Box<dyn Error>> {
         return Ok(true);
     }
     let text = format!(
-        "Threat Atlas SOC {VERSION} (build {BUILD})\n\nCloudflare Radar data licence: CC BY-NC 4.0 (Attribution-NonCommercial).\n{}\n\n{}\n{}\n\n{}\nAcceptance does not grant commercial-use permission.\n\nGreyNoise public threat-map records are received records, not unique attacks; no endorsement implied. Windows currently connects only to GreyNoise; no Cloudflare token or Radar requests.\n\nNo feed or worker starts until acceptance. Acceptance is required again for each new version/build or reviewed terms change.\n\nNotice fingerprint: {}\nLegal fingerprint: {}\n\nYES: I have read the linked notice/legal code and accept these terms for this version/build.\nNO: Decline and quit. The default is NO.",
+        "Threat Atlas SOC {VERSION} (build {BUILD})\n\nCloudflare Radar data licence: CC BY-NC 4.0 (Attribution-NonCommercial).\n{}\n\n{}\n{}\n\n{}\nAcceptance does not grant commercial-use permission.\n\nGreyNoise public threat-map records are received records, not unique attacks; no endorsement implied. Windows connects to GreyNoise. If you save your own Cloudflare token, it also reads Radar aggregates from api.cloudflare.com, at most every 15 minutes. When it starts, it asks api.github.com whether a newer version exists.\n\nNo feed or worker starts until acceptance. Acceptance is required again for each new version/build or reviewed terms change.\n\nNotice fingerprint: {}\nLegal fingerprint: {}\n\nYES: I have read the linked notice/legal code and accept these terms for this version/build.\nNO: Decline and quit. The default is NO.",
         terms.notice, terms.notice_url, terms.license_url, terms.scope, terms.notice_sha256, terms.legal_sha256
     );
     let result = unsafe {
@@ -129,7 +131,7 @@ fn displays(
 }
 
 fn help(window: &Window) {
-    let text = "Right-click anywhere for settings.\n\nF11: fullscreen/windowed\nSpace: freeze/resume display (the shared feed continues)\nR / C / S: Realtime / Calm / Still animation\n1 / 2 / 3: malicious / suspicious / benign visibility\nM: mirror all detected displays (one shared feed)\nT: always on top\nF1: this help\nEscape: leave fullscreen/mirroring, otherwise close\n\nLeft-click a country to focus; hover shows country details in the title.\nSettings save under LocalAppData/ThreatAtlasSOC. Reset settings never resets licence acceptance.\n\nGreyNoise live receipts, not unique attacks. No Windows Cloudflare worker or token storage.\nMirroring is implemented; independent display roles/spanning and physical multimonitor acceptance remain pending. No sleep or lock settings are changed.";
+    let text = "Right-click anywhere for settings.\n\nF11: fullscreen/windowed\nSpace: freeze/resume display (the shared feed continues)\nR / C / S: Realtime / Calm / Still animation\nL: Classic / Dashboard layout\n1 / 2 / 3: malicious / suspicious / benign visibility\nM: mirror all detected displays (one shared feed)\nT: always on top\nF1: this help\nEscape: leave fullscreen/mirroring, otherwise close\n\nLeft-click a country to focus; hover shows country details in the title.\nSettings save under LocalAppData/ThreatAtlasSOC. Reset settings never resets licence acceptance.\n\nCloudflare Radar (optional): right-click > Set Cloudflare Radar token (collection starts when it is saved); Collect Cloudflare Radar data pauses or resumes it. Past-day aggregate shares, at most one request every 15 minutes; the token stays in Windows Credential Manager. Right-click > How to get a Cloudflare token opens the step-by-step guide.\n\nGreyNoise live receipts, not unique attacks.\nMirroring is implemented; independent display roles/spanning and physical multimonitor acceptance remain pending. No sleep or lock settings are changed.";
     unsafe {
         MessageBoxW(
             window.hwnd() as HWND,
@@ -140,7 +142,13 @@ fn help(window: &Window) {
     }
 }
 
-fn menu(window: &Window, settings: &Settings, paused: bool) -> u32 {
+fn menu(
+    window: &Window,
+    settings: &Settings,
+    paused: bool,
+    radar: Option<&Radar>,
+    update: Option<&UpdateStatus>,
+) -> u32 {
     unsafe {
         let menu = CreatePopupMenu();
         if menu.is_null() {
@@ -160,9 +168,23 @@ fn menu(window: &Window, settings: &Settings, paused: bool) -> u32 {
             (11, "5 frames/second", settings.fps == 5),
             (12, "10 frames/second", settings.fps == 10),
             (13, "20 frames/second", settings.fps == 20),
+            (
+                17,
+                "Collect Cloudflare Radar data",
+                radar.is_some_and(Radar::collecting),
+            ),
+            (18, "Set Cloudflare Radar token...", false),
+            (19, "Remove Cloudflare Radar token", false),
+            (20, "Show Cloudflare Radar on the map", settings.radar_layer),
+            (25, "Classic layout (L)", settings.theme == Theme::Classic),
+            (
+                26,
+                "Dashboard layout (L)",
+                settings.theme == Theme::Dashboard,
+            ),
+            (27, "How to get a Cloudflare token...", false),
             (14, "Reset display settings", false),
             (15, "Controls and limitations (F1)", false),
-            (16, "Exit", false),
         ];
         for (id, text, checked) in options {
             AppendMenuW(
@@ -172,6 +194,16 @@ fn menu(window: &Window, settings: &Settings, paused: bool) -> u32 {
                 wide(text).as_ptr(),
             );
         }
+        if let Some(update) = update {
+            let enabled = matches!(update, UpdateStatus::Available(_));
+            AppendMenuW(
+                menu,
+                MF_STRING | if enabled { 0 } else { MF_GRAYED },
+                21,
+                wide(&update.label()).as_ptr(),
+            );
+        }
+        AppendMenuW(menu, MF_STRING, 16, wide("Exit").as_ptr());
         let mut point: POINT = std::mem::zeroed();
         GetCursorPos(&mut point);
         let chosen = TrackPopupMenu(
@@ -188,7 +220,58 @@ fn menu(window: &Window, settings: &Settings, paused: bool) -> u32 {
     }
 }
 
-fn paint(display: &mut Display, rgba: &[u8]) -> Result<(), Box<dyn Error>> {
+/// Asks first, then hands over to the update script. Returns true when the app should close.
+fn start_update(window: &Window, update: &UpdateStatus) -> bool {
+    let text = format!(
+        "{}\n\nAtlasSOC will close, download the installer from GitHub, check it and replace this version. Windows may ask for approval. The app then opens again and asks you to review the licence for the new version.\n\nContinue?",
+        update.label().trim_end_matches("...")
+    );
+    let answer = unsafe {
+        MessageBoxW(
+            window.hwnd() as HWND,
+            wide(&text).as_ptr(),
+            wide("Update AtlasSOC").as_ptr(),
+            MB_YESNO | MB_ICONQUESTION,
+        )
+    };
+    if answer != IDYES {
+        return false;
+    }
+    match soc_update::launch() {
+        Ok(()) => true,
+        Err(error) => {
+            show_error(&format!("Cannot start the update: {error}"));
+            false
+        }
+    }
+}
+
+/// Opens the token guide shipped next to AtlasSOC.exe (read-only HTML), or the public docs.
+fn open_token_guide(window: &Window) {
+    let local = std::env::current_exe()
+        .ok()
+        .and_then(|exe| {
+            exe.parent()
+                .map(|dir| dir.join("Cloudflare-Radar-Token-Guide.html"))
+        })
+        .filter(|path| path.is_file());
+    let target = local.map_or_else(
+        || "https://github.com/ibert-ai/threat-atlas/blob/main/docs/CLOUDFLARE-RADAR-TOKEN-GUIDE.md".to_string(),
+        |path| path.display().to_string(),
+    );
+    unsafe {
+        ShellExecuteW(
+            window.hwnd() as HWND,
+            wide("open").as_ptr(),
+            wide(&target).as_ptr(),
+            std::ptr::null(),
+            std::ptr::null(),
+            SW_SHOWNORMAL,
+        );
+    }
+}
+
+fn paint(display: &mut Display, rgba: &[u8], frame_w: u32) -> Result<(), Box<dyn Error>> {
     let size = display.window.inner_size();
     let (Some(width), Some(height)) = (NonZeroU32::new(size.width), NonZeroU32::new(size.height))
     else {
@@ -199,14 +282,17 @@ fn paint(display: &mut Display, rgba: &[u8]) -> Result<(), Box<dyn Error>> {
         return Err("Display exceeds the 34-megapixel rendering limit".into());
     }
     display.surface.resize(width, height)?;
-    let (dw, dh, ox, oy) = soc_config::layout(size.width, size.height);
+    let (dw, dh, ox, oy) = soc_config::layout_frame(size.width, size.height, frame_w, HEIGHT);
+    if rgba.len() < frame_w as usize * HEIGHT as usize * 4 {
+        return Ok(());
+    }
     let mut buffer = display.surface.buffer_mut()?;
     buffer.fill(0x00060c14);
     for y in 0..dh {
         let sy = u64::from(y) * u64::from(HEIGHT) / u64::from(dh);
         for x in 0..dw {
-            let sx = u64::from(x) * u64::from(WIDTH) / u64::from(dw);
-            let i = ((sy * u64::from(WIDTH) + sx) * 4) as usize;
+            let sx = u64::from(x) * u64::from(frame_w) / u64::from(dw);
+            let i = ((sy * u64::from(frame_w) + sx) * 4) as usize;
             buffer[((y + oy) * size.width + x + ox) as usize] =
                 (u32::from(rgba[i]) << 16) | (u32::from(rgba[i + 1]) << 8) | u32::from(rgba[i + 2]);
         }
@@ -215,9 +301,9 @@ fn paint(display: &mut Display, rgba: &[u8]) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn frame_point(window: &Window, point: PhysicalPosition<f64>) -> Option<(f32, f32)> {
+fn frame_point(window: &Window, point: PhysicalPosition<f64>, frame_w: u32) -> Option<(f32, f32)> {
     let size = window.inner_size();
-    let (dw, dh, ox, oy) = soc_config::layout(size.width, size.height);
+    let (dw, dh, ox, oy) = soc_config::layout_frame(size.width, size.height, frame_w, HEIGHT);
     if dw == 0
         || dh == 0
         || point.x < f64::from(ox)
@@ -228,7 +314,7 @@ fn frame_point(window: &Window, point: PhysicalPosition<f64>) -> Option<(f32, f3
         return None;
     }
     Some((
-        ((point.x - f64::from(ox)) * f64::from(WIDTH) / f64::from(dw)) as f32,
+        ((point.x - f64::from(ox)) * f64::from(frame_w) / f64::from(dw)) as f32,
         ((point.y - f64::from(oy)) * f64::from(HEIGHT) / f64::from(dh)) as f32,
     ))
 }
@@ -263,6 +349,8 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         }
         Some(Feed::shared())
     };
+    let radar = (!smoke).then(|| Radar::start(state_dir.clone()));
+    let updater = (!smoke).then(Updater::start);
     let path = state_dir.join("settings.json");
     let (mut settings, warning) = if smoke {
         (Settings::default(), None)
@@ -275,7 +363,6 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     let event_loop = EventLoop::new();
     let mut windows = displays(&event_loop, &settings)?;
     let mut view = SocView::new();
-    view.options.radar_layer = false;
     let offline = State::default();
     let mut paused = false;
     let mut rgba = Vec::new();
@@ -297,12 +384,13 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                     WindowEvent::CloseRequested => *flow = ControlFlow::Exit,
                     WindowEvent::CursorMoved { position, .. } => {
                         cursor = position;
-                        let detail = frame_point(&display.window, position).and_then(|(x, y)| view.inspect(x, y, None)).and_then(|json| soc_config::inspection_label(&json));
+                        let hover_radar = radar.as_ref().map_or((None, 0), Radar::data).0;
+                        let detail = frame_point(&display.window, position, view.width()).and_then(|(x, y)| view.inspect(x, y, hover_radar.as_deref())).and_then(|json| soc_config::inspection_label(&json));
                         display.window.set_title(&format!("AtlasSOC {VERSION}/{BUILD} by Ibert Consulting · {} · {}", if smoke { "OFFLINE TEST - NO NETWORK" } else if paused { "DISPLAY FROZEN - FEED CONTINUES" } else { "right-click or F1: controls" }, detail.unwrap_or_default()));
                     }
-                    WindowEvent::MouseInput { state: ElementState::Released, button: MouseButton::Right, .. } => action = menu(&display.window, &settings, paused),
+                    WindowEvent::MouseInput { state: ElementState::Released, button: MouseButton::Right, .. } => action = menu(&display.window, &settings, paused, radar.as_ref(), updater.as_ref().map(Updater::status).as_ref()),
                     WindowEvent::MouseInput { state: ElementState::Released, button: MouseButton::Left, .. } => {
-                        if let Some((x, y)) = frame_point(&display.window, cursor) {
+                        if let Some((x, y)) = frame_point(&display.window, cursor, view.width()) {
                             let hit = view.country_at(x, y);
                             view.options.focus = if view.options.focus == hit { None } else { hit };
                         }
@@ -312,6 +400,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                             KeyCode::F11 => 1, KeyCode::KeyM => 2, KeyCode::KeyT => 3, KeyCode::Space => 4,
                             KeyCode::KeyR => 5, KeyCode::KeyC => 6, KeyCode::KeyS => 7,
                             KeyCode::Digit1 => 8, KeyCode::Digit2 => 9, KeyCode::Digit3 => 10, KeyCode::F1 => 15,
+                            KeyCode::KeyL => if settings.theme == Theme::Dashboard { 25 } else { 26 },
                             KeyCode::Escape if settings.fullscreen || settings.mirror_all_displays => { settings.fullscreen = false; settings.mirror_all_displays = false; rebuild = true; dirty = true; 0 }
                             KeyCode::Escape => 16, _ => 0,
                         };
@@ -331,12 +420,25 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                     5 => settings.motion = Motion::Realtime, 6 => settings.motion = Motion::Calm, 7 => settings.motion = Motion::Still,
                     8..=10 => settings.severities[(action - 8) as usize] = !settings.severities[(action - 8) as usize],
                     11 => settings.fps = 5, 12 => settings.fps = 10, 13 => settings.fps = 20,
+                    25 => settings.theme = Theme::Classic, 26 => settings.theme = Theme::Dashboard,
+                    27 => open_token_guide(&display.window),
                     14 => { settings = Settings::default(); rebuild = true; }
                     15 => help(&display.window),
+                    17 => { if let Some(radar) = &radar { radar.toggle_collecting(); } }
+                    18 => { if let Some(radar) = &radar { radar.set_token(display.window.hwnd() as HWND); } }
+                    19 => { if let Some(radar) = &radar { radar.remove_token(); } }
+                    20 => settings.radar_layer = !settings.radar_layer,
                     16 => *flow = ControlFlow::Exit,
+                    21 => {
+                        if let Some(update) = updater.as_ref().map(Updater::status) {
+                            if start_update(&display.window, &update) {
+                                *flow = ControlFlow::Exit;
+                            }
+                        }
+                    }
                     _ => {}
                 }
-                if action != 0 && action != 15 && action != 16 { dirty = true; }
+                if action != 0 && action != 15 && action != 16 && action != 21 && action != 27 { dirty = true; }
             }
             Event::MainEventsCleared => {
                 if monitor_check.elapsed() >= Duration::from_secs(2) {
@@ -360,18 +462,27 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                     if !paused || rgba.is_empty() {
                         view.options.motion = match settings.motion { Motion::Calm => CoreMotion::Calm, Motion::Still => CoreMotion::Still, Motion::Realtime => CoreMotion::Realtime };
                         view.options.severities = settings.severities;
+                        view.options.theme = match settings.theme { Theme::Classic => CoreTheme::Classic, Theme::Dashboard => CoreTheme::Dashboard };
                         let snapshot = feed.as_ref().map_or_else(|| offline.snapshot(feed::now_ms()), |f| f.snapshot());
                         let counts = feed.as_ref().map_or_else(|| offline.counts(feed::now_ms()), |f| f.counts());
-                        rgba = view.draw(&snapshot, counts, None, 0).to_vec();
+                        // Frame shape follows the first window (mirrors of another shape letterbox).
+                        if let Some(first) = windows.first() {
+                            let size = first.window.inner_size();
+                            view.set_width(soc_config::frame_width(size.width, size.height));
+                        }
+                        view.options.radar_layer = settings.radar_layer;
+                        let (radar_data, radar_received) = radar.as_ref().map_or((None, 0), Radar::data);
+                        view.options.radar_note = radar.as_ref().map(Radar::note);
+                        rgba = view.draw(&snapshot, counts, radar_data.as_deref(), radar_received).to_vec();
                     }
                     for window in &mut windows {
-                        if let Err(error) = paint(window, &rgba) { show_error(&error.to_string()); *flow = ControlFlow::Exit; break; }
+                        if let Err(error) = paint(window, &rgba, (rgba.len() / 4 / HEIGHT as usize) as u32) { show_error(&error.to_string()); *flow = ControlFlow::Exit; break; }
                     }
                     frames += 1;
                     last_frame = Instant::now();
                 }
                 if smoke && started.elapsed() >= Duration::from_secs(3) {
-                    let result = serde_json::json!({"product":"AtlasSOC", "version":VERSION, "build":BUILD, "offline_test":true, "feed_constructed":feed.is_some(), "frames_presented":frames, "windows":windows.len(), "width":WIDTH, "height":HEIGHT, "consent_written":false, "sentinel_icon_loaded":windows.iter().all(|w| w.icon_loaded)});
+                    let result = serde_json::json!({"product":"AtlasSOC", "version":VERSION, "build":BUILD, "offline_test":true, "feed_constructed":feed.is_some(), "frames_presented":frames, "windows":windows.len(), "width":view.width(), "height":HEIGHT, "consent_written":false, "sentinel_icon_loaded":windows.iter().all(|w| w.icon_loaded)});
                     if let Err(error) = soc_config::write_atomic(report.as_ref().unwrap(), &serde_json::to_vec_pretty(&result).unwrap()) { show_error(&error.to_string()); }
                     *flow = ControlFlow::Exit;
                 }

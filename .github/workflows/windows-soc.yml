@@ -15,7 +15,12 @@ jobs:
       - run: cargo test --workspace --locked
       - run: ./scripts/build-windows-soc.ps1
       - run: ./scripts/test-windows-soc.ps1
+      - run: ./scripts/build-windows-soc-installer.ps1
+      - run: ./scripts/build-windows-soc-installer.ps1 -Version 99.0.0 -Build 1
+      - run: ./scripts/test-windows-soc-installer.ps1 -NextSetup dist/AtlasSOC-Setup-99.0.0-build1.exe
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2 (Node 24)
         with:
           name: ThreatAtlas-Windows-SOC-review
-          path: dist/AtlasSOC-Windows-*.zip
+          path: |
+            dist/AtlasSOC-Windows-*.zip
+            dist/AtlasSOC-Setup-0*.exe

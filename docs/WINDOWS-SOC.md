@@ -16,11 +16,21 @@ The build checks the reviewed Cloudflare licence against current published terms
 
 Extract the ZIP into a user-owned folder and launch `AtlasSOC.exe`. No administrator rights, screensaver selection, startup task, sleep inhibition or lock preference change is required. The EXE is unsigned; ordinary Windows reputation/trust checks apply. Do not disable those protections. Close the app before replacing its portable folder. Uninstall by removing that extracted folder; settings remain in `%LOCALAPPDATA%/ThreatAtlasSOC` for subsequent versions. There is no standalone MSI or auto-updater in this increment. Existing screensaver installers are not standalone SOC installers. The full required installer scope/shortcut behavior is specified separately in [ATLAS-SOC-INSTALLER.md](ATLAS-SOC-INSTALLER.md).
 
+## Installer (review build)
+
+`./scripts/build-windows-soc-installer.ps1` wraps the portable package with Inno Setup 6. The installer offers **Just me** (default, `%LocalAppData%\Programs\AtlasSOC`, no elevation) or **Everyone** (`%ProgramFiles%\AtlasSOC`, administrator approval), plus separate desktop and Start menu shortcut choices. It refuses to install over the other scope. The app always runs unelevated, and settings and consent stay in each user's profile and survive uninstall. It never touches the screensaver or its settings. No updater, startup task or schedule is added.
+
+## Cloudflare Radar
+
+Radar is optional and needs your own Cloudflare API token with Account / Radar / Read. Right-click and choose **Set Cloudflare Radar token...**. The Windows credential prompt saves it in Credential Manager for your user; AtlasSOC never writes it to a file. **Remove Cloudflare Radar token** deletes it.
+
+With a saved token, collection starts by itself after consent and reads `api.cloudflare.com` at most every 15 minutes, keeping that wait across restarts. It respects Retry-After and backs off on failures. A refused token is not retried until you save a new one, and Pause is remembered. Only one worker runs. Data is a past-day aggregate, not live events or routes, and the latest validated response is cached in your profile. Uninstalling keeps the token and settings; remove the token first if you want it gone.
+
 ## Consent and network behavior
 
 The first normal launch shows the Cloudflare Radar data notice, CC BY-NC 4.0 attribution/noncommercial restriction, legal/source URLs and reviewed fingerprints. **No** is the default; declining quits without a feed. Only the person reviewing the terms may choose Yes. Acceptance does not grant commercial-use permission. Acceptance is bound to full app version/build plus notice/legal hashes; any change requires reconfirmation. Settings reset does not accept or erase consent.
 
-After consent, one background worker connects with verified TLS to `wss://threat-map-api.greynoise.io/ws`. Counts are received records, not unique attacks; timestamps describe receipt and do not establish upstream event age or attacker identity. No raw telemetry, credentials or API tokens are saved in settings. Windows has no Cloudflare request worker or token store in this increment; Radar aggregates are not fabricated or inferred from GreyNoise records.
+After consent, one background worker connects with verified TLS to `wss://threat-map-api.greynoise.io/ws`. With a saved token, a second worker reads `api.cloudflare.com`. Counts are received records, not unique attacks; timestamps describe receipt and do not establish upstream event age or attacker identity. No raw telemetry, credentials or API tokens are saved in settings. Windows has no Cloudflare request worker or token store in this increment; Radar aggregates are not fabricated or inferred from GreyNoise records.
 
 `--smoke-test REPORT.json` is an offline rendering/lifecycle test. It constructs no feed, does not read or change real consent and displays no synthetic attack records. It does not prove live telemetry or accept licence terms.
 
@@ -30,6 +40,24 @@ Right-click for native controls; F1 shows help. F11 toggles fullscreen; Escape l
 
 Settings are bounded, versioned JSON under `%LOCALAPPDATA%/ThreatAtlasSOC/settings.json`, separate from `consent.json`. Invalid or oversized settings fall back to defaults and report the problem. Changes use atomic replacements. Mirror windows recover from monitor geometry/list changes; the feed and renderer remain shared. There is a 16-window cap and a 34-megapixel limit per display.
 
+## Known issues
+
+F11 does not enter fullscreen. Use the right-click menu to enter it; F11 then returns to windowed. Planned for the next version.
+
 ## Acceptance limits
 
 Mirrored fullscreen windows are implemented. Per-display log/metrics roles, selected-display layouts, spanning canvases, login startup, standalone MSI/upgrade integration and an eight-hour physical wall soak remain pending. Automated native smoke covers window creation, drawing and exit without networking; it does not prove physical mixed-DPI/hotplug behavior, live feed delivery, idle/lock acceptance, signature trust or installation on another machine. MAC owns final cross-platform integration, product identity, documentation and publication. Preserve stable screensaver releases and keep the combined beta blocked until required gates pass.
+
+## Update to the latest version
+
+When it starts, after licence consent, AtlasSOC asks `api.github.com` once whether a newer installer exists on its channel. A pre-release build follows beta and a full release follows stable. The right-click menu shows the result. Choosing **Update available** asks for confirmation, closes the app and runs the embedded script, which verifies the download, upgrades silently in the existing scope and reopens the app. UAC appears for an install for everyone, and the new version asks for licence consent again. Nothing installs without that choice.
+
+The script can also be run by hand:
+
+Run this in PowerShell. It asks for stable or beta, verifies the installer's SHA256 against GitHub, and starts the normal installer. Windows may show a UAC prompt or an unsigned-file warning.
+
+```powershell
+irm https://raw.githubusercontent.com/ibert-ai/threat-atlas/main/scripts/update-atlassoc.ps1 -OutFile "$env:TEMP\update-atlassoc.ps1"; powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\update-atlassoc.ps1"
+```
+
+Add `-Channel beta` or `-Channel stable` to skip the question, `-Force` to reinstall the same version, or `-DownloadOnly` to stop after verification. `stable` finds nothing until a full AtlasSOC release exists.

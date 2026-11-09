@@ -57,6 +57,17 @@ pub enum Motion {
     /// Default, screensaver-like: many short arcs sampled uniformly from what arrives.
     Realtime,
 }
+/// Panel layout and styling around the shared map. The map itself, arcs, tints and data are the
+/// same in every theme; only the frame around them changes.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Theme {
+    /// The established layout; stays the default.
+    #[default]
+    Classic,
+    /// Robert, 9 November 2026 (ATLAS-SOC-LAYOUT-001): optional dense dashboard. Black background,
+    /// one cyan accent, numbered tiles, a callout on the focused country and a status line.
+    Dashboard,
+}
 #[derive(Clone, Debug)]
 pub struct Options {
     pub severities: [bool; 3],
@@ -65,6 +76,9 @@ pub struct Options {
     /// Cloudflare Radar icon layer on/off, and origin codes (upper case) the viewer has hidden.
     pub radar_layer: bool,
     pub radar_hidden: Vec<String>,
+    /// Host status shown while there is no Radar data; hosts know why, the view does not.
+    pub radar_note: Option<String>,
+    pub theme: Theme,
 }
 impl Default for Options {
     fn default() -> Self {
@@ -75,8 +89,82 @@ impl Default for Options {
             focus: None,
             radar_layer: true,
             radar_hidden: Vec::new(),
+            radar_note: None,
+            theme: Theme::Classic,
         }
     }
+}
+/// Dashboard theme palette. The accent is informational and never a severity colour.
+const DASH_BG: [u8; 3] = [3, 6, 10];
+const DASH_PANEL: [u8; 3] = [5, 11, 17];
+const ACCENT: [u8; 3] = [64, 214, 230];
+const ACCENT_DIM: [u8; 3] = [28, 86, 100];
+const DASH_GRID: [u8; 3] = [13, 32, 42];
+/// Dashboard tiles: (x, y, w, h, number and label). Map tile matches the shared map rectangle.
+const DASH_TILES: [(f32, f32, f32, f32, &str); 11] = [
+    (35., 96., 265., 96., "01 MALICIOUS / 5 MIN"),
+    (315., 96., 265., 96., "02 SUSPICIOUS / 5 MIN"),
+    (595., 96., 265., 96., "03 BENIGN / 5 MIN"),
+    (875., 96., 265., 96., "04 RECORDS / S (10 S AVG)"),
+    (1155., 96., 260., 96., "05 FOCUS | MOTION"),
+    (25., 205., 980., 510., "06 LIVE MAP / GREYNOISE RECEIPTS"),
+    (1025., 205., 390., 330., "07 LATEST SELECTED RECORDS"),
+    (1025., 545., 390., 310., "08 CLOUDFLARE RADAR / TOP ROWS"),
+    (25., 740., 560., 115., "09 RECEIVED RECORDS / S (LAST 90 S)"),
+    (595., 740., 200., 115., "10 SEVERITY MIX / 5 MIN"),
+    (805., 740., 200., 115., "11 LEGEND"),
+];
+/// Wide frames: with at least this much extra width a "top countries" column fills the space
+/// between the map and the right-hand panels; less is added to the map and legend panels.
+const WIDE_COLUMN_MIN: f32 = 150.;
+/// Panel colour of the classic layout.
+const CLASSIC_PANEL: [u8; 3] = [10, 23, 36];
+/// The five header tiles across the frame width: (x, w). Identical to the 1440 layout at dx = 0.
+fn header_tiles(dx: f32) -> [(f32, f32); 5] {
+    if dx <= 0. {
+        return [
+            (35., 265.),
+            (315., 265.),
+            (595., 265.),
+            (875., 265.),
+            (1155., 260.),
+        ];
+    }
+    let w = (1380. + dx - 4. * 15.) / 5.;
+    std::array::from_fn(|i| (35. + i as f32 * (w + 15.), w))
+}
+/// Extra width that widens the map and legend panels (narrow wide frames) and the extra column
+/// rectangle (wider frames), both in frame coordinates.
+fn wide_split(dx: f32) -> (f32, Option<(f32, f32, f32, f32)>) {
+    if dx >= WIDE_COLUMN_MIN {
+        (0., Some((1025., 205., dx - 20., 650.)))
+    } else {
+        (dx.max(0.), None)
+    }
+}
+/// Dashboard tiles in frame coordinates for a frame `dx` pixels wider than 1440.
+fn dash_tiles(dx: f32) -> Vec<(f32, f32, f32, f32, &'static str)> {
+    let (grow, column) = wide_split(dx);
+    let head = header_tiles(dx);
+    let mut tiles: Vec<_> = DASH_TILES
+        .iter()
+        .enumerate()
+        .map(|(i, &(x, y, w, h, label))| match i {
+            0..=4 => (head[i].0, y, head[i].1, h, label),
+            5 | 10 => (x, y, w + grow, h, label),
+            6 | 7 => (x + dx.max(0.), y, w, h, label),
+            _ => (x, y, w, h, label),
+        })
+        .collect();
+    if let Some((x, y, w, h)) = column {
+        let label = if w < 220. {
+            "12 TOP COUNTRIES"
+        } else {
+            "12 TOP COUNTRIES / 5 MIN"
+        };
+        tiles.push((x, y, w, h, label));
+    }
+    tiles
 }
 /// A static Cloudflare Radar map icon: an origin badge sized by its largest share, or a target
 /// diamond (only for targets the provider supplied). Never connected by lines.
@@ -120,6 +208,8 @@ pub struct SocView {
     composed: Pixmap,
     icons: Vec<Icon>,
     counts: (Vec<(usize, [u64; 3])>, [u64; 3]),
+    /// Theme the renderer's static base was painted for; repainted when `options.theme` changes.
+    base_theme: Theme,
 }
 impl Default for SocView {
     fn default() -> Self {
@@ -140,27 +230,111 @@ pub fn lon_lat(x: f32, y: f32) -> Option<(f64, f64)> {
 impl Renderer {
     pub fn new_soc() -> Self {
         let mut r = Self::blank();
-        r.base_map();
-        r.text(35, 28, 30, "THREAT ATLAS", [223, 241, 249]);
-        r.text(
-            36,
-            70,
-            14,
-            "SECURITY OPERATIONS / GREYNOISE LIVE + CLOUDFLARE RADAR",
-            MUTED,
-        );
-        r.text(1044, 225, 15, "LATEST SELECTED RECORDS", INFO);
-        r.text(45, 750, 14, "RECEIVED RECORDS / SECOND (LAST 90 S)", MUTED);
-        r.text(
+        r.paint_soc_base(Theme::Classic);
+        r
+    }
+    /// Repaint the static frame (background, panels, map, fixed labels) for a theme.
+    fn paint_soc_base(&mut self, theme: Theme) {
+        match theme {
+            Theme::Classic => {
+                self.base_map();
+                let (grow, column) = wide_split(self.wide_dx);
+                self.wide_raw = true;
+                if grow > 0. {
+                    self.rect(1005., 205., grow, 510., CLASSIC_PANEL, 255);
+                    self.rect(1005., 735., grow, 120., CLASSIC_PANEL, 255);
+                }
+                if let Some((x, y, w, h)) = column {
+                    self.rect(x, y, w, h, CLASSIC_PANEL, 255);
+                    let title = if w < 220. {
+                        "TOP COUNTRIES"
+                    } else {
+                        "TOP COUNTRIES / 5 MIN"
+                    };
+                    self.text(x as i32 + 19, 225, 15, title, INFO);
+                }
+                self.wide_raw = false;
+                self.text(35, 28, 30, "THREAT ATLAS", [223, 241, 249]);
+                self.text(
+                    36,
+                    70,
+                    14,
+                    "SECURITY OPERATIONS / GREYNOISE LIVE + CLOUDFLARE RADAR",
+                    MUTED,
+                );
+                self.text(1044, 225, 15, "LATEST SELECTED RECORDS", INFO);
+                self.text(45, 750, 14, "RECEIVED RECORDS / SECOND (LAST 90 S)", MUTED);
+            }
+            Theme::Dashboard => self.dashboard_base(),
+        }
+        self.text(
             35,
             875,
             12,
             "GREYNOISE: RECEIVED RECORDS, NOT UNIQUE ATTACKS | RADAR: AGGREGATE SHARES | TIMES UTC",
             MUTED,
         );
-        r.version_label();
-        r.base = r.pix.clone();
-        r
+        self.desktop_version_label();
+        self.base = self.pix.clone();
+    }
+    fn dashboard_base(&mut self) {
+        let (w, h) = (self.pix.width(), self.pix.height());
+        let tiles = dash_tiles(self.wide_dx);
+        self.wide_raw = true;
+        self.pix
+            .fill(Color::from_rgba8(DASH_BG[0], DASH_BG[1], DASH_BG[2], 255));
+        // Fine frame grid behind everything.
+        for x in (0..=w).step_by(40) {
+            self.line(x as f32, 0., x as f32, h as f32, DASH_GRID, 1., 70);
+        }
+        for y in (0..=h).step_by(40) {
+            self.line(0., y as f32, w as f32, y as f32, DASH_GRID, 1., 70);
+        }
+        for &(x, y, tw, th, _) in &tiles {
+            self.rect(x, y, tw, th, DASH_PANEL, 255);
+        }
+        // Graticule every 15 degrees, then the shared land polygons.
+        for lon in (-180..=180).step_by(15) {
+            let (a, b) = xy(lon as f64, 90.);
+            let (c, d) = xy(lon as f64, -90.);
+            self.line(a, b, c, d, DASH_GRID, 1., 200);
+        }
+        for lat in (-90..=90).step_by(15) {
+            let (a, b) = xy(-180., lat as f64);
+            let (c, d) = xy(180., lat as f64);
+            self.line(a, b, c, d, DASH_GRID, 1., 200);
+        }
+        Self::draw_land(&mut self.pix, Transform::identity(), 0.7);
+        for &(x, y, tw, th, label) in &tiles {
+            self.tile_frame(x, y, tw, th);
+            self.text(x as i32 + 10, y as i32 + 8, 11, label, ACCENT);
+        }
+        self.text(35, 22, 26, "THREAT ATLAS", [223, 241, 249]);
+        self.text(
+            37,
+            60,
+            12,
+            "SOC / DASHBOARD LAYOUT / GREYNOISE LIVE + CLOUDFLARE RADAR",
+            ACCENT_DIM,
+        );
+        self.wide_raw = false;
+    }
+    /// Thin tile outline with brighter corner ticks.
+    fn tile_frame(&mut self, x: f32, y: f32, w: f32, h: f32) {
+        let (r, b) = (x + w, y + h);
+        for (a, c, d, e) in [(x, y, r, y), (r, y, r, b), (x, b, r, b), (x, y, x, b)] {
+            self.line(a, c, d, e, ACCENT_DIM, 1., 200);
+        }
+        let t = 9.;
+        for (cx, cy, dx, dy) in [
+            (x, y, 1., 1.),
+            (r, y, -1., 1.),
+            (x, b, 1., -1.),
+            (r, b, -1., -1.),
+        ] {
+            self.line(cx, cy, cx + t * dx, cy, ACCENT, 1.5, 230);
+            self.line(cx, cy, cx, cy + t * dy, ACCENT, 1.5, 230);
+        }
     }
 }
 impl SocView {
@@ -180,7 +354,25 @@ impl SocView {
             composed: Pixmap::new(crate::WIDTH, crate::HEIGHT).unwrap(),
             icons: Vec::new(),
             counts: (Vec::new(), [0; 3]),
+            base_theme: Theme::Classic,
         }
+    }
+    /// Frame width in pixels (height is always 900).
+    pub fn width(&self) -> u32 {
+        self.renderer.size().0
+    }
+    /// Lay the frame out `width` pixels wide (at least 1440, at most 3x): the map keeps its size,
+    /// the right-hand panels move to the right edge and the space between holds a top-countries
+    /// column. Returns the width in use.
+    pub fn set_width(&mut self, width: u32) -> u32 {
+        let width = width.clamp(crate::WIDTH, crate::WIDTH * 3);
+        if width != self.width() {
+            self.renderer.resize_wide(width);
+            self.renderer.paint_soc_base(self.base_theme);
+            self.composed = Pixmap::new(width, crate::HEIGHT).unwrap();
+            self.overlay_key = None;
+        }
+        width
     }
     pub fn arc_count(&self) -> usize {
         self.arcs.len()
@@ -287,6 +479,11 @@ impl SocView {
         radar_received_ms: u64,
     ) -> &[u8] {
         self.counts = counts;
+        if self.options.theme != self.base_theme {
+            self.base_theme = self.options.theme;
+            self.renderer.paint_soc_base(self.base_theme);
+            self.overlay_key = None; // recompose tints and icons on the new base
+        }
         self.update_arcs(s);
         let now = s.now_ms;
         let selected = self.options.severities;
@@ -431,63 +628,14 @@ impl SocView {
             }
         }
 
-        // Header: clocks, sources, five summary boxes.
-        let (utc, local) = crate::clock::labels(now);
-        r.text(1044, 24, 18, &utc, [218, 236, 242]);
-        r.text(1044, 50, 18, &local, [218, 236, 242]);
         let radar_label = match radar_state {
             Freshness::NoData => "NO DATA",
             Freshness::Empty => "EMPTY",
             Freshness::Current => "CURRENT",
             Freshness::Stale => "STALE",
         };
-        r.text(
-            1044,
-            80,
-            13,
-            &format!("GREYNOISE {} | RADAR {}", s.status, radar_label),
-            INFO,
-        );
-        let total = self.counts.1;
-        let rate: u64 = s.rate.iter().rev().take(10).sum::<u64>() / 10;
-        let focus = self
-            .options
-            .focus
-            .and_then(|f| r.countries.label(f))
-            .map_or("ALL".into(), |(code, _)| code.to_string());
-        let motion = match self.options.motion {
-            Motion::Calm => "CALM",
-            Motion::Still => "STILL",
-            Motion::Realtime => "REALTIME",
-        };
-        for i in 0..5 {
-            let x = 35 + i as i32 * 280;
-            r.rect(x as f32, 112., 265., 70., [12, 28, 42], 255);
-            let (label, value, colour) = match i {
-                0..=2 if selected[i] => (
-                    format!("{} / 5 MIN", CLASS_NAMES[i]),
-                    total[i].to_string(),
-                    severity(i),
-                ),
-                0..=2 => (
-                    format!("{} / HIDDEN", CLASS_NAMES[i]),
-                    total[i].to_string(),
-                    MUTED,
-                ),
-                3 => ("RECORDS / S (10 S AVG)".into(), rate.to_string(), INFO),
-                _ => ("FOCUS | MOTION".into(), format!("{focus} | {motion}"), INFO),
-            };
-            r.text(x + 12, 119, 12, &label, MUTED);
-            r.text(
-                x + 12,
-                142,
-                25,
-                &value.chars().take(16).collect::<String>(),
-                colour,
-            );
-        }
 
-        // Right panel: latest selected records, refreshed every 2 s so the list does not scroll.
+        // Latest selected records, refreshed every 2 s (Realtime 0.5 s) so the list does not scroll.
         let list_refresh = if self.options.motion == Motion::Realtime {
             REALTIME_LIST_REFRESH_MS
         } else {
@@ -527,6 +675,78 @@ impl SocView {
                 })
                 .collect();
         }
+        if self.options.theme == Theme::Dashboard {
+            let panel = Dashboard {
+                s,
+                options: &self.options,
+                list: &self.list,
+                counts: &self.counts,
+                radar_data,
+                radar_label,
+            };
+            panel.draw(r);
+            return r.pix.data();
+        }
+
+        // Header: clocks, sources, five summary boxes.
+        let (utc, local) = crate::clock::labels(now);
+        r.text(1044, 24, 18, &utc, [218, 236, 242]);
+        r.text(1044, 50, 18, &local, [218, 236, 242]);
+        r.text(
+            1044,
+            80,
+            13,
+            &format!("GREYNOISE {} | RADAR {}", s.status, radar_label),
+            INFO,
+        );
+        let total = self.counts.1;
+        let rate: u64 = s.rate.iter().rev().take(10).sum::<u64>() / 10;
+        let focus = self
+            .options
+            .focus
+            .and_then(|f| r.countries.label(f))
+            .map_or("ALL".into(), |(code, _)| code.to_string());
+        let motion = match self.options.motion {
+            Motion::Calm => "CALM",
+            Motion::Still => "STILL",
+            Motion::Realtime => "REALTIME",
+        };
+        let head = header_tiles(r.wide_dx);
+        r.wide_raw = true;
+        for (i, &(tx, tw)) in head.iter().enumerate() {
+            let x = tx as i32;
+            // The 1440 layout keeps its original five equal 265 px boxes.
+            let tw = if r.wide_dx > 0. { tw } else { 265. };
+            r.rect(tx, 112., tw, 70., [12, 28, 42], 255);
+            let (label, value, colour) = match i {
+                0..=2 if selected[i] => (
+                    format!("{} / 5 MIN", CLASS_NAMES[i]),
+                    total[i].to_string(),
+                    severity(i),
+                ),
+                0..=2 => (
+                    format!("{} / HIDDEN", CLASS_NAMES[i]),
+                    total[i].to_string(),
+                    MUTED,
+                ),
+                3 => ("RECORDS / S (10 S AVG)".into(), rate.to_string(), INFO),
+                _ => ("FOCUS | MOTION".into(), format!("{focus} | {motion}"), INFO),
+            };
+            r.text(x + 12, 119, 12, &label, MUTED);
+            r.text(
+                x + 12,
+                142,
+                25,
+                &value.chars().take(16).collect::<String>(),
+                colour,
+            );
+        }
+        if let (_, Some(column)) = wide_split(r.wide_dx) {
+            top_countries(r, &self.counts.0, selected, column, 252, TEXT);
+        }
+        r.wide_raw = false;
+
+        // Right panel: latest selected records.
         for (i, line) in self.list.iter().enumerate() {
             let y = 256 + i as i32 * 42;
             r.text(1044, y, 13, &line.route, TEXT);
@@ -597,7 +817,10 @@ impl SocView {
                 1044,
                 590,
                 12,
-                "NO RADAR DATA (PRESS START IN THE APP)",
+                self.options
+                    .radar_note
+                    .as_deref()
+                    .unwrap_or("NO RADAR DATA YET (SEE STATUS IN THE APP)"),
                 MUTED,
             ),
         }
@@ -700,6 +923,369 @@ impl SocView {
             })
             .to_string(),
         )
+    }
+}
+
+/// Per-frame data for the dashboard theme's dynamic panels. Same sources as the classic theme.
+struct Dashboard<'a> {
+    s: &'a Snapshot,
+    options: &'a Options,
+    list: &'a [Line],
+    counts: &'a (Vec<(usize, [u64; 3])>, [u64; 3]),
+    radar_data: Option<&'a Aggregate>,
+    radar_label: &'a str,
+}
+impl Dashboard<'_> {
+    fn draw(&self, r: &mut Renderer) {
+        let (s, o, now) = (self.s, self.options, self.s.now_ms);
+        let selected = o.severities;
+        let total = self.counts.1;
+
+        // Header clocks, right-aligned in the title band.
+        let (utc, local) = crate::clock::labels(now);
+        r.text(1044, 20, 15, &utc, [218, 236, 242]);
+        r.text(1044, 44, 15, &local, [218, 236, 242]);
+        r.text(1044, 68, 11, "THEME: DASHBOARD", ACCENT_DIM);
+
+        // 01-05: big-number tiles.
+        let rate: u64 = s.rate.iter().rev().take(10).sum::<u64>() / 10;
+        let focus = o
+            .focus
+            .and_then(|f| r.countries.label(f))
+            .map_or("ALL".into(), |(code, _)| code.to_string());
+        let motion = match o.motion {
+            Motion::Calm => "CALM",
+            Motion::Still => "STILL",
+            Motion::Realtime => "REALTIME",
+        };
+        let tiles = dash_tiles(r.wide_dx);
+        r.wide_raw = true;
+        if let Some(&(x, y, w, h, _)) = tiles.get(11) {
+            top_countries(r, &self.counts.0, selected, (x, y, w, h), 232, TEXT);
+        }
+        for (i, &(x, y, _, _, _)) in tiles.iter().take(5).enumerate() {
+            let (value, colour, note) = match i {
+                0..=2 if selected[i] => (total[i].to_string(), severity(i), ""),
+                0..=2 => (total[i].to_string(), MUTED, "HIDDEN"),
+                3 => (rate.to_string(), ACCENT, ""),
+                _ => (format!("{focus} | {motion}"), ACCENT, ""),
+            };
+            let size = if i == 4 { 24 } else { 36 };
+            r.text(
+                x as i32 + 12,
+                y as i32 + 36,
+                size,
+                &value.chars().take(16).collect::<String>(),
+                colour,
+            );
+            if !note.is_empty() {
+                r.text(x as i32 + 190, y as i32 + 8, 11, note, MUTED);
+            }
+        }
+        r.wide_raw = false;
+
+        // 06: map tile hints, focused-country callout, status line under the map.
+        let arcs_note = if o.motion == Motion::Realtime {
+            "ARCS UP TO 40/S, 3 S"
+        } else {
+            "ARCS MAX 2/S, FADE 8 S"
+        };
+        r.text(
+            560,
+            213,
+            10,
+            &format!("CLICK COUNTRY TO FOCUS | TINT: TOP CLASS 5 MIN | {arcs_note}"),
+            MUTED,
+        );
+        if let Some(index) = o.focus {
+            self.callout(r, index);
+        }
+        let error = if s.status != "LIVE" && !s.error.is_empty() {
+            format!(" | {}", s.error.chars().take(60).collect::<String>())
+        } else {
+            String::new()
+        };
+        let feed_colour = if s.status == "LIVE" { ACCENT } else { MUTED };
+        r.dot(37., 727., 3.5, feed_colour, 230);
+        r.text(
+            46,
+            720,
+            11,
+            &format!(
+                "GREYNOISE {}{error} | RADAR {} | {utc} | {local} | {}",
+                s.status,
+                self.radar_label,
+                crate::render::release_label(include_str!("../../../atlassoc-beta-version.json"))
+            ),
+            TEXT,
+        );
+
+        // 07: latest selected records.
+        for (i, line) in self.list.iter().enumerate() {
+            let y = 236 + i as i32 * 41;
+            r.rect(1037., y as f32 + 2., 3., 28., severity(line.class), 220);
+            r.text(1048, y, 13, &line.route, TEXT);
+            let when = crate::clock::labels(line.received_ms).0;
+            r.text(
+                1048,
+                y + 17,
+                11,
+                &format!("{} | {}", CLASS_NAMES[line.class], when),
+                severity(line.class),
+            );
+        }
+        if self.list.is_empty() {
+            r.text(1048, 238, 13, "NO SELECTED RECORDS YET", MUTED);
+        }
+
+        // 08: Cloudflare Radar rows as supplied (informational).
+        if !o.radar_layer {
+            r.text(1300, 553, 11, "LAYER OFF", MUTED);
+        }
+        match self.radar_data {
+            Some(data) => {
+                for (i, row) in data.rows.iter().take(8).enumerate() {
+                    let y = 576 + i as i32 * 26;
+                    let origin: String = row.origin_country_alpha2.trim().chars().take(8).collect();
+                    let target: String = row
+                        .target_country_alpha2
+                        .as_deref()
+                        .map_or("?".into(), |t| t.trim().chars().take(8).collect());
+                    let hidden = !o.radar_layer
+                        || o.radar_hidden
+                            .iter()
+                            .any(|h| h.eq_ignore_ascii_case(&origin));
+                    let note = if hidden { " (HIDDEN)" } else { "" };
+                    r.text(
+                        1037,
+                        y,
+                        12,
+                        &format!("{:>2}. {origin} -> {target}{note}", i + 1),
+                        if hidden { MUTED } else { TEXT },
+                    );
+                    let label: String = data.value_label(i).chars().take(14).collect();
+                    r.text(1300, y, 12, &label, if hidden { MUTED } else { INFO });
+                }
+                r.text(
+                    1037,
+                    826,
+                    11,
+                    &format!(
+                        "AGGREGATE, NOT LIVE | {} | {}",
+                        self.radar_label, data.normalization
+                    ),
+                    MUTED,
+                );
+            }
+            None => r.text(
+                1037,
+                578,
+                12,
+                "NO RADAR DATA (PRESS START IN THE APP)",
+                MUTED,
+            ),
+        }
+
+        // 09: receipt-rate bars across the tile.
+        let peak = s.rate.iter().copied().max().unwrap_or(1).max(1) as f32;
+        let step = 536. / s.rate.len().max(1) as f32;
+        for (i, &value) in s.rate.iter().enumerate() {
+            let h = 68. * value as f32 / peak;
+            r.rect(
+                37. + i as f32 * step,
+                845. - h,
+                (step * 0.7).max(1.),
+                h,
+                ACCENT,
+                150,
+            );
+        }
+        r.text(470, 748, 11, &format!("PEAK {}", peak as u64), MUTED);
+
+        // 10: severity mix of the selected classes over the count window.
+        let sum: u64 = (0..3).filter(|&k| selected[k]).map(|k| total[k]).sum();
+        for k in 0..3 {
+            let y = 770. + k as f32 * 26.;
+            let share = if selected[k] && sum > 0 {
+                total[k] as f32 / sum as f32
+            } else {
+                0.
+            };
+            let colour = if selected[k] { severity(k) } else { MUTED };
+            r.rect(607., y + 13., 176., 6., DASH_GRID, 255);
+            r.rect(607., y + 13., 176. * share, 6., colour, 220);
+            let pct = if selected[k] {
+                format!("{:>3}%", (share * 100.).round() as u32)
+            } else {
+                " OFF".into()
+            };
+            r.text(
+                607,
+                y as i32 - 2,
+                11,
+                &format!("{:<10} {pct}", &CLASS_NAMES[k][..3]),
+                TEXT,
+            );
+        }
+
+        // 11: legend.
+        for (i, (label, colour)) in [
+            ("MALICIOUS", RED),
+            ("SUSPICIOUS", YELLOW),
+            ("BENIGN", GREEN),
+        ]
+        .iter()
+        .enumerate()
+        {
+            let y = 766 + i as i32 * 16;
+            r.rect(817., y as f32 + 3., 10., 8., *colour, 200);
+            r.text(833, y, 11, label, TEXT);
+        }
+        for (i, (target, label)) in [(false, "RADAR ORIGIN"), (true, "RADAR TARGET")]
+            .into_iter()
+            .enumerate()
+        {
+            let y = 814 + i as i32 * 16;
+            let icon = Icon {
+                target,
+                at: (822., y as f32 + 7.),
+                size: 5.,
+                label: String::new(),
+                slices: if target { Vec::new() } else { vec![0.65, 0.35] },
+            };
+            draw_icon(&mut r.pix, &icon, 230.);
+            r.text(833, y, 11, label, TEXT);
+        }
+    }
+    /// Leader line from the focused country to a label box with its window counts.
+    fn callout(&self, r: &mut Renderer, index: usize) {
+        let Some((lon, lat)) = r.countries.anchor(index) else {
+            return;
+        };
+        let Some((code, name)) = r.countries.label(index) else {
+            return;
+        };
+        let (code, name) = (code.to_string(), name.to_uppercase());
+        let counts = self
+            .counts
+            .0
+            .iter()
+            .find(|(i, _)| *i == index)
+            .map_or([0; 3], |(_, c)| *c);
+        let (ax, ay) = xy(lon, lat);
+        let (bw, bh) = (236., 50.);
+        // Keep the box inside the map tile, preferring above-right of the anchor.
+        let bx = if ax + 40. + bw < 1000. {
+            ax + 40.
+        } else {
+            ax - 40. - bw
+        };
+        let by = (ay - 70.).clamp(232., 700. - bh);
+        let join = (if bx > ax { bx } else { bx + bw }, by + bh / 2.);
+        r.line(ax, ay, join.0, join.1, ACCENT, 1., 220);
+        r.dot(ax, ay, 3., ACCENT, 240);
+        r.rect(bx, by, bw, bh, DASH_BG, 235);
+        r.tile_frame(bx, by, bw, bh);
+        let title: String = format!("{code} / {name}").chars().take(28).collect();
+        r.text(bx as i32 + 9, by as i32 + 7, 12, &title, ACCENT);
+        r.text(
+            bx as i32 + 9,
+            by as i32 + 27,
+            11,
+            &format!(
+                "MAL {} SUS {} BEN {} / {} MIN",
+                counts[0],
+                counts[1],
+                counts[2],
+                crate::countries::COUNT_MINUTES
+            ),
+            TEXT,
+        );
+    }
+}
+
+/// Common short form of a formal country name for narrow lists ("Kingdom of Spain" -> "SPAIN").
+fn short_name(name: &str) -> String {
+    const PREFIXES: [&str; 12] = [
+        "FEDERAL REPUBLIC OF ",
+        "PEOPLE'S REPUBLIC OF ",
+        "ISLAMIC REPUBLIC OF ",
+        "UNITED REPUBLIC OF ",
+        "DEMOCRATIC REPUBLIC OF THE ",
+        "REPUBLIC OF THE ",
+        "REPUBLIC OF ",
+        "KINGDOM OF THE ",
+        "KINGDOM OF ",
+        "COMMONWEALTH OF THE ",
+        "COMMONWEALTH OF ",
+        "STATE OF ",
+    ];
+    let upper = name.to_uppercase();
+    PREFIXES
+        .iter()
+        .find_map(|p| upper.strip_prefix(p))
+        .filter(|rest| !rest.is_empty())
+        .map_or(upper.clone(), str::to_string)
+}
+/// Wide frames only: countries ranked by received records of the selected classes in the count
+/// window, with a severity bar. Drawn in frame coordinates (`wide_raw`), inside `area`.
+fn top_countries(
+    r: &mut Renderer,
+    counts: &[(usize, [u64; 3])],
+    selected: [bool; 3],
+    area: (f32, f32, f32, f32),
+    top: i32,
+    text: [u8; 3],
+) {
+    let (x, _, w, h) = area;
+    let total = |c: &[u64; 3]| (0..3).filter(|&k| selected[k]).map(|k| c[k]).sum::<u64>();
+    let mut ranked: Vec<_> = counts.iter().filter(|(_, c)| total(c) > 0).collect();
+    ranked.sort_by_key(|(index, c)| (std::cmp::Reverse(total(c)), *index));
+    let rows = ((h - (top as f32 - area.1) - 16.) / 28.).max(0.) as usize;
+    let peak = ranked.first().map_or(1, |(_, c)| total(c)).max(1) as f32;
+    let left = x as i32 + 19;
+    let chars = ((w - 38.) / 7.5).max(4.) as usize;
+    if ranked.is_empty() {
+        r.text(left, top, 12, "NO SELECTED RECORDS YET", MUTED);
+    }
+    for (i, (index, c)) in ranked.into_iter().take(rows).enumerate() {
+        let y = top + i as i32 * 28;
+        let sum = total(c);
+        let count = sum.to_string();
+        let room = chars.saturating_sub(count.len() + 1);
+        // Narrow column: the code alone rather than a name cut mid-word.
+        let name = r
+            .countries
+            .label(*index)
+            .map_or(String::from("?"), |(code, name)| {
+                if chars >= 20 {
+                    format!("{code} {}", short_name(name))
+                } else {
+                    code.to_string()
+                }
+            });
+        r.text(
+            left,
+            y,
+            12,
+            &name.chars().take(room).collect::<String>(),
+            text,
+        );
+        r.text(
+            left + (chars.saturating_sub(count.len()) as f32 * 7.5) as i32,
+            y,
+            12,
+            &count,
+            INFO,
+        );
+        // Severity mix bar, length relative to the busiest country.
+        let full = (w - 38.) * sum as f32 / peak;
+        let mut bx = left as f32;
+        for k in (0..3).filter(|&k| selected[k]) {
+            let part = full * c[k] as f32 / sum as f32;
+            r.rect(bx, y as f32 + 17., part, 4., severity(k), 200);
+            bx += part;
+        }
     }
 }
 
@@ -893,6 +1479,28 @@ fn draw_icon(pixmap: &mut Pixmap, icon: &Icon, alpha: f32) {
 }
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn desktop_footer_shows_the_desktop_identity_not_the_screensaver() {
+        let read = |file: &str| -> serde_json::Value {
+            serde_json::from_str(&std::fs::read_to_string(format!("../../{file}")).unwrap())
+                .unwrap()
+        };
+        let (desktop, windows, saver) = (
+            read("atlassoc-beta-version.json"),
+            read("windows-soc-version.json"),
+            read("version.json"),
+        );
+        assert_eq!(desktop["version"], windows["version"]);
+        assert_eq!(desktop["build"], windows["build"]);
+        let label = crate::render::release_label(&desktop.to_string());
+        let (version, build) = (desktop["version"].as_str().unwrap(), &desktop["build"]);
+        assert!(label.starts_with(&format!("v{version}-")), "{label}");
+        assert!(label.ends_with(&format!("| b{build}")), "{label}");
+        let saver_label = crate::render::release_label(&saver.to_string());
+        assert_ne!(label, saver_label);
+        // The screensaver may carry its own prerelease label (e.g. 0.4.6-beta.1).
+        assert!(saver_label.starts_with(&format!("v{}", saver["version"].as_str().unwrap())));
+    }
     use super::*;
     use crate::feed::State;
     fn row(source: &str, destination: &str, intention: &str) -> String {
@@ -1069,7 +1677,7 @@ mod tests {
             .filter(|i| !i.target)
             .map(|i| i.label.clone())
             .collect();
-        assert_eq!(origins, vec!["BR 7.4%", "CN 4.0%", "HK 2.1%"]);
+        assert_eq!(origins, vec!["BR 7.40%", "CN 4.00%", "HK 2.10%"]);
         let targets: Vec<_> = icons
             .iter()
             .filter(|i| i.target)
@@ -1284,5 +1892,220 @@ mod tests {
             0,
         );
         assert!(view.arc_count() <= MAX_ARCS);
+    }
+    fn still_frame(view: &mut SocView, state: &State, now: u64) -> Vec<u8> {
+        view.draw(&state.snapshot(now), counts(state, now), None, 0)
+            .to_vec()
+    }
+    fn busy_state() -> State {
+        let mut state = State::default();
+        for (i, (src, dst)) in [("NL", "US"), ("CN", "DE"), ("BR", "US"), ("NL", "FR")]
+            .iter()
+            .cycle()
+            .take(40)
+            .enumerate()
+        {
+            state.ingest(
+                &row(src, dst, ["malicious", "suspicious", "benign"][i % 3]),
+                1000 + i as u64,
+            );
+        }
+        state
+    }
+    #[test]
+    fn wide_frames_keep_the_map_and_move_the_right_panels() {
+        let state = busy_state();
+        let now = 5_000;
+        for theme in [Theme::Classic, Theme::Dashboard] {
+            let mut standard = SocView::new();
+            standard.options.motion = Motion::Still;
+            standard.options.theme = theme;
+            let base = still_frame(&mut standard, &state, now);
+            for width in [1500u32, 1900, 2560] {
+                let mut view = SocView::new();
+                view.options.motion = Motion::Still;
+                view.options.theme = theme;
+                assert_eq!(view.set_width(width), width);
+                let frame = still_frame(&mut view, &state, now);
+                assert_eq!(frame.len(), width as usize * crate::HEIGHT as usize * 4);
+                // The map (with tints) is pixel-identical: same size, same place, same clicks.
+                for y in (240..700).step_by(7) {
+                    for x in (60..980).step_by(7) {
+                        let a = (y * crate::WIDTH as usize + x) * 4;
+                        let b = (y * width as usize + x) * 4;
+                        assert_eq!(
+                            base[a..a + 3],
+                            frame[b..b + 3],
+                            "{theme:?} {width} map at {x},{y}"
+                        );
+                    }
+                }
+                // The right-hand panels moved to the right edge, unchanged.
+                let dx = (width - crate::WIDTH) as usize;
+                for y in (210..850).step_by(9) {
+                    for x in (1030..1410).step_by(9) {
+                        let a = (y * crate::WIDTH as usize + x) * 4;
+                        let b = (y * width as usize + x + dx) * 4;
+                        // Dashboard background grid stays on its 40 px raster between tiles.
+                        let dark = |p: &[u8]| p[..3].iter().all(|&c| c < 20);
+                        if theme == Theme::Dashboard && dark(&base[a..]) && dark(&frame[b..]) {
+                            continue;
+                        }
+                        assert_eq!(
+                            base[a..a + 3],
+                            frame[b..b + 3],
+                            "{theme:?} {width} panel at {x},{y}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+    #[test]
+    fn short_country_names_for_the_top_list() {
+        assert_eq!(short_name("Kingdom of Spain"), "SPAIN");
+        assert_eq!(short_name("Kingdom of the Netherlands"), "NETHERLANDS");
+        assert_eq!(short_name("Democratic Republic of the Congo"), "CONGO");
+        assert_eq!(short_name("Canada"), "CANADA");
+        assert_eq!(short_name("Republic of "), "REPUBLIC OF ");
+    }
+    #[test]
+    fn wide_frames_fill_the_extra_space_and_restore_exactly() {
+        let state = busy_state();
+        let now = 5_000;
+        let mut reference = SocView::new();
+        reference.options.motion = Motion::Still;
+        let classic = still_frame(&mut reference, &state, now);
+        let mut view = SocView::new();
+        view.options.motion = Motion::Still;
+        let px = |frame: &[u8], width: u32, x: usize, y: usize| {
+            let i = (y * width as usize + x) * 4;
+            [frame[i], frame[i + 1], frame[i + 2]]
+        };
+        // Small extra width: the map panel grows; no column.
+        view.set_width(1540);
+        let frame = still_frame(&mut view, &state, now);
+        assert_eq!(px(&frame, 1540, 1060, 400), CLASSIC_PANEL);
+        // Enough for a column: a top-countries panel with text between map and right panels.
+        view.set_width(1900);
+        let frame = still_frame(&mut view, &state, now);
+        let column: Vec<_> = (1030..1460)
+            .flat_map(|x| (240..300).map(move |y| (x, y)))
+            .map(|(x, y)| px(&frame, 1900, x, y))
+            .collect();
+        assert!(column.contains(&CLASSIC_PANEL), "column panel painted");
+        assert!(
+            column.iter().any(|p| p.iter().all(|&c| c > 150)),
+            "country rows written"
+        );
+        // Back to 1440: exactly the standard frame again; out-of-range widths are clamped.
+        assert_eq!(view.set_width(100), crate::WIDTH);
+        assert_eq!(still_frame(&mut view, &state, now), classic);
+        assert_eq!(view.set_width(u32::MAX), crate::WIDTH * 3);
+        view.options.theme = Theme::Dashboard;
+        let frame = still_frame(&mut view, &state, now);
+        assert_eq!(
+            frame.len(),
+            (crate::WIDTH * 3) as usize * crate::HEIGHT as usize * 4
+        );
+    }
+    #[test]
+    fn classic_is_the_default_theme_and_switching_back_restores_it_exactly() {
+        assert_eq!(Options::default().theme, Theme::Classic);
+        let mut state = State::default();
+        for i in 0..20u64 {
+            state.ingest(
+                &row(
+                    "NL",
+                    "US",
+                    ["malicious", "suspicious", "benign"][i as usize % 3],
+                ),
+                1000 + i,
+            );
+        }
+        let now = 5_000;
+        let mut reference = SocView::new();
+        reference.options.motion = Motion::Still;
+        let classic = still_frame(&mut reference, &state, now);
+
+        let mut view = SocView::new();
+        view.options.motion = Motion::Still;
+        view.options.theme = Theme::Dashboard;
+        let dashboard = still_frame(&mut view, &state, now);
+        assert_ne!(classic, dashboard, "dashboard repaints the frame");
+        view.options.theme = Theme::Classic;
+        assert_eq!(
+            still_frame(&mut view, &state, now),
+            classic,
+            "classic frame is unchanged"
+        );
+    }
+    #[test]
+    fn dashboard_uses_black_background_and_accent_tiles() {
+        let mut view = SocView::new();
+        view.options.motion = Motion::Still;
+        view.options.theme = Theme::Dashboard;
+        let frame = still_frame(&mut view, &State::default(), 5_000);
+        let px = |x: usize, y: usize| {
+            let i = (y * crate::WIDTH as usize + x) * 4;
+            [frame[i], frame[i + 1], frame[i + 2]]
+        };
+        // Gap between tiles is near-black (classic is navy 5,12,21 there).
+        let gap = px(1015, 400);
+        assert!(gap.iter().all(|&c| c < 16), "gap {gap:?}");
+        // Top-left corner tick of tile 01 uses the cyan accent.
+        let tick = px(37, 96);
+        assert!(
+            tick[1] > 150 && tick[2] > 150 && tick[0] < 120,
+            "tick {tick:?}"
+        );
+    }
+    #[test]
+    fn dashboard_callout_marks_the_focused_country_and_classic_has_none() {
+        let mut state = State::default();
+        state.ingest(&row("NL", "US", "malicious"), 1000);
+        let mut view = SocView::new();
+        view.options.motion = Motion::Still;
+        let index = view
+            .renderer
+            .countries
+            .index("US")
+            .expect("US in country map");
+        let (lon, lat) = view.renderer.countries.anchor(index).expect("anchor");
+        let (x, y) = xy(lon, lat);
+        let at = |frame: &[u8]| {
+            let i = (y.round() as usize * crate::WIDTH as usize + x.round() as usize) * 4;
+            [frame[i], frame[i + 1], frame[i + 2]]
+        };
+        let is_accent = |c: [u8; 3]| c[1] > 150 && c[2] > 150 && c[0] < 140;
+        view.options.focus = Some(index);
+        let classic = still_frame(&mut view, &state, 5_000);
+        assert!(!is_accent(at(&classic)), "classic has no callout dot");
+        view.options.theme = Theme::Dashboard;
+        let dashboard = still_frame(&mut view, &state, 5_000);
+        assert!(
+            is_accent(at(&dashboard)),
+            "callout dot at anchor: {:?}",
+            at(&dashboard)
+        );
+    }
+    #[test]
+    fn dashboard_keeps_the_same_bounded_arcs() {
+        let mut view = SocView::new();
+        view.options.theme = Theme::Dashboard;
+        let mut state = State::default();
+        let mut most = 0;
+        for second in 0..10u64 {
+            let now = 1_000_000 + second * 1000;
+            for _ in 0..500 {
+                state.ingest(&row("NL", "US", "malicious"), now);
+            }
+            for frame in 0..10 {
+                let t = now + frame * 100;
+                view.draw(&state.snapshot(t), counts(&state, t), None, 0);
+                most = most.max(view.arc_count());
+            }
+        }
+        assert!(most > MAX_ARCS && most <= REALTIME_MAX_ARCS, "peak {most}");
     }
 }

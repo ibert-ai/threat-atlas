@@ -40,11 +40,33 @@ pub struct Renderer {
     country_classes: Vec<Option<usize>>,
     country_overlay: Pixmap,
     panorama: Option<panorama::View>,
+    /// Wide SOC frame (macOS window wider than 16:10): extra pixels inserted at `WIDE_SPLIT`.
+    /// Everything drawn at x >= WIDE_SPLIT moves right by this amount unless `wide_raw` is set.
+    /// Zero for the screensaver and the standard 1440x900 SOC frame, which stay unchanged.
+    pub(crate) wide_dx: f32,
+    pub(crate) wide_raw: bool,
 }
+/// Column boundary between the map and the right-hand panels in the 1440x900 layout.
+pub(crate) const WIDE_SPLIT: f32 = 1015.;
 impl Default for Renderer {
     fn default() -> Self {
         Self::new()
     }
+}
+pub(crate) fn release_label(release: &str) -> String {
+    let release: serde_json::Value = serde_json::from_str(release).unwrap_or_default();
+    let version = release["version"]
+        .as_str()
+        .unwrap_or(env!("CARGO_PKG_VERSION"));
+    let suffix = release["prerelease"]
+        .as_str()
+        .map(|value| format!("-{value}"))
+        .unwrap_or_default();
+    let build = release["build"]
+        .as_u64()
+        .map(|value| value.to_string())
+        .unwrap_or_else(|| "unknown".into());
+    format!("v{version}{suffix} | b{build}")
 }
 impl Renderer {
     pub fn new() -> Self {
@@ -74,7 +96,7 @@ impl Renderer {
         r.text(1044, 225, 17, "TOP ROWS / ORIGIN -> TARGET", CYAN);
         r.text(45, 750, 14, "PROVIDER WINDOW / FRESHNESS", MUTED);
         r.text(35,875,12,"CLOUDFLARE RADAR | LAYER 3 TOP ATTACKS | AGGREGATE SHARES, NOT INDIVIDUAL ATTACKS | NO ROUTES DRAWN",MUTED);
-        r.version_label();
+        r.desktop_version_label();
         r.base = r.pix.clone();
         r
     }
@@ -100,31 +122,39 @@ impl Renderer {
             country_classes: Vec::new(),
             country_overlay: Pixmap::new(width, height).unwrap(),
             panorama: None,
+            wide_dx: 0.,
+            wide_raw: false,
         }
+    }
+    /// Frame x for a layout x: right-hand column shifted in a wide SOC frame.
+    pub(crate) fn wx(&self, x: f32) -> f32 {
+        if !self.wide_raw && self.wide_dx > 0. && x >= WIDE_SPLIT {
+            x + self.wide_dx
+        } else {
+            x
+        }
+    }
+    /// Resize the frame for the wide SOC layout (height stays 900); callers repaint the base.
+    pub(crate) fn resize_wide(&mut self, width: u32) {
+        let width = width.max(WIDTH);
+        self.pix = Pixmap::new(width, HEIGHT).unwrap();
+        self.base = self.pix.clone();
+        self.country_overlay = Pixmap::new(width, HEIGHT).unwrap();
+        self.wide_dx = (width - WIDTH) as f32;
     }
     /// Frame size in pixels; `WIDTH` x `HEIGHT` except in the panorama layout.
     pub fn size(&self) -> (u32, u32) {
         (self.pix.width(), self.pix.height())
     }
-    fn version_text() -> String {
-        let release: serde_json::Value =
-            serde_json::from_str(include_str!("../../../version.json")).unwrap_or_default();
-        let version = release["version"]
-            .as_str()
-            .unwrap_or(env!("CARGO_PKG_VERSION"));
-        let suffix = release["prerelease"]
-            .as_str()
-            .map(|value| format!("-{value}"))
-            .unwrap_or_default();
-        let build = release["build"]
-            .as_u64()
-            .map(|value| value.to_string())
-            .unwrap_or_else(|| "unknown".into());
-        format!("v{version}{suffix} | b{build}")
-    }
     fn version_label(&mut self) {
-        let label = Self::version_text();
-        self.text(1120, 875, 12, &label, MUTED);
+        self.draw_release_label(include_str!("../../../version.json"));
+    }
+    /// The Desktop app has its own identity, independent of the screensaver's version.json.
+    fn desktop_version_label(&mut self) {
+        self.draw_release_label(include_str!("../../../atlassoc-beta-version.json"));
+    }
+    fn draw_release_label(&mut self, release: &str) {
+        self.text(1120, 875, 12, &release_label(release), MUTED);
     }
     /// Background, panels, graticule and land shared by the screensaver and the standalone SOC view.
     fn base_map(&mut self) {
@@ -371,6 +401,7 @@ impl Renderer {
         self.pix.data()
     }
     fn rect(&mut self, x: f32, y: f32, w: f32, h: f32, c: [u8; 3], a: u8) {
+        let x = self.wx(x);
         let mut p = Paint::default();
         p.set_color_rgba8(c[0], c[1], c[2], a);
         if let Some(rect) = Rect::from_xywh(x, y, w, h) {
@@ -379,6 +410,7 @@ impl Renderer {
     }
     #[allow(clippy::too_many_arguments)] // Explicit coordinates keep drawing call sites readable.
     fn line(&mut self, x: f32, y: f32, xx: f32, yy: f32, c: [u8; 3], w: f32, a: u8) {
+        let (x, xx) = (self.wx(x), self.wx(xx));
         let mut b = PathBuilder::new();
         b.move_to(x, y);
         b.line_to(xx, yy);
@@ -398,6 +430,7 @@ impl Renderer {
         }
     }
     fn dot(&mut self, x: f32, y: f32, r: f32, c: [u8; 3], a: u8) {
+        let x = self.wx(x);
         if let Some(path) = PathBuilder::from_circle(x, y, r) {
             let mut p = Paint::default();
             p.set_color_rgba8(c[0], c[1], c[2], a);
@@ -406,7 +439,7 @@ impl Renderer {
         }
     }
     fn text(&mut self, x: i32, y: i32, size: u16, text: &str, c: [u8; 3]) {
-        let mut pen = x;
+        let mut pen = self.wx(x as f32) as i32;
         let (width, height) = self.size();
         // A network peer must not grow the glyph cache with arbitrary Unicode.
         // Limit work to visible text; unsupported/control characters render as '?'.

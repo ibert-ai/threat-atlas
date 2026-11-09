@@ -2,7 +2,9 @@ pub mod clock;
 mod countries;
 pub mod feed;
 pub mod radar;
+pub mod radar_poll;
 pub mod render;
+pub mod update;
 use feed::{Feed, Snapshot};
 use std::sync::Arc;
 pub const WIDTH: u32 = 1440;
@@ -139,7 +141,7 @@ pub unsafe extern "C" fn ta_radar_set(
 }
 /// # Safety
 /// `session` must be a live pointer from ta_radar_new, used only on its owning UI thread.
-/// The returned RGBA buffer (ta_width x ta_height) remains valid until the next frame or ta_radar_drop.
+/// The returned RGBA buffer (ta_soc_width x ta_height) remains valid until the next frame or ta_radar_drop.
 #[no_mangle]
 pub unsafe extern "C" fn ta_radar_frame(session: *mut RadarSession) -> *const u8 {
     if session.is_null() {
@@ -279,6 +281,36 @@ pub unsafe extern "C" fn ta_soc_set_radar_layer(
     options.radar_layer = enabled != 0;
     options.radar_hidden = codes;
 }
+/// Layout theme: 0 classic (default), 1 dashboard; anything else is classic.
+/// # Safety
+/// `session` must be null or a live pointer from ta_soc_new.
+#[no_mangle]
+pub unsafe extern "C" fn ta_soc_set_theme(session: *mut SocSession, theme: u32) {
+    if let Some(session) = session.as_mut() {
+        session.view.options.theme = match theme {
+            1 => render::soc::Theme::Dashboard,
+            _ => render::soc::Theme::Classic,
+        };
+    }
+}
+/// Frame width for the macOS window's shape: at least 1440 (the standard 16:10 layout, unchanged),
+/// at most 4320; height stays 900. Wider frames keep the map size, move the right-hand panels to
+/// the right edge and add a top-countries column. Returns the width in use (0 for null).
+/// # Safety
+/// `session` must be null or a live pointer from ta_soc_new, used only on its owning UI thread.
+#[no_mangle]
+pub unsafe extern "C" fn ta_soc_set_width(session: *mut SocSession, width: u32) -> u32 {
+    session
+        .as_mut()
+        .map_or(0, |session| session.view.set_width(width))
+}
+/// Current frame width of a SOC session (0 for null); the height is always ta_height().
+/// # Safety
+/// `session` must be null or a live pointer from ta_soc_new.
+#[no_mangle]
+pub unsafe extern "C" fn ta_soc_width(session: *const SocSession) -> u32 {
+    session.as_ref().map_or(0, |session| session.view.width())
+}
 /// Up to 100 trimmed upper-case codes of at most 8 ASCII alphanumerics each.
 fn radar_codes(list: &str) -> Vec<String> {
     list.split(',')
@@ -331,7 +363,7 @@ pub unsafe extern "C" fn ta_soc_inspect(
 }
 /// # Safety
 /// `session` must be a live pointer from ta_soc_new, used only on its owning UI thread.
-/// The returned RGBA buffer (ta_width x ta_height) remains valid until the next frame or ta_soc_drop.
+/// The returned RGBA buffer (ta_soc_width x ta_height) remains valid until the next frame or ta_soc_drop.
 #[no_mangle]
 pub unsafe extern "C" fn ta_soc_frame(session: *mut SocSession) -> *const u8 {
     if session.is_null() {

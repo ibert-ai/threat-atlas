@@ -21,6 +21,13 @@ enum TokenStore {
               let data = value as? Data else { return nil }
         return String(data: data, encoding: .utf8)
     }
+    /// Whether a token is saved, from its attributes only: the secret is not decrypted, so no
+    /// Keychain access prompt can block launch (each ad-hoc build is a new code identity).
+    static func exists() -> Bool {
+        var q = query; q[kSecReturnAttributes as String] = true
+        var value: CFTypeRef?
+        return SecItemCopyMatching(q as CFDictionary, &value) == errSecSuccess
+    }
     static func save(_ token: String) -> Bool {
         let values = [kSecValueData as String: Data(token.utf8)]
         let result = SecItemUpdate(query as CFDictionary, values as CFDictionary)
@@ -32,6 +39,11 @@ enum TokenStore {
         return result == errSecSuccess
     }
 }
+/// One visible worker state, so licence acceptance, the token and collection never look like separate
+/// hidden steps (SOC-DATA-001).
+enum RadarStatus: Equatable {
+    case otherWorker, needsToken, denied, paused, waiting(Date), fetching, current, stale, unavailable
+}
 @MainActor final class RadarModel: ObservableObject {
     @Published var result: RadarResult?
     @Published var message = "No data yet. Add a Cloudflare Radar Read token."
@@ -39,20 +51,36 @@ enum TokenStore {
     @Published var enabled = false
     @Published var next: Date
     @Published var received: Date?
+    @Published private(set) var hasToken = false
+    /// The saved token last got HTTP 200 from Cloudflare; persisted, cleared on 401/403 or a new token.
+    @Published var tokenVerified: Bool { didSet { defaults.set(tokenVerified, forKey: "radar.tokenVerified") } }
+    /// Token saved and known to work: the window hides the token setup and shows a compact status bar.
+    var configured: Bool { hasToken && tokenVerified }
     private var failures = 0
     private let defaults: UserDefaults
     private let delegate = NoRedirect()
     private let directory: URL
     private let readToken: () -> String?
+    private let storeToken: (String) -> Bool
+    /// Whether a token is saved, from Keychain attributes only (no decryption, no prompt at launch).
+    private let tokenSaved: () -> Bool
+    /// Persisted user choices: Pause survives relaunch; an authorization failure is not retried
+    /// automatically until a new token is saved.
+    private static let pausedKey = "radarPaused", deniedKey = "radarDenied"
     private var lockFD: Int32 = -1
     private var session: URLSession!
     private var running = false
     /// Defaults are the app's real locations. Tests pass a temporary directory, a private defaults
-    /// suite, a fixed token and a stub protocol that replaces all networking.
+    /// suite, a fixed token, a token saver that never touches Keychain and a stub protocol that
+    /// replaces all networking.
     init(directory customDirectory: URL? = nil, defaults: UserDefaults = .standard,
-         token: @escaping () -> String? = TokenStore.read, protocolClasses: [AnyClass]? = nil) {
+         token: @escaping () -> String? = TokenStore.read, tokenExists: (() -> Bool)? = nil, saveToken: @escaping (String) -> Bool = TokenStore.save,
+         protocolClasses: [AnyClass]? = nil) {
         self.defaults = defaults
         readToken = token
+        storeToken = saveToken
+        tokenSaved = tokenExists ?? TokenStore.exists
+        tokenVerified = defaults.bool(forKey: "radar.tokenVerified")
         next = Date(timeIntervalSince1970: defaults.double(forKey: "nextRequest"))
         directory = customDirectory ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("ThreatAtlasPrivateRadar", isDirectory: true)
@@ -77,20 +105,54 @@ enum TokenStore {
         }
     }
     struct Snapshot: Codable { let result: RadarResult; let received: Date }
+    var status: RadarStatus {
+        if !running { return .otherWorker }
+        if busy { return .fetching }
+        if defaults.bool(forKey: Self.deniedKey) { return .denied }
+        if !hasToken { return .needsToken }
+        if !enabled { return .paused }
+        if let received { return Date().timeIntervalSince(received) > 1800 ? .stale : .current }
+        if failures > 0 { return .unavailable }
+        return .waiting(max(next, Date()))
+    }
+    /// Called once the licence gate has been passed. Starts (or resumes) collection when a token is
+    /// already saved, unless the user paused it or the token was refused; `refresh` still enforces
+    /// the persisted 15-minute interval, so relaunch never adds a request.
+    func autoStart(consented: Bool) {
+        guard consented, running else { return }
+        hasToken = tokenSaved()
+        if !hasToken { message = "Add a Cloudflare Radar Read token to show Radar data. GreyNoise live data needs no token."; return }
+        if defaults.bool(forKey: Self.deniedKey) { message = "Cloudflare refused the saved token. Save a token with Radar Read permission."; return }
+        if defaults.bool(forKey: Self.pausedKey) { message = "Radar collection is paused. Press Start to resume."; return }
+        resume()
+    }
     func save(token: String) {
         let clean = token.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty, clean.count < 4096, !clean.contains("\n"), !clean.contains("\r") else {
             message = "Enter a valid Radar Read token."; return
         }
-        message = TokenStore.save(clean) ? "Token saved in Keychain. Press Start when ready." : "Keychain save failed. No request sent."
+        guard storeToken(clean) else { message = "Keychain save failed. No request sent."; return }
+        // A newly saved token is the user's go-ahead: no second Start step.
+        hasToken = true; tokenVerified = false
+        defaults.removeObject(forKey: Self.deniedKey); defaults.removeObject(forKey: Self.pausedKey)
+        resume()
     }
+    /// Resume polling at launch only if the user left it on and the saved token is known to work.
     func setNext(_ date: Date) { next = date; defaults.set(date.timeIntervalSince1970, forKey: "nextRequest") }
-    func start() { guard running else { return }; enabled = true; Task { await refresh() } }
-    func stop() { enabled = false; message = "Paused. Saved data remains visible." }
+    func start() { guard running else { return }; defaults.removeObject(forKey: Self.pausedKey); resume() }
+    func stop() { enabled = false; defaults.set(true, forKey: Self.pausedKey); message = "Paused. Saved data remains visible." }
+    private func resume() {
+        guard running else { return }
+        enabled = true
+        if Date() < next {
+            message = "Token saved. Next Cloudflare request \(next.formatted(date: .omitted, time: .shortened)) (at most once per 15 minutes)."
+        }
+        Task { await refresh() }
+    }
     func refresh() async {
         guard running, enabled, !busy, Date() >= next else { return }
         guard let token = readToken(), !token.isEmpty else {
-            enabled = false; message = "Radar Read token required. No request sent."; return
+            enabled = false; hasToken = false; message = "Radar Read token required. No request sent."; return
         }
         busy = true
         defer { busy = false }
@@ -105,7 +167,8 @@ enum TokenStore {
             let (data, response) = try await session.data(for: request)
             guard let http = response as? HTTPURLResponse else { throw RadarError.invalidResponse }
             if http.statusCode == 401 || http.statusCode == 403 {
-                enabled = false; message = "Authorization denied (\(http.statusCode)). Polling stopped; verify Radar Read permission."; return
+                enabled = false; tokenVerified = false; defaults.set(true, forKey: Self.deniedKey)
+                message = "Authorization denied (\(http.statusCode)). Polling stopped; save a token with Radar Read permission."; return
             }
             guard http.statusCode == 200 else {
                 failures += 1
@@ -116,7 +179,7 @@ enum TokenStore {
                 message = "HTTP \(http.statusCode). Saved data retained; cooldown applies.\(!enabled ? " Polling stopped." : "")"; return
             }
             let parsed = try parseRadar(data)
-            result = parsed; received = Date(); failures = 0
+            result = parsed; received = Date(); failures = 0; hasToken = true; tokenVerified = true
             if let remaining = http.value(forHTTPHeaderField: "Ratelimit"), remaining.contains("r=0") {
                 setNext(Date().addingTimeInterval(PollPolicy.delay(status: 200, retryAfter: nil,
                     reset: remaining, failures: 0, now: Date())))
