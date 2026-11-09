@@ -14,7 +14,7 @@ macOS and Windows additionally support optional Cloudflare Radar past-day aggreg
 
 **macOS:** unzip `AtlasSOC-macOS-universal-v0.7.0-build12.zip`, then copy `AtlasSOC.app` to your chosen Applications location. Requires macOS14+. The app is ad-hoc signed, not Developer ID signed or notarised; Gatekeeper or organisational policy may refuse to open it. Do not disable Gatekeeper or strip quarantine as a workaround. It installs no startup agent or automatic updater; check the releases page for new versions. Quit before replacement/removal. The existing development bundle identifier `dev.threatatlas.private.radar` and Radar support/Keychain locations are retained for continuity; this bundle is separate from the stable screensaver.
 
-The final Windows installer is planned to offer `%ProgramFiles%\AtlasSOC` for all users or `%LocalAppData%\Programs\AtlasSOC` for one user, and independent desktop/Start menu shortcut choices. Those requirements are NOT implemented by this portable beta. See ATLAS-SOC-INSTALLER.md.
+The Windows installer offers `%LocalAppData%\Programs\AtlasSOC` for one user (default, no elevation) or `%ProgramFiles%\AtlasSOC` for all users, with independent desktop and Start menu shortcut choices; it upgrades an earlier AtlasSOC installation in place. See ATLAS-SOC-INSTALLER.md.
 
 ## Consent, credentials and privacy
 
