@@ -1,4 +1,4 @@
-use crate::soc_config::{self, Motion, Settings, Terms, BUILD, VERSION};
+use crate::soc_config::{self, Motion, Settings, Terms, Theme, BUILD, VERSION};
 use std::{
     error::Error,
     num::NonZeroU32,
@@ -16,7 +16,7 @@ use tao::{
 };
 use threat_atlas_core::{
     feed::{self, Feed, State},
-    render::soc::{Motion as CoreMotion, SocView},
+    render::soc::{Motion as CoreMotion, SocView, Theme as CoreTheme},
     HEIGHT, WIDTH,
 };
 use windows_sys::Win32::{
@@ -129,7 +129,7 @@ fn displays(
 }
 
 fn help(window: &Window) {
-    let text = "Right-click anywhere for settings.\n\nF11: fullscreen/windowed\nSpace: freeze/resume display (the shared feed continues)\nR / C / S: Realtime / Calm / Still animation\n1 / 2 / 3: malicious / suspicious / benign visibility\nM: mirror all detected displays (one shared feed)\nT: always on top\nF1: this help\nEscape: leave fullscreen/mirroring, otherwise close\n\nLeft-click a country to focus; hover shows country details in the title.\nSettings save under LocalAppData/ThreatAtlasSOC. Reset settings never resets licence acceptance.\n\nGreyNoise live receipts, not unique attacks. No Windows Cloudflare worker or token storage.\nMirroring is implemented; independent display roles/spanning and physical multimonitor acceptance remain pending. No sleep or lock settings are changed.";
+    let text = "Right-click anywhere for settings.\n\nF11: fullscreen/windowed\nSpace: freeze/resume display (the shared feed continues)\nR / C / S: Realtime / Calm / Still animation\nL: Classic / Dashboard layout\n1 / 2 / 3: malicious / suspicious / benign visibility\nM: mirror all detected displays (one shared feed)\nT: always on top\nF1: this help\nEscape: leave fullscreen/mirroring, otherwise close\n\nLeft-click a country to focus; hover shows country details in the title.\nSettings save under LocalAppData/ThreatAtlasSOC. Reset settings never resets licence acceptance.\n\nGreyNoise live receipts, not unique attacks. No Windows Cloudflare worker or token storage.\nMirroring is implemented; independent display roles/spanning and physical multimonitor acceptance remain pending. No sleep or lock settings are changed.";
     unsafe {
         MessageBoxW(
             window.hwnd() as HWND,
@@ -160,6 +160,12 @@ fn menu(window: &Window, settings: &Settings, paused: bool) -> u32 {
             (11, "5 frames/second", settings.fps == 5),
             (12, "10 frames/second", settings.fps == 10),
             (13, "20 frames/second", settings.fps == 20),
+            (17, "Classic layout (L)", settings.theme == Theme::Classic),
+            (
+                18,
+                "Dashboard layout (L)",
+                settings.theme == Theme::Dashboard,
+            ),
             (14, "Reset display settings", false),
             (15, "Controls and limitations (F1)", false),
             (16, "Exit", false),
@@ -312,6 +318,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                             KeyCode::F11 => 1, KeyCode::KeyM => 2, KeyCode::KeyT => 3, KeyCode::Space => 4,
                             KeyCode::KeyR => 5, KeyCode::KeyC => 6, KeyCode::KeyS => 7,
                             KeyCode::Digit1 => 8, KeyCode::Digit2 => 9, KeyCode::Digit3 => 10, KeyCode::F1 => 15,
+                            KeyCode::KeyL => if settings.theme == Theme::Dashboard { 17 } else { 18 },
                             KeyCode::Escape if settings.fullscreen || settings.mirror_all_displays => { settings.fullscreen = false; settings.mirror_all_displays = false; rebuild = true; dirty = true; 0 }
                             KeyCode::Escape => 16, _ => 0,
                         };
@@ -331,6 +338,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                     5 => settings.motion = Motion::Realtime, 6 => settings.motion = Motion::Calm, 7 => settings.motion = Motion::Still,
                     8..=10 => settings.severities[(action - 8) as usize] = !settings.severities[(action - 8) as usize],
                     11 => settings.fps = 5, 12 => settings.fps = 10, 13 => settings.fps = 20,
+                    17 => settings.theme = Theme::Classic, 18 => settings.theme = Theme::Dashboard,
                     14 => { settings = Settings::default(); rebuild = true; }
                     15 => help(&display.window),
                     16 => *flow = ControlFlow::Exit,
@@ -360,6 +368,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                     if !paused || rgba.is_empty() {
                         view.options.motion = match settings.motion { Motion::Calm => CoreMotion::Calm, Motion::Still => CoreMotion::Still, Motion::Realtime => CoreMotion::Realtime };
                         view.options.severities = settings.severities;
+                        view.options.theme = match settings.theme { Theme::Classic => CoreTheme::Classic, Theme::Dashboard => CoreTheme::Dashboard };
                         let snapshot = feed.as_ref().map_or_else(|| offline.snapshot(feed::now_ms()), |f| f.snapshot());
                         let counts = feed.as_ref().map_or_else(|| offline.counts(feed::now_ms()), |f| f.counts());
                         rgba = view.draw(&snapshot, counts, None, 0).to_vec();

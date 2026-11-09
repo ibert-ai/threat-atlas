@@ -38,6 +38,20 @@ pub enum Motion {
     Realtime,
 }
 
+/// Layout theme around the shared map (ATLAS-SOC-LAYOUT-001). Classic stays the default.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum Theme {
+    #[default]
+    Classic,
+    Dashboard,
+}
+impl Theme {
+    pub fn is_classic(&self) -> bool {
+        *self == Theme::Classic
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Settings {
@@ -50,6 +64,9 @@ pub struct Settings {
     pub severities: [bool; 3],
     pub motion: Motion,
     pub mirror_all_displays: bool,
+    /// Omitted while Classic, so settings files stay readable by earlier builds.
+    #[serde(skip_serializing_if = "Theme::is_classic")]
+    pub theme: Theme,
 }
 impl Default for Settings {
     fn default() -> Self {
@@ -63,6 +80,7 @@ impl Default for Settings {
             severities: [true; 3],
             motion: Motion::Realtime,
             mirror_all_displays: false,
+            theme: Theme::Classic,
         }
     }
 }
@@ -247,6 +265,32 @@ mod tests {
         assert_eq!(fs::read(&path).unwrap(), invalid);
         fs::write(&path, vec![b'x'; MAX_STATE_BYTES as usize + 1]).unwrap();
         assert!(Settings::load(&path).1.is_some());
+        fs::remove_file(path).unwrap();
+    }
+    #[test]
+    fn layout_theme_persists_and_classic_files_stay_readable_by_older_builds() {
+        let path = scratch("theme.json");
+        // Classic is the default and is not written, so pre-theme builds still accept the file.
+        Settings::default().save(&path).unwrap();
+        let text = fs::read_to_string(&path).unwrap();
+        assert!(!text.contains("theme"), "{text}");
+        let dashboard = Settings {
+            theme: Theme::Dashboard,
+            ..Settings::default()
+        };
+        dashboard.save(&path).unwrap();
+        assert!(fs::read_to_string(&path)
+            .unwrap()
+            .contains(r#""theme": "dashboard""#));
+        assert_eq!(Settings::load(&path), (dashboard, None));
+        // Files from earlier builds (no theme key) load as Classic.
+        fs::write(&path, br#"{"schema_version":1,"motion":"calm"}"#).unwrap();
+        assert_eq!(Settings::load(&path).0.theme, Theme::Classic);
+        fs::write(&path, br#"{"schema_version":1,"theme":"neon"}"#).unwrap();
+        assert!(
+            Settings::load(&path).1.is_some(),
+            "unknown theme falls back to defaults"
+        );
         fs::remove_file(path).unwrap();
     }
     #[test]

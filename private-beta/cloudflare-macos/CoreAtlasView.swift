@@ -28,6 +28,12 @@ enum Motion: UInt32, CaseIterable {
     /// Seconds between frames: Calm needs slow fades, Realtime moving heads, Still only the clocks.
     var frameInterval: Double { [0.125, 1, 1.0 / 15][Int(rawValue)] }
 }
+/// Layout theme around the shared map (ATLAS-SOC-LAYOUT-001). Classic stays the default;
+/// the choice is remembered in user defaults.
+enum LayoutTheme: Int, CaseIterable {
+    case classic = 0, dashboard = 1
+    var name: String { ["Classic", "Dashboard"][rawValue] }
+}
 let infoColor = Color(red: 116 / 255, green: 151 / 255, blue: 189 / 255)
 
 /// Country details from the core's hover inspection (counts are received records, not unique attacks).
@@ -55,6 +61,7 @@ final class CoreAtlas {
         let mask = severities.enumerated().reduce(UInt32(0)) { $0 | ($1.element ? 1 << UInt32($1.offset) : 0) }
         ta_soc_set_options(session, mask, motion.rawValue)
     }
+    func setTheme(_ theme: LayoutTheme) { ta_soc_set_theme(session, UInt32(theme.rawValue)) }
     func setRadarLayer(on: Bool, hidden: Set<String>) {
         let codes = Array(hidden.sorted().joined(separator: ",").utf8)
         codes.withUnsafeBufferPointer { ta_soc_set_radar_layer(session, on ? 1 : 0, $0.baseAddress, $0.count) }
@@ -110,6 +117,7 @@ struct CoreAtlasView: View {
     @State private var atlas = CoreAtlas()
     @State private var severities = [true, true, true]
     @State private var motion = Motion.realtime
+    @AppStorage("atlasSOC.layoutTheme") private var theme = LayoutTheme.classic
     @State private var paused = false
     @State private var focused = false
     @State private var hover: CountryInfo?
@@ -179,8 +187,10 @@ struct CoreAtlasView: View {
         }
         .onAppear {
             atlas.setOptions(severities: severities, motion: motion)
+            atlas.setTheme(theme)
             atlas.setRadarLayer(on: radarOn, hidden: hidden)
         }
+        .onChange(of: theme) { _, value in atlas.setTheme(value) }
         .onChange(of: radarOn) { _, value in atlas.setRadarLayer(on: value, hidden: hidden) }
         .onChange(of: hidden) { _, value in atlas.setRadarLayer(on: radarOn, hidden: value) }
         .onChange(of: severities) { _, value in atlas.setOptions(severities: value, motion: motion) }
@@ -205,6 +215,12 @@ struct CoreAtlasView: View {
             .pickerStyle(.segmented).frame(width: 230).labelsHidden()
             .help("Realtime (default): up to 40 arcs/s as records arrive. Calm: few slow arcs. Still: no arcs.")
             Button(paused ? "Resume" : "Pause") { paused.toggle() }
+            Divider().frame(height: 18)
+            Picker("Layout", selection: $theme) {
+                ForEach(LayoutTheme.allCases, id: \.rawValue) { Text($0.name).tag($0) }
+            }
+            .pickerStyle(.segmented).frame(width: 170).labelsHidden()
+            .help("Classic (default) or Dashboard layout. Same map and data; remembered between launches.")
             Divider().frame(height: 18)
             Toggle(isOn: $radarOn) {
                 HStack(spacing: 5) {

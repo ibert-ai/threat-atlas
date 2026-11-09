@@ -279,6 +279,18 @@ pub unsafe extern "C" fn ta_soc_set_radar_layer(
     options.radar_layer = enabled != 0;
     options.radar_hidden = codes;
 }
+/// Layout theme: 0 classic (default), 1 dashboard; anything else is classic.
+/// # Safety
+/// `session` must be null or a live pointer from ta_soc_new.
+#[no_mangle]
+pub unsafe extern "C" fn ta_soc_set_theme(session: *mut SocSession, theme: u32) {
+    if let Some(session) = session.as_mut() {
+        session.view.options.theme = match theme {
+            1 => render::soc::Theme::Dashboard,
+            _ => render::soc::Theme::Classic,
+        };
+    }
+}
 /// Up to 100 trimmed upper-case codes of at most 8 ASCII alphanumerics each.
 fn radar_codes(list: &str) -> Vec<String> {
     list.split(',')
