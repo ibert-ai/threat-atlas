@@ -191,6 +191,8 @@ pub fn write_atomic(path: &Path, bytes: &[u8]) -> io::Result<()> {
 }
 
 /// UI mapping uses integer bounds so tiny/minimized and letterboxed windows are safe.
+/// Standard 1440x900 fit; the host uses `layout_frame` with the current frame width.
+#[cfg(test)]
 pub fn layout(width: u32, height: u32) -> (u32, u32, u32, u32) {
     layout_frame(width, height, 1440, 900)
 }
