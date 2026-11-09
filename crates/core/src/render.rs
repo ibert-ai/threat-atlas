@@ -9,6 +9,105 @@ pub mod panorama;
 pub mod soc;
 const CYAN: [u8; 3] = [68, 220, 225];
 const MUTED: [u8; 3] = [100, 139, 159];
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Theme {
+    Classic,
+    Seeker,
+}
+
+impl Default for Theme {
+    fn default() -> Self {
+        Self::Classic
+    }
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct Palette {
+    bg: [u8; 3],
+    panel: [u8; 3],
+    panel_border: Option<([u8; 3], u8)>,
+    grid: [u8; 3],
+    grid_alpha: u8,
+    land: [u8; 3],
+    coast: [u8; 3],
+    coast_alpha: u8,
+    text: [u8; 3],
+    clock: [u8; 3],
+    body: [u8; 3],
+    muted: [u8; 3],
+    cyan: [u8; 3],
+    gold: [u8; 3],
+    red: [u8; 3],
+    amber: [u8; 3],
+    green: [u8; 3],
+    neutral: [u8; 3],
+    counter: [u8; 3],
+    counter_border: Option<([u8; 3], u8)>,
+    seeker: bool,
+}
+
+impl Palette {
+    pub(crate) const fn classic() -> Self {
+        Self {
+            bg: [5, 12, 21],
+            panel: [10, 23, 36],
+            panel_border: None,
+            grid: [22, 43, 57],
+            grid_alpha: 180,
+            land: [22, 49, 63],
+            coast: [48, 90, 106],
+            coast_alpha: 220,
+            text: [223, 241, 249],
+            clock: [218, 236, 242],
+            body: [203, 222, 235],
+            muted: [100, 139, 159],
+            cyan: [68, 220, 225],
+            gold: [224, 179, 106],
+            red: [255, 93, 115],
+            amber: [255, 190, 82],
+            green: [76, 215, 163],
+            neutral: [116, 151, 189],
+            counter: [12, 28, 42],
+            counter_border: None,
+            seeker: false,
+        }
+    }
+    const fn seeker() -> Self {
+        Self {
+            bg: [4, 14, 22],
+            panel: [8, 26, 36],
+            panel_border: Some(([120, 92, 52], 170)),
+            grid: [26, 58, 68],
+            grid_alpha: 150,
+            land: [12, 36, 48],
+            coast: [168, 196, 186],
+            coast_alpha: 150,
+            text: [232, 246, 250],
+            clock: [228, 238, 234],
+            body: [210, 228, 230],
+            muted: [130, 154, 160],
+            cyan: [68, 220, 225],
+            gold: [224, 179, 106],
+            red: [255, 93, 115],
+            amber: [255, 190, 82],
+            green: [76, 215, 163],
+            neutral: [116, 151, 189],
+            counter: [9, 26, 36],
+            counter_border: Some(([120, 92, 52], 130)),
+            seeker: true,
+        }
+    }
+    fn color(&self, i: usize) -> [u8; 3] {
+        match i {
+            0 => self.red,
+            1 => self.amber,
+            2 => self.green,
+            _ => self.neutral,
+        }
+    }
+}
+
 pub(crate) fn color(i: usize) -> [u8; 3] {
     match i {
         0 => [255, 93, 115],
@@ -45,6 +144,8 @@ pub struct Renderer {
     /// Zero for the screensaver and the standard 1440x900 SOC frame, which stay unchanged.
     pub(crate) wide_dx: f32,
     pub(crate) wide_raw: bool,
+    theme: Theme,
+    pal: Palette,
 }
 /// Column boundary between the map and the right-hand panels in the 1440x900 layout.
 pub(crate) const WIDE_SPLIT: f32 = 1015.;
@@ -70,13 +171,26 @@ pub(crate) fn release_label(release: &str) -> String {
 }
 impl Renderer {
     pub fn new() -> Self {
-        let mut r = Self::blank();
+        Self::new_with_theme(Theme::Classic)
+    }
+    /// Renderer for an explicit visual theme. Layout, data and semantics are identical.
+    pub fn new_with_theme(theme: Theme) -> Self {
+        let mut r = Self::blank_sized(WIDTH, HEIGHT, theme);
         r.base_map();
-        r.text(35, 28, 30, "THREAT ATLAS", [223, 241, 249]);
-        r.text(36, 70, 14, "SECURITY OPERATIONS / GLOBAL TELEMETRY", MUTED);
-        r.text(1044, 225, 17, "RECENT OBSERVATIONS", CYAN);
-        r.text(45, 750, 14, "RECEIVED RECORDS / SECOND", MUTED);
-        r.text(35,875,12,"GREYNOISE PUBLIC THREAT MAP | RECEIPT TIMES UTC | COUNTS ARE RECEIVED RECORDS, NOT UNIQUE ATTACKS",MUTED);
+        let pal = r.pal;
+        r.text(35, 28, 30, "THREAT ATLAS", pal.text);
+        if pal.seeker {
+            r.text(392, 30, 22, "// THE SEEKER", pal.gold);
+            r.text(36, 70, 14, "SECURITY OPERATIONS / GLOBAL TELEMETRY / NAUTICAL THEME", pal.muted);
+            r.text(1044, 225, 17, "RECENT OBSERVATIONS", pal.gold);
+            r.text(45, 750, 14, "RECEIVED RECORDS / SECOND", pal.muted);
+            r.text(35,875,12,"GREYNOISE PUBLIC THREAT MAP | RECEIPT TIMES UTC | COUNTS ARE RECEIVED RECORDS, NOT UNIQUE ATTACKS | THE SEEKER THEME",pal.muted);
+        } else {
+            r.text(36, 70, 14, "SECURITY OPERATIONS / GLOBAL TELEMETRY", pal.muted);
+            r.text(1044, 225, 17, "RECENT OBSERVATIONS", pal.cyan);
+            r.text(45, 750, 14, "RECEIVED RECORDS / SECOND", pal.muted);
+            r.text(35,875,12,"GREYNOISE PUBLIC THREAT MAP | RECEIPT TIMES UTC | COUNTS ARE RECEIVED RECORDS, NOT UNIQUE ATTACKS",pal.muted);
+        }
         r.version_label();
         r.base = r.pix.clone();
         r
@@ -101,10 +215,14 @@ impl Renderer {
         r
     }
     fn blank() -> Self {
-        Self::blank_sized(WIDTH, HEIGHT)
+        Self::blank_sized(WIDTH, HEIGHT, Theme::Classic)
     }
-    fn blank_sized(width: u32, height: u32) -> Self {
+    fn blank_sized(width: u32, height: u32, theme: Theme) -> Self {
         let pix = Pixmap::new(width, height).unwrap();
+        let pal = match theme {
+            Theme::Classic => Palette::classic(),
+            Theme::Seeker => Palette::seeker(),
+        };
         let base = pix.clone();
         let font = fontdue::Font::from_bytes(
             include_bytes!("../../../assets/mono.ttf") as &[u8],
@@ -124,6 +242,8 @@ impl Renderer {
             panorama: None,
             wide_dx: 0.,
             wide_raw: false,
+            theme,
+            pal,
         }
     }
     /// Frame x for a layout x: right-hand column shifted in a wide SOC frame.
@@ -142,6 +262,10 @@ impl Renderer {
         self.country_overlay = Pixmap::new(width, HEIGHT).unwrap();
         self.wide_dx = (width - WIDTH) as f32;
     }
+    /// The theme this renderer was created with.
+    pub fn theme(&self) -> Theme {
+        self.theme
+    }
     /// Frame size in pixels; `WIDTH` x `HEIGHT` except in the panorama layout.
     pub fn size(&self) -> (u32, u32) {
         (self.pix.width(), self.pix.height())
@@ -158,28 +282,143 @@ impl Renderer {
     }
     /// Background, panels, graticule and land shared by the screensaver and the standalone SOC view.
     fn base_map(&mut self) {
-        self.pix.fill(Color::from_rgba8(5, 12, 21, 255));
+        let pal = self.pal;
+        self.pix.fill(Color::from_rgba8(pal.bg[0], pal.bg[1], pal.bg[2], 255));
         for (x, y, w, h) in [
             (25., 205., 980., 510.),
             (1025., 205., 390., 650.),
             (25., 735., 980., 120.),
         ] {
-            self.rect(x, y, w, h, [10, 23, 36], 255);
+            self.rect(x, y, w, h, pal.panel, 255);
+            if let Some((c, a)) = pal.panel_border {
+                self.rect_outline(x, y, w, h, c, a, 1.);
+            }
         }
         for lon in (-180..=180).step_by(30) {
             let (a, b) = xy(lon as f64, 90.);
             let (c, d) = xy(lon as f64, -90.);
-            self.line(a, b, c, d, [22, 43, 57], 1., 180);
+            self.line(a, b, c, d, pal.grid, 1., pal.grid_alpha);
         }
         for lat in (-90..=90).step_by(30) {
             let (a, b) = xy(-180., lat as f64);
             let (c, d) = xy(180., lat as f64);
-            self.line(a, b, c, d, [22, 43, 57], 1., 180);
+            self.line(a, b, c, d, pal.grid, 1., pal.grid_alpha);
         }
-        Self::draw_land(&mut self.pix, Transform::identity(), 0.7);
+        Self::draw_land(&mut self.pix, Transform::identity(), 0.7, &pal);
+    }
+
+    fn rect_outline(&mut self, x: f32, y: f32, w: f32, h: f32, c: [u8; 3], a: u8, width: f32) {
+        if let Some(rect) = Rect::from_xywh(x, y, w, h) {
+            let mut p = Paint::default();
+            p.set_color_rgba8(c[0], c[1], c[2], a);
+            let path = PathBuilder::from_rect(rect);
+            self.pix.stroke_path(
+                &path,
+                &p,
+                &Stroke { width, ..Default::default() },
+                Transform::identity(),
+                None,
+            );
+        }
+    }
+
+    fn poly(&mut self, pts: &[(f32, f32)], c: [u8; 3], a: u8) {
+        if pts.len() < 3 {
+            return;
+        }
+        let mut b = PathBuilder::new();
+        b.move_to(pts[0].0, pts[0].1);
+        for p in &pts[1..] {
+            b.line_to(p.0, p.1);
+        }
+        b.close();
+        if let Some(path) = b.finish() {
+            let mut p = Paint::default();
+            p.set_color_rgba8(c[0], c[1], c[2], a);
+            self.pix.fill_path(&path, &p, FillRule::Winding, Transform::identity(), None);
+        }
+    }
+
+    fn ring_clipped(&mut self, cx: f32, cy: f32, r: f32, c: [u8; 3], a: u8, width: f32) {
+        let inside = |x: f32, y: f32| x >= 25. && x <= 1005. && y >= 205. && y <= 715.;
+        let mut prev: Option<(f32, f32)> = None;
+        for i in 0..=360 {
+            let ang = (i as f32).to_radians();
+            let p = (cx + r * ang.cos(), cy + r * ang.sin());
+            if let Some(q) = prev {
+                if inside(q.0, q.1) && inside(p.0, p.1) {
+                    self.line(q.0, q.1, p.0, p.1, c, width, a);
+                }
+            }
+            prev = Some(p);
+        }
+    }
+
+    fn seeker_overlay(&mut self) {
+        let gold = self.pal.gold;
+        let cyan = self.pal.cyan;
+        let cx = 436.0f32;
+        let cy = 347.0f32;
+        self.rect_outline(14., 14., 1412., 872., gold, 150, 2.);
+        for r in [140.0f32, 110.0] {
+            self.ring_clipped(cx, cy, r, gold, 55, 1.2);
+        }
+        for deg in (0..360).step_by(10) {
+            let a = (deg as f32).to_radians();
+            let r1 = 140.0;
+            let r2 = if deg % 30 == 0 { 124.0 } else { 131.0 };
+            let alpha = if deg % 30 == 0 { 170 } else { 90 };
+            self.line(
+                cx + r1 * a.cos(), cy + r1 * a.sin(),
+                cx + r2 * a.cos(), cy + r2 * a.sin(),
+                gold, 1.2, alpha,
+            );
+        }
+        for k in 0..8 {
+            let a = (k as f32 * 45.0).to_radians();
+            let long = if k % 2 == 0 { 100.0 } else { 62.0 };
+            let wdt = if k % 2 == 0 { 9.0 } else { 6.0 };
+            let perp = a + std::f32::consts::FRAC_PI_2;
+            let tip = (cx + long * a.cos(), cy + long * a.sin());
+            let l = (cx + wdt * perp.cos(), cy + wdt * perp.sin());
+            let r = (cx + wdt * (a - std::f32::consts::FRAC_PI_2).cos(),
+                     cy + wdt * (a - std::f32::consts::FRAC_PI_2).sin());
+            let col = if k % 2 == 0 { gold } else { cyan };
+            self.poly(&[tip, l, r], col, if k % 2 == 0 { 70 } else { 45 });
+        }
+        let na = (-55.0f32).to_radians();
+        let ntip = (cx + 133.0 * na.cos(), cy + 133.0 * na.sin());
+        let nback = (cx - 20.0 * na.cos(), cy - 20.0 * na.sin());
+        let perp = na + std::f32::consts::FRAC_PI_2;
+        let b1 = (cx + 6.0 * perp.cos(), cy + 6.0 * perp.sin());
+        let b2 = (cx - 6.0 * perp.cos(), cy - 6.0 * perp.sin());
+        self.poly(&[ntip, b1, nback, b2], gold, 150);
+        self.text(433, 211, 11, "N", gold);
+        self.text(588, 343, 11, "E", gold);
+        self.text(433, 497, 11, "S", gold);
+        self.text(278, 343, 11, "W", gold);
+        for (r, a) in [(90.0f32, 70u8), (180.0, 55), (270.0, 42), (360.0, 30)] {
+            self.ring_clipped(cx, cy, r, cyan, a, 1.3);
+        }
+        let sa = (-55.0f32).to_radians();
+        let inside = |x: f32, y: f32| x >= 25. && x <= 1005. && y >= 205. && y <= 715.;
+        let mut prev: Option<(f32, f32)> = None;
+        for k in 0..=60 {
+            let t = k as f32 / 60.0;
+            let x = cx + 360.0 * t * sa.cos();
+            let y = cy + 360.0 * t * sa.sin();
+            if let Some(q) = prev {
+                if inside(q.0, q.1) && inside(x, y) {
+                    self.line(q.0, q.1, x, y, cyan, 1.6, 190);
+                }
+            }
+            prev = Some((x, y));
+        }
+        self.text(360, 560, 8, "NORTH ATLANTIC", gold);
+        self.text(560, 250, 8, "SEEKER ARRAY", cyan);
     }
     /// Bundled land polygons, transformed from `xy` coordinates into `target`.
-    fn draw_land(target: &mut Pixmap, transform: Transform, outline: f32) {
+    fn draw_land(target: &mut Pixmap, transform: Transform, outline: f32, pal: &Palette) {
         let land: serde_json::Value =
             serde_json::from_str(include_str!("../../../assets/land.json")).unwrap();
         for feature in land["features"].as_array().unwrap() {
@@ -205,9 +444,9 @@ impl Renderer {
                     pb.close();
                     if let Some(path) = pb.finish() {
                         let mut paint = Paint::default();
-                        paint.set_color_rgba8(22, 49, 63, 255);
+                        paint.set_color_rgba8(pal.land[0], pal.land[1], pal.land[2], 255);
                         target.fill_path(&path, &paint, FillRule::EvenOdd, transform, None);
-                        paint.set_color_rgba8(48, 90, 106, 220);
+                        paint.set_color_rgba8(pal.coast[0], pal.coast[1], pal.coast[2], pal.coast_alpha);
                         target.stroke_path(
                             &path,
                             &paint,
@@ -234,6 +473,7 @@ impl Renderer {
     ) -> &[u8] {
         use crate::radar::{freshness, small_place, Freshness};
         const AMBER: [u8; 3] = [255, 190, 82];
+        let pal = Palette::classic();
         self.pix.data_mut().copy_from_slice(self.base.data());
         let state = freshness(data, received_ms, now_ms);
         let dim = if state == Freshness::Stale { 0.5 } else { 1. };
@@ -291,8 +531,8 @@ impl Renderer {
             }
         }
         let (utc, local) = crate::clock::labels(now_ms);
-        self.text(1044, 24, 18, &utc, [218, 236, 242]);
-        self.text(1044, 50, 18, &local, [218, 236, 242]);
+        self.text(1044, 24, 18, &utc, pal.clock);
+        self.text(1044, 50, 18, &local, pal.clock);
         let (status, status_color) = match state {
             Freshness::NoData => ("NO DATA", MUTED),
             Freshness::Empty => ("EMPTY RESPONSE", MUTED),
@@ -332,8 +572,9 @@ impl Renderer {
         ];
         for (i, (label, value)) in boxes.iter().enumerate() {
             let x = 35 + i as i32 * 280;
-            self.rect(x as f32, 112., 265., 70., [12, 28, 42], 255);
-            self.text(x + 12, 119, 12, label, MUTED);
+            self.rect(x as f32, 112., 265., 70., pal.counter, 255);
+            if let Some((c, a)) = pal.counter_border { self.rect_outline(x as f32, 112., 265., 70., c, a, 1.); }
+            self.text(x + 12, 119, 12, label, pal.muted);
             let value: String = value.chars().take(22).collect();
             self.text(
                 x + 12,
@@ -505,7 +746,7 @@ impl Renderer {
             .collect();
         for (a, b, t, class) in routes {
             let age = now_ms.saturating_sub(t) as f32 / 6000.;
-            let c = color(class);
+            let c = self.pal.color(class);
             let alpha = ((1. - age) * 160.) as u8;
             let cy = (a.1.min(b.1) - ((b.0 - a.0).abs() * 0.18).min(lift)).max(top);
             let point = |t: f32| {
@@ -531,10 +772,16 @@ impl Renderer {
             return self.draw_panorama(s);
         }
         self.pix.data_mut().copy_from_slice(self.base.data());
+        let pal = self.pal;
         let classes = self.countries.classes(s);
         if classes != self.country_classes {
-            self.countries
-                .highlights(&mut self.country_overlay, &classes);
+            if pal.seeker {
+                self.countries
+                    .highlights_alpha(&mut self.country_overlay, &classes, 30);
+            } else {
+                self.countries
+                    .highlights(&mut self.country_overlay, &classes);
+            }
             self.country_classes = classes;
         }
         self.pix.draw_pixmap(
@@ -545,21 +792,20 @@ impl Renderer {
             Transform::identity(),
             None,
         );
+        if pal.seeker {
+            self.seeker_overlay();
+        }
         self.update_routes(s, xy);
         self.draw_routes(s.now_ms, 212., 100.);
         let (utc, local) = crate::clock::labels(s.now_ms);
-        self.text(1044, 24, 18, &utc, [218, 236, 242]);
-        self.text(1044, 50, 18, &local, [218, 236, 242]);
+        self.text(1044, 24, 18, &utc, pal.clock);
+        self.text(1044, 50, 18, &local, pal.clock);
         self.text(
             1044,
             80,
             14,
             &format!("FEED / {}", s.status),
-            if s.status == "LIVE" {
-                color(2)
-            } else {
-                color(1)
-            },
+            if s.status == "LIVE" { pal.color(2) } else { pal.color(1) },
         );
         for (i, (label, value)) in [
             ("RECORDS", s.records),
@@ -572,21 +818,22 @@ impl Renderer {
         .enumerate()
         {
             let x = 35 + i as i32 * 280;
-            self.rect(x as f32, 112., 265., 70., [12, 28, 42], 255);
-            self.text(x + 12, 119, 12, label, MUTED);
+            self.rect(x as f32, 112., 265., 70., pal.counter, 255);
+            if let Some((c, a)) = pal.counter_border { self.rect_outline(x as f32, 112., 265., 70., c, a, 1.); }
+            self.text(x + 12, 119, 12, label, pal.muted);
             self.text(
                 x + 12,
                 142,
                 25,
                 &value.to_string(),
-                if i > 0 && i < 4 { color(i - 1) } else { CYAN },
+                if i > 0 && i < 4 { pal.color(i - 1) } else { pal.cyan },
             );
         }
         for (i, r) in s.recent.iter().take(9).enumerate() {
             let y = 265 + i as i32 * 56;
             let src: String = r.record.source.country.chars().take(19).collect();
             let dst: String = r.record.destination.country.chars().take(19).collect();
-            self.text(1044, y, 13, &format!("{} > {}", src, dst), [203, 222, 235]);
+            self.text(1044, y, 13, &format!("{} > {}", src, dst), pal.body);
             self.text(
                 1044,
                 y + 19,
@@ -595,7 +842,7 @@ impl Renderer {
                     "{} / {} / spoofable:{}",
                     r.sequence, r.record.intention, r.record.spoofable
                 ),
-                color(r.record.class()),
+                pal.color(r.record.class()),
             );
         }
         self.text(
@@ -603,7 +850,7 @@ impl Renderer {
             787,
             12,
             &format!("CHANGED PAYLOADS {}", s.changed_batches),
-            CYAN,
+            pal.cyan,
         );
         self.text(
             1044,
@@ -613,12 +860,12 @@ impl Renderer {
                 "SHA256 {}",
                 s.last_digest.chars().take(25).collect::<String>()
             ),
-            MUTED,
+            pal.muted,
         );
         let max = *s.rate.iter().max().unwrap_or(&1);
         for (i, v) in s.rate.iter().enumerate() {
             let h = *v as f32 / max.max(1) as f32 * 55.;
-            self.rect(45. + i as f32 * 10.4, 835. - h, 7., h.max(1.), CYAN, 180);
+            self.rect(45. + i as f32 * 10.4, 835. - h, 7., h.max(1.), pal.cyan, 180);
         }
         if s.status != "LIVE" {
             self.rect(210., 430., 600., 70., [5, 12, 21], 235);
@@ -627,7 +874,7 @@ impl Renderer {
                 450,
                 18,
                 &format!("{} / waiting for fresh telemetry", s.status),
-                color(1),
+                pal.color(1),
             );
         }
         self.pix.data()
@@ -656,5 +903,23 @@ mod tests {
         assert_eq!(r.routes.len(), 1);
         r.draw(&state.snapshot(8000));
         assert!(r.routes.is_empty());
+    }
+
+    #[test]
+    fn theme_defaults_to_classic() {
+        let r = Renderer::new();
+        assert_eq!(r.theme(), Theme::Classic);
+        assert!(!r.pal.seeker);
+    }
+
+    #[test]
+    fn seeker_theme_renders_a_full_frame() {
+        let mut r = Renderer::new_with_theme(Theme::Seeker);
+        assert_eq!(r.theme(), Theme::Seeker);
+        let mut state = State::default();
+        state.ingest(r#"[{"source":{"latitude":52,"longitude":5,"country":"NL"},"destination":{"latitude":40,"longitude":-100,"country":"US"},"intention":"malicious"}]"#, 1000);
+        let snap = state.snapshot(1500);
+        let px = r.draw(&snap).to_vec();
+        assert_eq!(px.len(), (WIDTH * HEIGHT * 4) as usize);
     }
 }

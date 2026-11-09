@@ -365,6 +365,21 @@ impl CountryMap {
     pub fn highlights(&self, pixmap: &mut Pixmap, classes: &[Option<usize>]) {
         self.highlights_with(pixmap, classes, Transform::identity(), 0.65);
     }
+    /// `highlights` with a caller-supplied fill alpha (theme support).
+    pub fn highlights_alpha(&self, pixmap: &mut Pixmap, classes: &[Option<usize>], alpha: u8) {
+        pixmap.fill(tiny_skia::Color::TRANSPARENT);
+        for (paths, class) in self.paths.iter().zip(classes) {
+            if let Some(class) = class {
+                let rgb = super::render::color(*class);
+                let mut paint = Paint::default();
+                paint.set_color_rgba8(rgb[0], rgb[1], rgb[2], alpha);
+                for path in paths {
+                    pixmap.fill_path(path, &paint, FillRule::EvenOdd, Transform::identity(), None);
+                }
+            }
+        }
+        self.borders_with(pixmap, Transform::identity(), 0.65);
+    }
     /// `highlights` for a map drawn at another position or scale.
     pub fn highlights_with(
         &self,
