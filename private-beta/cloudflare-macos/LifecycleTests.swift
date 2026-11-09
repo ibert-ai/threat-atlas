@@ -37,7 +37,7 @@ let validBody = Data(#"{"success":true,"result":{"meta":{"lastUpdated":"2026-01-
     }
     func model(_ dir: String, defaults: UserDefaults? = nil, token: String? = "fake-test-token") -> RadarModel {
         RadarModel(directory: root.appendingPathComponent(dir, isDirectory: true), defaults: defaults ?? self.defaults(),
-                   token: { token }, protocolClasses: [StubProtocol.self])
+                   token: { token }, tokenExists: { token != nil }, saveToken: { _ in true }, protocolClasses: [StubProtocol.self])
     }
     /// One eligible poll: clears the persisted interval, enables polling and returns the requests it made.
     func poll(_ m: RadarModel, _ stubs: [Stub]) async -> Int {
@@ -122,6 +122,30 @@ func check(_ ok: Bool, _ what: String) { precondition(ok, what); print("ok  " + 
         let relaunched = h.model("wake-relaunch", defaults: d)
         relaunched.enabled = true; await relaunched.refresh()
         check(StubProtocol.hosts.count == before, "relaunch: persisted next-request time is honoured")
+        StubProtocol.queue = []
+
+        // Configured state: a 200 marks the saved token as working and persists it with the polling
+        // choice, so the next launch hides the token setup and resumes; 401 shows the setup again.
+        let cd = h.defaults()
+        let setup = h.model("configured", defaults: cd)
+        check(setup.hasToken && !setup.configured, "fresh token: setup shown until Cloudflare accepts it")
+        _ = await h.poll(setup, [.http(200, [:], validBody)])
+        check(setup.configured, "200: token marked working, compact window")
+        setup.start()   // user choice: polling on (next interval still blocks a request)
+        let next = h.model("configured-relaunch", defaults: cd)
+        let count = StubProtocol.hosts.count
+        next.resumeIfConfigured()
+        check(next.configured && next.enabled && StubProtocol.hosts.count == count, "relaunch: compact window, polling resumed, interval honoured")
+        next.stop()
+        let paused = h.model("configured-paused", defaults: cd)
+        paused.resumeIfConfigured()
+        check(paused.configured && !paused.enabled, "relaunch after Pause: polling stays paused")
+        _ = await h.poll(paused, [.http(401, [:], Data())])
+        check(!paused.configured && !h.model("configured-denied", defaults: cd).configured, "401: setup shown again, also after relaunch")
+        let missing = h.model("configured-missing", defaults: cd, token: nil)
+        check(!missing.configured, "no token in Keychain: setup shown")
+        missing.save(token: "replacement-fake-token")
+        check(missing.hasToken && !missing.configured, "new token saved: unverified until Cloudflare accepts it")
         StubProtocol.queue = []
 
         check(Set(StubProtocol.hosts) == ["api.cloudflare.com"], "every intercepted request targeted api.cloudflare.com only")

@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import CoreGraphics
 
 // Live SOC view drawn by the shared Rust core (crates/core, ta_soc_*): the screensaver's renderer,
@@ -114,6 +115,8 @@ struct FrameFit {
 struct CoreAtlasView: View {
     let result: RadarResult?
     let received: Date?
+    /// False in SOC fullscreen: only the map, edge to edge; settings stay as they were set.
+    var showControls = true
     @State private var atlas = CoreAtlas()
     @State private var severities = [true, true, true]
     @State private var motion = Motion.realtime
@@ -142,7 +145,7 @@ struct CoreAtlasView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            controls
+            if showControls { controls }
             // Calm 8 frames/s, Realtime 15 frames/s; Still or paused 1 frame/s for the clocks.
             TimelineView(.periodic(from: .now, by: paused ? 1 : motion.frameInterval)) { _ in
                 let image = paused ? atlas.last : atlas.frame(result: result, received: received)
@@ -180,7 +183,7 @@ struct CoreAtlasView: View {
                     }
                 }
             }
-            if !atlas.accepted {
+            if showControls && !atlas.accepted {
                 Text("Shared core rejected the latest Radar snapshot; earlier core data, if any, is kept.")
                     .font(.caption).foregroundStyle(.orange)
             }
@@ -246,6 +249,10 @@ struct CoreAtlasView: View {
             if focused {
                 Button("Clear focus") { atlas.clearFocus(); focused = false }
             }
+            Button {
+                NSApp.keyWindow?.toggleFullScreen(nil)
+            } label: { Label("SOC fullscreen", systemImage: "arrow.up.left.and.arrow.down.right") }
+            .help("Map only, edge to edge. Esc or ⌃⌘F returns to these controls.")
             Spacer()
             Text(paused ? "PAUSED · live feed keeps running" : "Hover for details · click a country to focus").lineLimit(1)
                 .font(.caption).foregroundStyle(.secondary)
