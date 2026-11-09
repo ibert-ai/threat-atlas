@@ -117,6 +117,10 @@ struct CoreAtlasView: View {
     let received: Date?
     /// False in SOC fullscreen: only the map, edge to edge; settings stay as they were set.
     var showControls = true
+    /// When set (compact window), the app's status and buttons share the one controls row:
+    /// `leading` goes before the map options, `trailing` after them; the hint becomes a tooltip.
+    var leading: AnyView? = nil
+    var trailing: AnyView? = nil
     @State private var atlas = CoreAtlas()
     @State private var severities = [true, true, true]
     @State private var motion = Motion.realtime
@@ -202,6 +206,7 @@ struct CoreAtlasView: View {
 
     private var controls: some View {
         HStack(spacing: 10) {
+            if let leading { leading; Divider().frame(height: 18) }
             ForEach(Severity.allCases, id: \.rawValue) { severity in
                 Toggle(isOn: $severities[severity.rawValue]) {
                     HStack(spacing: 5) {
@@ -254,9 +259,15 @@ struct CoreAtlasView: View {
             } label: { Label("SOC fullscreen", systemImage: "arrow.up.left.and.arrow.down.right") }
             .help("Map only, edge to edge. Esc or ⌃⌘F returns to these controls.")
             Spacer()
-            Text(paused ? "PAUSED · live feed keeps running" : "Hover for details · click a country to focus").lineLimit(1)
-                .font(.caption).foregroundStyle(.secondary)
+            if let trailing {
+                if paused { Text("PAUSED").font(.caption).foregroundStyle(.secondary) }
+                trailing
+            } else {
+                Text(paused ? "PAUSED · live feed keeps running" : "Hover for details · click a country to focus").lineLimit(1)
+                    .font(.caption).foregroundStyle(.secondary)
+            }
         }
+        .help(trailing == nil ? "" : "Hover the map for details · click a country to focus")
     }
 }
 

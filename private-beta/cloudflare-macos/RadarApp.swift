@@ -29,7 +29,8 @@ struct RadarView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: fullScreen ? 0 : 14) {
             if !fullScreen {
-                if model.configured { compactHeader } else { setupHeader }
+                // Compact window with the map: everything sits in the map's controls row.
+                if !model.configured { setupHeader } else if !showAtlas { compactHeader }
                 if !model.configured {
                     Picker("View", selection: $showAtlas) {
                         Text("Live SOC").tag(true)
@@ -38,7 +39,9 @@ struct RadarView: View {
                 }
             }
             if showAtlas || fullScreen {
-                CoreAtlasView(result: model.result, received: model.received, showControls: !fullScreen)
+                CoreAtlasView(result: model.result, received: model.received, showControls: !fullScreen,
+                              leading: model.configured ? AnyView(statusItems) : nil,
+                              trailing: model.configured ? AnyView(appButtons) : nil)
             } else {
                 radarTable
             }
@@ -98,25 +101,42 @@ struct RadarView: View {
         }
     }
 
-    /// Token saved and working: one line of status; token changes live in the AtlasSOC menu.
+    /// Token saved and working (Table view): one line of status and buttons.
     private var compactHeader: some View {
-        HStack(spacing: 12) {
-            Text("Threat Atlas SOC").font(.title3.bold())
-            Text("BETA \(radarLicenseTerms.version) · build \(radarLicenseTerms.build)").font(.caption).foregroundStyle(.orange)
-            Divider().frame(height: 16)
+        HStack(spacing: 12) { statusItems; Spacer(); appButtons }
+    }
+
+    /// Title, beta label and Radar state; details (received time, last message) in the tooltip.
+    private var statusItems: some View {
+        HStack(spacing: 8) {
+            Text("Threat Atlas SOC").font(.headline)
+            Text("BETA \(radarLicenseTerms.version) · \(radarLicenseTerms.build)").font(.caption).foregroundStyle(.orange)
             Circle().fill(model.enabled ? Color.green : Color.secondary).frame(width: 8, height: 8)
-            Text(model.busy ? "Cloudflare Radar: fetching…" : model.enabled ? "Cloudflare Radar: on" : "Cloudflare Radar: paused")
-                .font(.callout)
-            receivedLine.font(.caption).foregroundStyle(.secondary)
-            Spacer()
+            Text(model.busy ? "Radar…" : model.enabled ? "Radar on" : "Radar paused").font(.callout)
+        }
+        .fixedSize()
+        .help(radarDetails)
+    }
+
+    private var radarDetails: String {
+        var lines = [model.message]
+        if let received = model.received {
+            lines.append("Received: \(received.formatted())\(Date().timeIntervalSince(received) > 1800 ? " · STALE" : "")")
+        }
+        if model.enabled { lines.append("Next eligible request: \(model.next.formatted())") }
+        return lines.joined(separator: "\n")
+    }
+
+    private var appButtons: some View {
+        HStack(spacing: 8) {
             Picker("View", selection: $showAtlas) {
                 Text("Live SOC").tag(true)
                 Text("Table").tag(false)
-            }.pickerStyle(.segmented).labelsHidden().frame(width: 170)
+            }.pickerStyle(.segmented).labelsHidden().frame(width: 150)
             Button(model.enabled ? "Pause Radar" : "Start Radar") { model.enabled ? model.stop() : model.start() }
-            Button("Cloudflare token…") { showTokenSheet = true }
+            Button("Token…") { showTokenSheet = true }.help("Change the Cloudflare token (also AtlasSOC ▸ Cloudflare Token…, ⌘,)")
         }
-        .help(model.message)
+        .fixedSize()
     }
 
     private var pollingRow: some View {
