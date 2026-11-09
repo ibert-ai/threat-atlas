@@ -1,4 +1,4 @@
-# AtlasSOC 0.7.0 beta 1 — build 10
+# AtlasSOC 0.7.0 RC1 (release candidate 1) — build 12
 
 Standalone beta for Windows x64 and macOS 14+ (Apple silicon and Intel). Separate from the existing Threat Atlas screensaver. Product: AtlasSOC by Ibert Consulting; Sentinel is the current working icon, with final design selection still open.
 
@@ -10,9 +10,9 @@ macOS and Windows additionally support optional Cloudflare Radar past-day aggreg
 
 ## Installation
 
-**Windows:** extract `AtlasSOC-Windows-x64-v0.7.0-build10.zip` into a user-owned folder and run `AtlasSOC.exe`. Windows 10/11 x64 is the intended platform; exact native CI evidence is in the release verification record. This is a portable unsigned ZIP, not an MSI/EXE installer. Follow OS trust policy; do not disable security protections. No automatic startup or updater is installed. Close it before replacing/removing the folder. Settings/consent remain in `%LOCALAPPDATA%\ThreatAtlasSOC`; remove them manually only if you intend to reset personal state. Existing screensaver installers are separate products.
+**Windows:** run `AtlasSOC-Setup-0.7.0-build12.exe` and choose **Just me** (no administrator rights) or **Everyone**, plus optional desktop and Start menu shortcuts; or extract the portable `AtlasSOC-Windows-x64-v0.7.0-build12.zip` into a user-owned folder and run `AtlasSOC.exe`. Windows 10/11 x64. Both are unsigned: follow OS trust policy and do not disable security protections. At start AtlasSOC asks `api.github.com` whether a newer AtlasSOC exists and offers it in the right-click menu; nothing installs without your confirmation. Settings/consent stay in `%LOCALAPPDATA%\ThreatAtlasSOC`. Existing screensaver installers are separate products.
 
-**macOS:** unzip `AtlasSOC-macOS-universal-v0.7.0-build10.zip`, then copy `AtlasSOC.app` to your chosen Applications location. Requires macOS14+. The app is ad-hoc signed, not Developer ID signed or notarised; Gatekeeper or organisational policy may refuse to open it. Do not disable Gatekeeper or strip quarantine as a workaround. It installs no startup agent or automatic updater. Quit before replacement/removal. The existing development bundle identifier `dev.threatatlas.private.radar` and Radar support/Keychain locations are retained for continuity; this bundle is separate from the stable screensaver.
+**macOS:** unzip `AtlasSOC-macOS-universal-v0.7.0-build12.zip`, then copy `AtlasSOC.app` to your chosen Applications location. Requires macOS14+. The app is ad-hoc signed, not Developer ID signed or notarised; Gatekeeper or organisational policy may refuse to open it. Do not disable Gatekeeper or strip quarantine as a workaround. It installs no startup agent or automatic updater; check the releases page for new versions. Quit before replacement/removal. The existing development bundle identifier `dev.threatatlas.private.radar` and Radar support/Keychain locations are retained for continuity; this bundle is separate from the stable screensaver.
 
 The final Windows installer is planned to offer `%ProgramFiles%\AtlasSOC` for all users or `%LocalAppData%\Programs\AtlasSOC` for one user, and independent desktop/Start menu shortcut choices. Those requirements are NOT implemented by this portable beta. See ATLAS-SOC-INSTALLER.md.
 
