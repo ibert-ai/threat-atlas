@@ -357,67 +357,68 @@ impl Renderer {
     fn seeker_overlay(&mut self) {
         let gold = self.pal.gold;
         let cyan = self.pal.cyan;
-        let cx = 436.0f32;
-        let cy = 347.0f32;
         self.rect_outline(14., 14., 1412., 872., gold, 150, 2.);
-        for r in [140.0f32, 110.0] {
-            self.ring_clipped(cx, cy, r, gold, 55, 1.2);
+
+        // Compass rose in the bottom-right corner, without a bearing needle.
+        let (ccx, ccy, cr) = (895.0f32, 585.0f32, 90.0f32);
+        for r in [cr, cr * 0.78] {
+            self.ring_clipped(ccx, ccy, r, gold, 55, 1.2);
         }
         for deg in (0..360).step_by(10) {
             let a = (deg as f32).to_radians();
-            let r1 = 140.0;
-            let r2 = if deg % 30 == 0 { 124.0 } else { 131.0 };
+            let r1 = cr;
+            let r2 = if deg % 30 == 0 { cr - 16. } else { cr - 9. };
             let alpha = if deg % 30 == 0 { 170 } else { 90 };
             self.line(
-                cx + r1 * a.cos(), cy + r1 * a.sin(),
-                cx + r2 * a.cos(), cy + r2 * a.sin(),
+                ccx + r1 * a.cos(), ccy + r1 * a.sin(),
+                ccx + r2 * a.cos(), ccy + r2 * a.sin(),
                 gold, 1.2, alpha,
             );
         }
         for k in 0..8 {
             let a = (k as f32 * 45.0).to_radians();
-            let long = if k % 2 == 0 { 100.0 } else { 62.0 };
-            let wdt = if k % 2 == 0 { 9.0 } else { 6.0 };
+            let long = if k % 2 == 0 { cr * 0.72 } else { cr * 0.44 };
+            let wdt = if k % 2 == 0 { 6.5 } else { 4.2 };
             let perp = a + std::f32::consts::FRAC_PI_2;
-            let tip = (cx + long * a.cos(), cy + long * a.sin());
-            let l = (cx + wdt * perp.cos(), cy + wdt * perp.sin());
-            let r = (cx + wdt * (a - std::f32::consts::FRAC_PI_2).cos(),
-                     cy + wdt * (a - std::f32::consts::FRAC_PI_2).sin());
+            let tip = (ccx + long * a.cos(), ccy + long * a.sin());
+            let l = (ccx + wdt * perp.cos(), ccy + wdt * perp.sin());
+            let r = (ccx + wdt * (a - std::f32::consts::FRAC_PI_2).cos(),
+                     ccy + wdt * (a - std::f32::consts::FRAC_PI_2).sin());
             let col = if k % 2 == 0 { gold } else { cyan };
             self.poly(&[tip, l, r], col, if k % 2 == 0 { 70 } else { 45 });
         }
-        let na = (-55.0f32).to_radians();
-        let ntip = (cx + 133.0 * na.cos(), cy + 133.0 * na.sin());
-        let nback = (cx - 20.0 * na.cos(), cy - 20.0 * na.sin());
-        let perp = na + std::f32::consts::FRAC_PI_2;
-        let b1 = (cx + 6.0 * perp.cos(), cy + 6.0 * perp.sin());
-        let b2 = (cx - 6.0 * perp.cos(), cy - 6.0 * perp.sin());
-        self.poly(&[ntip, b1, nback, b2], gold, 150);
-        self.text(433, 211, 11, "N", gold);
-        self.text(588, 343, 11, "E", gold);
-        self.text(433, 497, 11, "S", gold);
-        self.text(278, 343, 11, "W", gold);
+        self.text(ccx as i32 - 3, ccy as i32 - cr as i32 - 20, 10, "N", gold);
+        self.text(ccx as i32 + cr as i32 + 6, ccy as i32 - 5, 10, "E", gold);
+        self.text(ccx as i32 - 3, ccy as i32 + cr as i32 + 8, 10, "S", gold);
+        self.text(ccx as i32 - cr as i32 - 16, ccy as i32 - 5, 10, "W", gold);
+
+        // Radar rings originate from the computer's local time-zone meridian on the equator.
+        let offset = chrono::Local::now().offset().local_minus_utc();
+        let mut lon = (offset as f64 / 3600.0) * 15.0;
+        if lon > 180.0 {
+            lon -= 360.0;
+        }
+        if lon < -180.0 {
+            lon += 360.0;
+        }
+        let (rcx, rcy) = xy(lon, 0.0);
         for (r, a) in [(90.0f32, 70u8), (180.0, 55), (270.0, 42), (360.0, 30)] {
-            self.ring_clipped(cx, cy, r, cyan, a, 1.3);
+            self.ring_clipped(rcx, rcy, r, cyan, a, 1.3);
         }
-        let sa = (-55.0f32).to_radians();
-        let inside = |x: f32, y: f32| x >= 25. && x <= 1005. && y >= 205. && y <= 715.;
-        let mut prev: Option<(f32, f32)> = None;
-        for k in 0..=60 {
-            let t = k as f32 / 60.0;
-            let x = cx + 360.0 * t * sa.cos();
-            let y = cy + 360.0 * t * sa.sin();
-            if let Some(q) = prev {
-                if inside(q.0, q.1) && inside(x, y) {
-                    self.line(q.0, q.1, x, y, cyan, 1.6, 190);
-                }
-            }
-            prev = Some((x, y));
-        }
-        self.text(360, 560, 8, "NORTH ATLANTIC", gold);
-        self.text(560, 250, 8, "SEEKER ARRAY", cyan);
+        self.line(45., rcy, 985., rcy, cyan, 1., 40);
+        self.dot(rcx, rcy, 4., cyan, 220);
+        self.ring_clipped(rcx, rcy, 8., gold, 160, 1.2);
+        let hemisphere = if lon >= 0.0 { "E" } else { "W" };
+        self.text(
+            rcx as i32 + 10,
+            rcy as i32 - 8,
+            8,
+            &format!("LOCAL MERIDIAN {:.0}°{}", lon.abs(), hemisphere),
+            gold,
+        );
+        self.text(45, rcy as i32 - 10, 8, "EQUATOR", cyan);
     }
-    /// Bundled land polygons, transformed from `xy` coordinates into `target`.
+
     fn draw_land(target: &mut Pixmap, transform: Transform, outline: f32, pal: &Palette) {
         let land: serde_json::Value =
             serde_json::from_str(include_str!("../../../assets/land.json")).unwrap();
