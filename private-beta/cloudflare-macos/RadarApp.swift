@@ -38,12 +38,20 @@ struct RadarView: View {
                     }.pickerStyle(.segmented).frame(maxWidth: 420)
                 }
             }
-            if showAtlas || fullScreen {
+            // The live view stays alive under the Table: switching back keeps the GreyNoise
+            // connection, the 5-minute counts and the map settings instead of starting over.
+            ZStack(alignment: .topLeading) {
                 CoreAtlasView(result: model.result, received: model.received, showControls: !fullScreen,
                               leading: model.configured ? AnyView(statusItems) : nil,
                               trailing: model.configured ? AnyView(appButtons) : nil)
-            } else {
-                radarTable
+                    .opacity(showAtlas || fullScreen ? 1 : 0)
+                    .allowsHitTesting(showAtlas || fullScreen)
+                    .accessibilityHidden(!(showAtlas || fullScreen))
+                if !(showAtlas || fullScreen) {
+                    VStack(alignment: .leading, spacing: 8) { radarTable }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                        .background(Color(nsColor: .windowBackgroundColor))
+                }
             }
             if !fullScreen { attribution }
         }
