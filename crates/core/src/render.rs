@@ -146,6 +146,7 @@ pub struct Renderer {
     pub(crate) wide_raw: bool,
     theme: Theme,
     pal: Palette,
+    local_location: Option<(f64, f64)>,
 }
 /// Column boundary between the map and the right-hand panels in the 1440x900 layout.
 pub(crate) const WIDE_SPLIT: f32 = 1015.;
@@ -244,6 +245,7 @@ impl Renderer {
             wide_raw: false,
             theme,
             pal,
+            local_location: None,
         }
     }
     /// Frame x for a layout x: right-hand column shifted in a wide SOC frame.
@@ -265,6 +267,10 @@ impl Renderer {
     /// The theme this renderer was created with.
     pub fn theme(&self) -> Theme {
         self.theme
+    }
+    /// The user's actual position, used to centre the Seeker rings.
+    pub fn set_local_location(&mut self, lat: f64, lon: f64) {
+        self.local_location = Some((lat, lon));
     }
     /// Frame size in pixels; `WIDTH` x `HEIGHT` except in the panorama layout.
     pub fn size(&self) -> (u32, u32) {
@@ -392,31 +398,37 @@ impl Renderer {
         self.text(ccx as i32 - 3, ccy as i32 + cr as i32 + 8, 10, "S", gold);
         self.text(ccx as i32 - cr as i32 - 16, ccy as i32 - 5, 10, "W", gold);
 
-        // Radar rings originate from the computer's local time-zone meridian on the equator.
-        let offset = chrono::Local::now().offset().local_minus_utc();
-        let mut lon = (offset as f64 / 3600.0) * 15.0;
-        if lon > 180.0 {
-            lon -= 360.0;
-        }
-        if lon < -180.0 {
-            lon += 360.0;
-        }
-        let (rcx, rcy) = xy(lon, 0.0);
+        // Radar rings originate from the user's actual position.
+        let (lat, lon) = match self.local_location {
+            Some(pos) => pos,
+            None => {
+                // Fallback only when the host has not resolved a location yet.
+                let offset = chrono::Local::now().offset().local_minus_utc();
+                let mut fallback = (offset as f64 / 3600.0) * 15.0;
+                if fallback > 180.0 {
+                    fallback -= 360.0;
+                }
+                if fallback < -180.0 {
+                    fallback += 360.0;
+                }
+                (0.0, fallback)
+            }
+        };
+        let (rcx, rcy) = xy(lon, lat);
         for (r, a) in [(90.0f32, 70u8), (180.0, 55), (270.0, 42), (360.0, 30)] {
             self.ring_clipped(rcx, rcy, r, cyan, a, 1.3);
         }
-        self.line(45., rcy, 985., rcy, cyan, 1., 40);
         self.dot(rcx, rcy, 4., cyan, 220);
         self.ring_clipped(rcx, rcy, 8., gold, 160, 1.2);
-        let hemisphere = if lon >= 0.0 { "E" } else { "W" };
+        let ns = if lat >= 0.0 { "N" } else { "S" };
+        let ew = if lon >= 0.0 { "E" } else { "W" };
         self.text(
             rcx as i32 + 10,
             rcy as i32 - 8,
             8,
-            &format!("LOCAL MERIDIAN {:.0}°{}", lon.abs(), hemisphere),
+            &format!("LOCAL POSITION {:.1}°{} {:.1}°{}", lat.abs(), ns, lon.abs(), ew),
             gold,
         );
-        self.text(45, rcy as i32 - 10, 8, "EQUATOR", cyan);
     }
 
     fn draw_land(target: &mut Pixmap, transform: Transform, outline: f32, pal: &Palette) {

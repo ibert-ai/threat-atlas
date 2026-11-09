@@ -25,9 +25,15 @@ impl Session {
             Some("seeker") => render::Theme::Seeker,
             _ => render::Theme::Classic,
         };
+        let mut renderer = render::Renderer::new_with_theme(theme);
+        let lat = std::env::var("THREAT_ATLAS_LAT").ok().and_then(|v| v.parse::<f64>().ok());
+        let lon = std::env::var("THREAT_ATLAS_LON").ok().and_then(|v| v.parse::<f64>().ok());
+        if let (Some(lat), Some(lon)) = (lat, lon) {
+            renderer.set_local_location(lat, lon);
+        }
         Self {
             feed: Feed::shared(),
-            renderer: render::Renderer::new_with_theme(theme),
+            renderer,
         }
     }
     /// Session with the wide two-display layout for a window of this physical size.
@@ -45,6 +51,13 @@ impl Session {
         self.feed.snapshot()
     }
 }
+#[no_mangle]
+pub unsafe extern "C" fn ta_set_location(session: *mut Session, lat: f64, lon: f64) {
+    if let Some(session) = session.as_mut() {
+        session.renderer.set_local_location(lat, lon);
+    }
+}
+
 #[no_mangle]
 pub extern "C" fn ta_new() -> *mut Session {
     std::panic::catch_unwind(|| Box::into_raw(Box::new(Session::new())))
