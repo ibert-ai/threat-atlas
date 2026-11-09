@@ -1,4 +1,6 @@
 #![cfg_attr(target_os = "windows", windows_subsystem = "windows")]
+#[cfg(windows)]
+mod radar_token;
 mod soc_config;
 #[cfg(windows)]
 mod soc_host;

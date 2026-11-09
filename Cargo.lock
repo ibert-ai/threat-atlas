@@ -2281,6 +2281,7 @@ dependencies = [
  "sha2",
  "tiny-skia",
  "tungstenite",
+ "webpki-roots 1.0.11",
 ]
 
 [[package]]

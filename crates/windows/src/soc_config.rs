@@ -67,6 +67,13 @@ pub struct Settings {
     /// Omitted while Classic, so settings files stay readable by earlier builds.
     #[serde(skip_serializing_if = "Theme::is_classic")]
     pub theme: Theme,
+    /// Cloudflare Radar icon layer on the map (data only after the user adds a token and starts
+    /// Radar). Omitted while on, so settings files stay readable by earlier builds.
+    #[serde(skip_serializing_if = "is_true")]
+    pub radar_layer: bool,
+}
+fn is_true(value: &bool) -> bool {
+    *value
 }
 impl Default for Settings {
     fn default() -> Self {
@@ -81,6 +88,7 @@ impl Default for Settings {
             motion: Motion::Realtime,
             mirror_all_displays: false,
             theme: Theme::Classic,
+            radar_layer: true,
         }
     }
 }

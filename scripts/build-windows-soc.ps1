@@ -16,13 +16,16 @@ New-Item -ItemType Directory -Force -Path $package | Out-Null
 $targetRoot = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $PWD 'target' }
 Copy-Item -LiteralPath (Join-Path $targetRoot 'x86_64-pc-windows-msvc/release/threat-atlas-soc.exe') -Destination (Join-Path $package 'AtlasSOC.exe')
 Copy-Item -LiteralPath 'docs/WINDOWS-SOC.md','docs/ATLAS-SOC-BETA.md','LICENSE','PRIVACY.md','THIRD-PARTY-NOTICES.txt','docs/CLOUDFLARE-LICENSE.json' -Destination $package
+# Customer token guide as read-only HTML, opened by right-click > How to get a token...
+& $Python scripts/render-token-guide.py docs/CLOUDFLARE-RADAR-TOKEN-GUIDE.md (Join-Path $package 'Cloudflare-Radar-Token-Guide.html')
+if ($LASTEXITCODE) { throw 'Token guide render failed' }
 $sourceCommit = (& git rev-parse HEAD).Trim()
 $sourceDirty = [bool](& git status --porcelain --untracked-files=normal)
 $socVersion = Get-Content -Raw -LiteralPath 'windows-soc-version.json' | ConvertFrom-Json
 $iconHash = (Get-FileHash -Algorithm SHA256 -LiteralPath 'assets/atlassoc/sentinel/AtlasSOC.ico').Hash.ToLowerInvariant()
 $expectedIconHash = (Get-Content -Raw -LiteralPath 'assets/atlassoc/sentinel/manifest.json' | ConvertFrom-Json).files.'AtlasSOC.ico'
 if ($iconHash -ne $expectedIconHash) { throw 'Sentinel asset hash mismatch' }
-$manifest = [ordered]@{product='AtlasSOC';publisher='Ibert Consulting';version=$socVersion.version;build=$socVersion.build;platform='windows-x64';source_commit=$sourceCommit;source_dirty=$sourceDirty;signature='unsigned';package='portable standalone beta; not a screensaver or MSI';radar_network='not implemented on Windows';sentinel_ico_sha256=$iconHash;sha256=(Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $package 'AtlasSOC.exe')).Hash.ToLowerInvariant()}
+$manifest = [ordered]@{product='AtlasSOC';publisher='Ibert Consulting';version=$socVersion.version;build=$socVersion.build;platform='windows-x64';source_commit=$sourceCommit;source_dirty=$sourceDirty;signature='unsigned';package='portable standalone beta; not a screensaver or MSI';radar_network='optional; user token in Windows Credential Manager; api.cloudflare.com at most every 15 minutes';sentinel_ico_sha256=$iconHash;sha256=(Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $package 'AtlasSOC.exe')).Hash.ToLowerInvariant()}
 $manifest | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $package 'manifest.json') -Encoding utf8
 $zip = Join-Path $PWD "dist/AtlasSOC-Windows-x64-v$($socVersion.version)-build$($socVersion.build).zip"
 Compress-Archive -Path (Join-Path $package '*') -DestinationPath $zip -Force

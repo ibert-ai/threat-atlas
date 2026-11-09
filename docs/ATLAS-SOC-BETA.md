@@ -6,7 +6,7 @@ Standalone beta for Windows x64 and macOS 14+ (Apple silicon and Intel). Separat
 
 Observe GreyNoise public threat-map records with provider classifications, received-record counters, country focus/inspection, severity filters and Realtime/Calm/Still display modes. Records are not unique attacks or guaranteed-current incidents. Animation is bounded and may sample received records. This is an observation tool, not prevention software or a production incident-response guarantee.
 
-macOS additionally supports optional Cloudflare Radar past-day aggregate country values. They are not individual realtime attacks or inferred source/target events. Windows has no Cloudflare worker/token store in this beta; Linux standalone is not included. Windows supports persistent native controls and mirrored windows; full SOC-wall roles/spanning are future work.
+macOS and Windows additionally support optional Cloudflare Radar past-day aggregate country values. They are not individual realtime attacks or inferred source/target events. Linux standalone is not included. Windows supports persistent native controls and mirrored windows; full SOC-wall roles/spanning are future work.
 
 ## Installation
 
@@ -20,7 +20,7 @@ The final Windows installer is planned to offer `%ProgramFiles%\AtlasSOC` for al
 
 Before the normal app constructs a feed/worker, the user must accept the displayed Cloudflare Radar notice/CC BY-NC4.0 terms for this exact version/build/notice/legal identity. Decline exits. A changed build or reviewed terms requires acceptance again; no agent or silent install accepts for another person. This beta is for noncommercial Radar use with attribution; commercial permission is separate. Source code licensing does not override provider data terms.
 
-After consent, GreyNoise uses `wss://threat-map-api.greynoise.io/ws` with TLS validation. No probing of observed hosts or added analytics. macOS Radar is opt-in: the tester supplies their own Account/Radar/Read token (step-by-step: [CLOUDFLARE-RADAR-TOKEN-GUIDE.md](CLOUDFLARE-RADAR-TOKEN-GUIDE.md)), stored in macOS Keychain service `ThreatAtlas.PrivateRadarBeta`, account `RadarRead`. Requests go to `api.cloudflare.com`; minimum15 minutes, persisted cooldown, retry/backoff and single-worker lock. Saved aggregate cache/worker lock is under Application Support/ThreatAtlasPrivateRadar. The token is not exported in packages. Windows stores settings/consent only, no token. Running saver and standalone may create separate GreyNoise connections. Third-party servers receive normal connection metadata/public IP.
+After consent, GreyNoise uses `wss://threat-map-api.greynoise.io/ws` with TLS validation. No probing of observed hosts or added analytics. macOS Radar is opt-in: the tester supplies their own Account/Radar/Read token (step-by-step: [CLOUDFLARE-RADAR-TOKEN-GUIDE.md](CLOUDFLARE-RADAR-TOKEN-GUIDE.md)), stored in macOS Keychain service `ThreatAtlas.PrivateRadarBeta`, account `RadarRead`. Requests go to `api.cloudflare.com`; minimum15 minutes, persisted cooldown, retry/backoff and single-worker lock. Saved aggregate cache/worker lock is under Application Support/ThreatAtlasPrivateRadar. The token is not exported in packages. On Windows the token is stored in Windows Credential Manager (`AtlasSOC/CloudflareRadarRead`) and the cache/state under `%LOCALAPPDATA%\ThreatAtlasSOC`; same request floor, backoff and single-worker rules. Running saver and standalone may create separate GreyNoise connections. Third-party servers receive normal connection metadata/public IP.
 
 ## Known limits
 

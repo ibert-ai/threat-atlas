@@ -1,3 +1,4 @@
+use crate::radar_token;
 use crate::soc_config::{self, Motion, Settings, Terms, Theme, BUILD, VERSION};
 use std::{
     error::Error,
@@ -16,13 +17,15 @@ use tao::{
 };
 use threat_atlas_core::{
     feed::{self, Feed, State},
+    radar::{self, Aggregate},
+    radar_fetch::{self, Worker},
     render::soc::{Motion as CoreMotion, SocView, Theme as CoreTheme},
     HEIGHT,
 };
 use windows_sys::Win32::{
     Foundation::{HWND, POINT},
     System::LibraryLoader::GetModuleHandleW,
-    UI::WindowsAndMessaging::*,
+    UI::{Shell::ShellExecuteW, WindowsAndMessaging::*},
 };
 
 fn wide(text: &str) -> Vec<u16> {
@@ -47,7 +50,7 @@ fn consent(path: &std::path::Path) -> Result<bool, Box<dyn Error>> {
         return Ok(true);
     }
     let text = format!(
-        "Threat Atlas SOC {VERSION} (build {BUILD})\n\nCloudflare Radar data licence: CC BY-NC 4.0 (Attribution-NonCommercial).\n{}\n\n{}\n{}\n\n{}\nAcceptance does not grant commercial-use permission.\n\nGreyNoise public threat-map records are received records, not unique attacks; no endorsement implied. Windows currently connects only to GreyNoise; no Cloudflare token or Radar requests.\n\nNo feed or worker starts until acceptance. Acceptance is required again for each new version/build or reviewed terms change.\n\nNotice fingerprint: {}\nLegal fingerprint: {}\n\nYES: I have read the linked notice/legal code and accept these terms for this version/build.\nNO: Decline and quit. The default is NO.",
+        "Threat Atlas SOC {VERSION} (build {BUILD})\n\nCloudflare Radar data licence: CC BY-NC 4.0 (Attribution-NonCommercial).\n{}\n\n{}\n{}\n\n{}\nAcceptance does not grant commercial-use permission.\n\nGreyNoise public threat-map records are received records, not unique attacks; no endorsement implied. Cloudflare Radar is optional: it starts only after you add your own Cloudflare API token (Account > Radar > Read) and choose Start; requests then go to api.cloudflare.com at most once every 15 minutes. The token stays in Windows Credential Manager.\n\nNo feed or worker starts until acceptance. Acceptance is required again for each new version/build or reviewed terms change.\n\nNotice fingerprint: {}\nLegal fingerprint: {}\n\nYES: I have read the linked notice/legal code and accept these terms for this version/build.\nNO: Decline and quit. The default is NO.",
         terms.notice, terms.notice_url, terms.license_url, terms.scope, terms.notice_sha256, terms.legal_sha256
     );
     let result = unsafe {
@@ -129,7 +132,7 @@ fn displays(
 }
 
 fn help(window: &Window) {
-    let text = "Right-click anywhere for settings.\n\nF11: fullscreen/windowed\nSpace: freeze/resume display (the shared feed continues)\nR / C / S: Realtime / Calm / Still animation\nL: Classic / Dashboard layout\n1 / 2 / 3: malicious / suspicious / benign visibility\nM: mirror all detected displays (one shared feed)\nT: always on top\nF1: this help\nEscape: leave fullscreen/mirroring, otherwise close\n\nLeft-click a country to focus; hover shows country details in the title.\nSettings save under LocalAppData/ThreatAtlasSOC. Reset settings never resets licence acceptance.\n\nGreyNoise live receipts, not unique attacks. No Windows Cloudflare worker or token storage.\nMirroring is implemented; independent display roles/spanning and physical multimonitor acceptance remain pending. No sleep or lock settings are changed.";
+    let text = "Right-click anywhere for settings.\n\nF11: fullscreen/windowed\nSpace: freeze/resume display (the shared feed continues)\nR / C / S: Realtime / Calm / Still animation\nL: Classic / Dashboard layout\n1 / 2 / 3: malicious / suspicious / benign visibility\nM: mirror all detected displays (one shared feed)\nT: always on top\nF1: this help\nEscape: leave fullscreen/mirroring, otherwise close\n\nLeft-click a country to focus; hover shows country details in the title.\nSettings save under LocalAppData/ThreatAtlasSOC. Reset settings never resets licence acceptance.\n\nCloudflare Radar (optional): right-click > Set Cloudflare token, then Start Cloudflare Radar. Past-day aggregate shares, at most one request every 15 minutes; the token stays in Windows Credential Manager. How to get a token: right-click > How to get a token.\n\nGreyNoise live receipts, not unique attacks.\nMirroring is implemented; independent display roles/spanning and physical multimonitor acceptance remain pending. No sleep or lock settings are changed.";
     unsafe {
         MessageBoxW(
             window.hwnd() as HWND,
@@ -140,7 +143,7 @@ fn help(window: &Window) {
     }
 }
 
-fn menu(window: &Window, settings: &Settings, paused: bool) -> u32 {
+fn menu(window: &Window, settings: &Settings, paused: bool, radar: &radar_fetch::Status) -> u32 {
     unsafe {
         let menu = CreatePopupMenu();
         if menu.is_null() {
@@ -166,6 +169,19 @@ fn menu(window: &Window, settings: &Settings, paused: bool) -> u32 {
                 "Dashboard layout (L)",
                 settings.theme == Theme::Dashboard,
             ),
+            (24, "Cloudflare layer on map", settings.radar_layer),
+            (
+                20,
+                if radar.enabled {
+                    "Pause Cloudflare Radar"
+                } else {
+                    "Start Cloudflare Radar"
+                },
+                radar.enabled,
+            ),
+            (21, "Set Cloudflare token...", false),
+            (22, "Remove Cloudflare token", false),
+            (23, "How to get a token...", false),
             (14, "Reset display settings", false),
             (15, "Controls and limitations (F1)", false),
             (16, "Exit", false),
@@ -178,6 +194,13 @@ fn menu(window: &Window, settings: &Settings, paused: bool) -> u32 {
                 wide(text).as_ptr(),
             );
         }
+        // Radar state line (disabled, information only): message and last receipt.
+        let line: String = format!("Radar: {}", radar.message)
+            .chars()
+            .take(90)
+            .collect();
+        AppendMenuW(menu, MF_SEPARATOR, 0, std::ptr::null());
+        AppendMenuW(menu, MF_STRING | MF_GRAYED, 0, wide(&line).as_ptr());
         let mut point: POINT = std::mem::zeroed();
         GetCursorPos(&mut point);
         let chosen = TrackPopupMenu(
@@ -191,6 +214,42 @@ fn menu(window: &Window, settings: &Settings, paused: bool) -> u32 {
         ) as u32;
         DestroyMenu(menu);
         chosen
+    }
+}
+
+/// Opens the token guide shipped next to AtlasSOC.exe (read-only HTML), or the public docs.
+fn open_token_guide(window: &Window) {
+    let local = std::env::current_exe()
+        .ok()
+        .and_then(|exe| {
+            exe.parent()
+                .map(|dir| dir.join("Cloudflare-Radar-Token-Guide.html"))
+        })
+        .filter(|path| path.is_file());
+    let target = local.map_or_else(
+        || "https://github.com/ibert-ai/threat-atlas/blob/main/docs/CLOUDFLARE-RADAR-TOKEN-GUIDE.md".to_string(),
+        |path| path.display().to_string(),
+    );
+    unsafe {
+        ShellExecuteW(
+            window.hwnd() as HWND,
+            wide("open").as_ptr(),
+            wide(&target).as_ptr(),
+            std::ptr::null(),
+            std::ptr::null(),
+            SW_SHOWNORMAL,
+        );
+    }
+}
+
+fn ask(window: &Window, text: &str) -> bool {
+    unsafe {
+        MessageBoxW(
+            window.hwnd() as HWND,
+            wide(text).as_ptr(),
+            wide("AtlasSOC - Cloudflare Radar").as_ptr(),
+            MB_YESNO | MB_ICONQUESTION,
+        ) == IDYES
     }
 }
 
@@ -281,10 +340,20 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     if let Some(warning) = warning {
         show_error(&warning);
     }
+    // Cloudflare Radar worker: never in the offline smoke test; idle until the user starts it.
+    let worker = (!smoke).then(|| {
+        Worker::start(
+            &state_dir,
+            Box::new(radar_token::read),
+            Box::new(|token: &str| radar_fetch::https_get(token, Duration::from_secs(20))),
+            feed::now_ms,
+        )
+    });
+    let mut radar_data: Option<Aggregate> = None;
+    let mut radar_received = 0u64;
     let event_loop = EventLoop::new();
     let mut windows = displays(&event_loop, &settings)?;
     let mut view = SocView::new();
-    view.options.radar_layer = false;
     let offline = State::default();
     let mut paused = false;
     let mut rgba = Vec::new();
@@ -306,10 +375,13 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                     WindowEvent::CloseRequested => *flow = ControlFlow::Exit,
                     WindowEvent::CursorMoved { position, .. } => {
                         cursor = position;
-                        let detail = frame_point(&display.window, position, view.width()).and_then(|(x, y)| view.inspect(x, y, None)).and_then(|json| soc_config::inspection_label(&json));
+                        let detail = frame_point(&display.window, position, view.width()).and_then(|(x, y)| view.inspect(x, y, radar_data.as_ref())).and_then(|json| soc_config::inspection_label(&json));
                         display.window.set_title(&format!("AtlasSOC {VERSION}/{BUILD} by Ibert Consulting · {} · {}", if smoke { "OFFLINE TEST - NO NETWORK" } else if paused { "DISPLAY FROZEN - FEED CONTINUES" } else { "right-click or F1: controls" }, detail.unwrap_or_default()));
                     }
-                    WindowEvent::MouseInput { state: ElementState::Released, button: MouseButton::Right, .. } => action = menu(&display.window, &settings, paused),
+                    WindowEvent::MouseInput { state: ElementState::Released, button: MouseButton::Right, .. } => {
+                        let status = worker.as_ref().map(|w| w.status()).unwrap_or_default();
+                        action = menu(&display.window, &settings, paused, &status);
+                    }
                     WindowEvent::MouseInput { state: ElementState::Released, button: MouseButton::Left, .. } => {
                         if let Some((x, y)) = frame_point(&display.window, cursor, view.width()) {
                             let hit = view.country_at(x, y);
@@ -342,12 +414,40 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                     8..=10 => settings.severities[(action - 8) as usize] = !settings.severities[(action - 8) as usize],
                     11 => settings.fps = 5, 12 => settings.fps = 10, 13 => settings.fps = 20,
                     17 => settings.theme = Theme::Classic, 18 => settings.theme = Theme::Dashboard,
+                    24 => settings.radar_layer = !settings.radar_layer,
+                    20 => if let Some(worker) = &worker {
+                        let status = worker.status();
+                        if status.enabled { worker.set_enabled(false); }
+                        else if radar_token::exists() { worker.set_enabled(true); }
+                        else if ask(&display.window, "No Cloudflare token is saved yet.\n\nAdd your own token now?") { action = 21; }
+                    },
+                    22 => if let Some(worker) = &worker {
+                        if ask(&display.window, "Remove the Cloudflare token from Windows Credential Manager and stop Radar?\n\nTo cancel the token everywhere, also delete it in Cloudflare under My Profile > API Tokens.") {
+                            radar_token::remove();
+                            worker.token_changed(false);
+                        }
+                    },
+                    23 => open_token_guide(&display.window),
                     14 => { settings = Settings::default(); rebuild = true; }
                     15 => help(&display.window),
                     16 => *flow = ControlFlow::Exit,
                     _ => {}
                 }
-                if action != 0 && action != 15 && action != 16 { dirty = true; }
+                if action == 21 {
+                    if let Some(worker) = &worker {
+                        match radar_token::prompt(display.window.hwnd() as HWND) {
+                            Some(token) if radar_token::save(&token) => {
+                                worker.token_changed(true);
+                                if ask(&display.window, "Token saved in Windows Credential Manager.\n\nStart Cloudflare Radar now? AtlasSOC asks Cloudflare at most once every 15 minutes.") {
+                                    worker.set_enabled(true);
+                                }
+                            }
+                            Some(_) => show_error("Enter a valid Cloudflare API token (one line)."),
+                            None => {}
+                        }
+                    }
+                }
+                if action != 0 && !matches!(action, 15 | 16 | 20..=23) { dirty = true; }
             }
             Event::MainEventsCleared => {
                 if monitor_check.elapsed() >= Duration::from_secs(2) {
@@ -379,7 +479,14 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                             let size = first.window.inner_size();
                             view.set_width(soc_config::frame_width(size.width, size.height));
                         }
-                        rgba = view.draw(&snapshot, counts, None, 0).to_vec();
+                        view.options.radar_layer = settings.radar_layer;
+                        if let Some(status) = worker.as_ref().map(|w| w.status()) {
+                            if status.received_ms != radar_received {
+                                radar_received = status.received_ms;
+                                radar_data = status.body.as_deref().and_then(|b| radar::parse(b).ok());
+                            }
+                        }
+                        rgba = view.draw(&snapshot, counts, radar_data.as_ref(), radar_received).to_vec();
                     }
                     for window in &mut windows {
                         if let Err(error) = paint(window, &rgba, (rgba.len() / 4 / HEIGHT as usize) as u32) { show_error(&error.to_string()); *flow = ControlFlow::Exit; break; }
