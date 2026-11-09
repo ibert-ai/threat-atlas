@@ -119,11 +119,17 @@ impl Aggregate {
         }
         origins
     }
-    /// Provider value string unchanged; only PERCENTAGE gets a unit suffix.
+    /// Display label for a row's value. PERCENTAGE shares show two decimals (`9.34%`; a share
+    /// above zero but under 0.005 shows `<0.01%`), rounded for display only; other
+    /// normalizations keep the provider string with its normalization named.
     pub fn value_label(&self, index: usize) -> String {
         let raw = self.rows[index].value.trim();
         if self.normalization.eq_ignore_ascii_case("PERCENTAGE") {
-            format!("{raw}%")
+            match raw.parse::<f64>() {
+                Ok(v) if v.is_finite() && v > 0. && v < 0.005 => "<0.01%".into(),
+                Ok(v) if v.is_finite() => format!("{v:.2}%"),
+                _ => format!("{raw}%"),
+            }
         } else {
             format!("{raw} ({})", self.normalization)
         }
@@ -175,12 +181,33 @@ mod tests {
         r#"{"originCountryAlpha2":"HK","originCountryName":"Hong Kong","value":"2.1"}"#;
 
     #[test]
+    fn percentage_labels_use_two_decimals_and_keep_the_provider_value() {
+        let rows = [
+            ("9.339963", "9.34%"),
+            ("0.0049", "<0.01%"),
+            ("0", "0.00%"),
+            ("12", "12.00%"),
+            ("0.005", "0.01%"),
+        ]
+        .map(|(v, _)| {
+            format!(r#"{{"originCountryAlpha2":"BR","originCountryName":"Brazil","value":"{v}"}}"#)
+        })
+        .join(",");
+        let data = parse(fixture(&rows).as_bytes()).unwrap();
+        let labels: Vec<_> = (0..5).map(|i| data.value_label(i)).collect();
+        assert_eq!(labels, ["9.34%", "<0.01%", "0.00%", "12.00%", "0.01%"]);
+        assert_eq!(
+            data.rows[0].value, "9.339963",
+            "provider value kept unrounded"
+        );
+    }
+    #[test]
     fn parses_rows_with_and_without_provider_targets() {
         let data = parse(fixture(&format!("{BR_US},{BR_NO_TARGET},{HK}")).as_bytes()).unwrap();
         assert_eq!(data.values, vec![7.5, 4.4, 2.1]);
         assert_eq!(data.rows[0].target_country_alpha2.as_deref(), Some("US"));
         assert_eq!(data.rows[1].target_country_alpha2, None);
-        assert_eq!(data.value_label(0), "7.5%");
+        assert_eq!(data.value_label(0), "7.50%");
         assert_eq!(data.windows.len(), 1);
     }
     #[test]

@@ -1649,7 +1649,7 @@ mod tests {
             .filter(|i| !i.target)
             .map(|i| i.label.clone())
             .collect();
-        assert_eq!(origins, vec!["BR 7.4%", "CN 4.0%", "HK 2.1%"]);
+        assert_eq!(origins, vec!["BR 7.40%", "CN 4.00%", "HK 2.10%"]);
         let targets: Vec<_> = icons
             .iter()
             .filter(|i| i.target)

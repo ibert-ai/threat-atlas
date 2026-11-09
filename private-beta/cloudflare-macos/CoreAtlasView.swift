@@ -153,7 +153,13 @@ struct CoreAtlasView: View {
             if value >= (seen[code]?.best ?? -1) { seen[code] = (row.originCountryName, value, row.value) }
         }
         let unit = result?.meta.normalization.uppercased() == "PERCENTAGE" ? "%" : ""
-        return order.map { (code: $0, name: seen[$0]!.name, value: seen[$0]!.value + unit) }
+        // Shares with two decimals like the map (display only); other units keep the provider string.
+        return order.map { code in
+            let entry = seen[code]!
+            let shown = unit == "%" ? (entry.best > 0 && entry.best < 0.005 ? "<0.01%" : String(format: "%.2f%%", entry.best))
+                                    : entry.value
+            return (code: code, name: entry.name, value: shown)
+        }
     }
 
     var body: some View {
