@@ -39,17 +39,20 @@ fn valid_token(token: &str) -> bool {
 
 fn read_token() -> Option<String> {
     let target = wide(TARGET);
-    let mut found: *mut CREDENTIALW = std::ptr::null_mut();
-    // SAFETY: `found` is checked for null, an empty or missing blob is never turned into a slice
-    // (a null pointer is not a valid slice pointer even for length 0), the blob is copied before
-    // CredFree, and `found` is released exactly once.
+    let mut out = std::mem::MaybeUninit::<*mut CREDENTIALW>::uninit();
+    // SAFETY: CredReadW writes the pointer when it returns non-zero; only then is it read. The
+    // pointer is checked for null, an empty or missing blob is never turned into a slice (a null
+    // pointer is not a valid slice pointer even for length 0), the blob is copied before
+    // CredFree, and the credential is released exactly once.
     unsafe {
-        if CredReadW(target.as_ptr(), CRED_TYPE_GENERIC, 0, &mut found) == 0 || found.is_null() {
+        if CredReadW(target.as_ptr(), CRED_TYPE_GENERIC, 0, out.as_mut_ptr()) == 0 {
             return None;
         }
+        let found = out.assume_init();
+        let credential = found.as_ref()?;
         let (data, size) = (
-            (*found).CredentialBlob,
-            (*found).CredentialBlobSize as usize,
+            credential.CredentialBlob,
+            credential.CredentialBlobSize as usize,
         );
         let token = if data.is_null() || size == 0 {
             None
