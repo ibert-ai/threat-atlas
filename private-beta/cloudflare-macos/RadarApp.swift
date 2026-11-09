@@ -2,9 +2,9 @@ import SwiftUI
 import Combine
 import AppKit
 
-/// Opens the customer token guide that build.sh copies into the app bundle.
+/// Opens the read-only customer token guide (HTML) that build.sh renders into the app bundle.
 func openTokenGuide() {
-    if let url = Bundle.main.url(forResource: "Cloudflare-Radar-Token-Guide", withExtension: "md") {
+    if let url = Bundle.main.url(forResource: "Cloudflare-Radar-Token-Guide", withExtension: "html") {
         NSWorkspace.shared.open(url)
     }
 }
