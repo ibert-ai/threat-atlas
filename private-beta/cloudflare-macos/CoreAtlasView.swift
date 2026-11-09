@@ -72,7 +72,9 @@ final class CoreAtlas {
     /// size, the right-hand panels sit at the right edge and a top-countries column fills the rest.
     func fit(_ view: CGSize) {
         guard let session, view.width > 0, view.height > 0 else { return }
-        let wanted = UInt32((900 * view.width / view.height / 8).rounded() * 8)   // steps of 8 px
+        // Steps of 8 px; at most 2160 (2.4:1, covers 21:9 ultrawide). Wider windows keep side margins
+        // rather than an oversized countries column.
+        let wanted = min(2160, UInt32((900 * view.width / view.height / 8).rounded() * 8))
         guard wanted != UInt32(size.width) else { return }
         size.width = CGFloat(ta_soc_set_width(session, max(1440, wanted)))
     }
@@ -221,70 +223,103 @@ struct CoreAtlasView: View {
         .onChange(of: motion) { _, value in atlas.setOptions(severities: severities, motion: value) }
     }
 
+    /// One row when it fits; on narrower windows (e.g. a 1440-point laptop screen) the same controls
+    /// wrap onto two rows instead of truncating labels or pushing the window content off screen.
     private var controls: some View {
-        HStack(spacing: 10) {
-            if let leading { leading; Divider().frame(height: 18) }
-            ForEach(Severity.allCases, id: \.rawValue) { severity in
-                Toggle(isOn: $severities[severity.rawValue]) {
-                    HStack(spacing: 5) {
-                        Circle().fill(severity.color).frame(width: 9, height: 9)
-                        Text(severity.name)
-                    }
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                if let leading { leading; Divider().frame(height: 18) }
+                viewControls
+                Divider().frame(height: 18)
+                layerControls
+                Spacer(minLength: 10)
+                trailingControls
+            }
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 10) {
+                    if let leading { leading; Divider().frame(height: 18) }
+                    viewControls
+                    Spacer(minLength: 0)
                 }
-                .toggleStyle(.button)
-            }
-            Divider().frame(height: 18)
-            Picker("Motion", selection: $motion) {
-                ForEach(Motion.allCases, id: \.rawValue) { Text($0.name).tag($0) }
-            }
-            .pickerStyle(.segmented).frame(width: 230).labelsHidden()
-            .help("Realtime (default): up to 40 arcs/s as records arrive. Calm: few slow arcs. Still: no arcs.")
-            Button(paused ? "Resume" : "Pause") { paused.toggle() }
-            Divider().frame(height: 18)
-            Picker("Layout", selection: $theme) {
-                ForEach(LayoutTheme.allCases, id: \.rawValue) { Text($0.name).tag($0) }
-            }
-            .pickerStyle(.segmented).frame(width: 170).labelsHidden()
-            .help("Classic (default) or Dashboard layout. Same map and data; remembered between launches.")
-            Divider().frame(height: 18)
-            Toggle(isOn: $radarOn) {
-                HStack(spacing: 5) {
-                    Image(systemName: "circle.circle").foregroundStyle(infoColor)
-                    Text("Cloudflare")
+                HStack(spacing: 10) {
+                    layerControls
+                    Spacer(minLength: 10)
+                    trailingControls
                 }
-            }
-            .toggleStyle(.button)
-            .help("Show or hide the whole Cloudflare Radar icon layer")
-            Menu("Countries (\(origins.count - hidden.intersection(origins.map(\.code)).count)/\(origins.count))") {
-                Button("Show all") { hidden.removeAll() }
-                Button("Hide all") { hidden = Set(origins.map(\.code)) }
-                Divider()
-                ForEach(origins, id: \.code) { origin in
-                    Toggle("\(origin.code)  \(origin.name)  \(origin.value)", isOn: Binding(
-                        get: { !hidden.contains(origin.code) },
-                        set: { visible in if visible { hidden.remove(origin.code) } else { hidden.insert(origin.code) } }))
-                }
-            }
-            .fixedSize()
-            .disabled(!radarOn || origins.isEmpty)
-            .help("Show or hide individual Cloudflare origin countries (their targets follow)")
-            if focused {
-                Button("Clear focus") { atlas.clearFocus(); focused = false }
-            }
-            Button {
-                NSApp.keyWindow?.toggleFullScreen(nil)
-            } label: { Label("SOC fullscreen", systemImage: "arrow.up.left.and.arrow.down.right") }
-            .help("Map only, edge to edge. Esc or ⌃⌘F returns to these controls.")
-            Spacer()
-            if let trailing {
-                if paused { Text("PAUSED").font(.caption).foregroundStyle(.secondary) }
-                trailing
-            } else {
-                Text(paused ? "PAUSED · live feed keeps running" : "Hover for details · click a country to focus").lineLimit(1)
-                    .font(.caption).foregroundStyle(.secondary)
             }
         }
         .help(trailing == nil ? "" : "Hover the map for details · click a country to focus")
+    }
+
+    /// Severity filters, motion and pause.
+    @ViewBuilder private var viewControls: some View {
+        ForEach(Severity.allCases, id: \.rawValue) { severity in
+            Toggle(isOn: $severities[severity.rawValue]) {
+                HStack(spacing: 5) {
+                    Circle().fill(severity.color).frame(width: 9, height: 9)
+                    Text(severity.name)
+                }
+            }
+            .toggleStyle(.button)
+            .fixedSize()
+        }
+        Divider().frame(height: 18)
+        Picker("Motion", selection: $motion) {
+            ForEach(Motion.allCases, id: \.rawValue) { Text($0.name).tag($0) }
+        }
+        .pickerStyle(.segmented).frame(width: 230).labelsHidden()
+        .help("Realtime (default): up to 40 arcs/s as records arrive. Calm: few slow arcs. Still: no arcs.")
+        Button(paused ? "Resume" : "Pause") { paused.toggle() }.fixedSize()
+    }
+
+    /// Layout, Cloudflare layer, countries, focus and fullscreen.
+    @ViewBuilder private var layerControls: some View {
+        Picker("Layout", selection: $theme) {
+            ForEach(LayoutTheme.allCases, id: \.rawValue) { Text($0.name).tag($0) }
+        }
+        .pickerStyle(.segmented).frame(width: 170).labelsHidden()
+        .help("Classic (default) or Dashboard layout. Same map and data; remembered between launches.")
+        Divider().frame(height: 18)
+        Toggle(isOn: $radarOn) {
+            HStack(spacing: 5) {
+                Image(systemName: "circle.circle").foregroundStyle(infoColor)
+                Text("Cloudflare")
+            }
+        }
+        .toggleStyle(.button)
+        .fixedSize()
+        .help("Show or hide the whole Cloudflare Radar icon layer")
+        Menu("Countries (\(origins.count - hidden.intersection(origins.map(\.code)).count)/\(origins.count))") {
+            Button("Show all") { hidden.removeAll() }
+            Button("Hide all") { hidden = Set(origins.map(\.code)) }
+            Divider()
+            ForEach(origins, id: \.code) { origin in
+                Toggle("\(origin.code)  \(origin.name)  \(origin.value)", isOn: Binding(
+                    get: { !hidden.contains(origin.code) },
+                    set: { visible in if visible { hidden.remove(origin.code) } else { hidden.insert(origin.code) } }))
+            }
+        }
+        .fixedSize()
+        .disabled(!radarOn || origins.isEmpty)
+        .help("Show or hide individual Cloudflare origin countries (their targets follow)")
+        if focused {
+            Button("Clear focus") { atlas.clearFocus(); focused = false }.fixedSize()
+        }
+        Button {
+            NSApp.keyWindow?.toggleFullScreen(nil)
+        } label: { Label("SOC fullscreen", systemImage: "arrow.up.left.and.arrow.down.right") }
+        .fixedSize()
+        .help("Map only, edge to edge. Esc or ⌃⌘F returns to these controls.")
+    }
+
+    @ViewBuilder private var trailingControls: some View {
+        if let trailing {
+            if paused { Text("PAUSED").font(.caption).foregroundStyle(.secondary).fixedSize() }
+            trailing
+        } else {
+            Text(paused ? "PAUSED · live feed keeps running" : "Hover for details · click a country to focus").lineLimit(1)
+                .font(.caption).foregroundStyle(.secondary)
+        }
     }
 }
 

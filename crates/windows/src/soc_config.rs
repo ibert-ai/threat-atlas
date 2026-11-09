@@ -206,14 +206,15 @@ pub fn layout_frame(width: u32, height: u32, frame_w: u32, frame_h: u32) -> (u32
     };
     (w, h, (width - w) / 2, (height - h) / 2)
 }
-/// SOC frame width for a window's shape (height 900): at least the standard 1440, at most 4320,
-/// in steps of 8 px. Wider windows get the wide layout and fill edge to edge.
+/// SOC frame width for a window's shape (height 900): at least the standard 1440, at most 2160
+/// (2.4:1, covers 21:9 ultrawide), in steps of 8 px. Wider windows keep side margins rather than
+/// an oversized countries column.
 pub fn frame_width(width: u32, height: u32) -> u32 {
     if width == 0 || height == 0 {
         return 1440;
     }
     let wanted = (u64::from(width) * 900 / u64::from(height) / 8 * 8) as u32;
-    wanted.clamp(1440, 4320)
+    wanted.clamp(1440, 2160)
 }
 
 pub fn inspection_label(body: &str) -> Option<String> {
@@ -330,9 +331,10 @@ mod tests {
         assert_eq!(frame_width(1440, 900), 1440);
         assert_eq!(frame_width(1280, 1024), 1440); // narrower than 16:10: standard frame, letterboxed
         assert_eq!(frame_width(1920, 1080), 1600); // 16:9 fills edge to edge
-        assert_eq!(frame_width(3440, 1440), 2144); // ultrawide
+        assert_eq!(frame_width(3440, 1440), 2144); // 21:9 ultrawide fills
+        assert_eq!(frame_width(5120, 1440), 2160); // 32:9 super-ultrawide: capped
         assert_eq!(frame_width(0, 0), 1440);
-        assert_eq!(frame_width(100_000, 10), 4320);
+        assert_eq!(frame_width(100_000, 10), 2160); // 32:9 and wider: margins
         assert_eq!(layout_frame(1920, 1080, 1600, 900), (1920, 1080, 0, 0));
         assert_eq!(layout_frame(1920, 1080, 1440, 900), layout(1920, 1080));
     }
