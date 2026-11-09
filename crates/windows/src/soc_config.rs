@@ -192,12 +192,26 @@ pub fn write_atomic(path: &Path, bytes: &[u8]) -> io::Result<()> {
 
 /// UI mapping uses integer bounds so tiny/minimized and letterboxed windows are safe.
 pub fn layout(width: u32, height: u32) -> (u32, u32, u32, u32) {
-    let (w, h) = if u64::from(width) * 900 <= u64::from(height) * 1440 {
-        (width, (u64::from(width) * 900 / 1440) as u32)
+    layout_frame(width, height, 1440, 900)
+}
+/// Aspect-fit a `frame_w` x `frame_h` frame inside a `width` x `height` window: (w, h, x, y).
+pub fn layout_frame(width: u32, height: u32, frame_w: u32, frame_h: u32) -> (u32, u32, u32, u32) {
+    let (fw, fh) = (u64::from(frame_w.max(1)), u64::from(frame_h.max(1)));
+    let (w, h) = if u64::from(width) * fh <= u64::from(height) * fw {
+        (width, (u64::from(width) * fh / fw) as u32)
     } else {
-        ((u64::from(height) * 1440 / 900) as u32, height)
+        ((u64::from(height) * fw / fh) as u32, height)
     };
     (w, h, (width - w) / 2, (height - h) / 2)
+}
+/// SOC frame width for a window's shape (height 900): at least the standard 1440, at most 4320,
+/// in steps of 8 px. Wider windows get the wide layout and fill edge to edge.
+pub fn frame_width(width: u32, height: u32) -> u32 {
+    if width == 0 || height == 0 {
+        return 1440;
+    }
+    let wanted = (u64::from(width) * 900 / u64::from(height) / 8 * 8) as u32;
+    wanted.clamp(1440, 4320)
 }
 
 pub fn inspection_label(body: &str) -> Option<String> {
@@ -307,6 +321,18 @@ mod tests {
             assert!(dw + x <= w && dh + y <= h);
             assert!(w - dw - x <= x + 1 && h - dh - y <= y + 1);
         }
+    }
+
+    #[test]
+    fn wide_windows_get_a_frame_of_their_shape() {
+        assert_eq!(frame_width(1440, 900), 1440);
+        assert_eq!(frame_width(1280, 1024), 1440); // narrower than 16:10: standard frame, letterboxed
+        assert_eq!(frame_width(1920, 1080), 1600); // 16:9 fills edge to edge
+        assert_eq!(frame_width(3440, 1440), 2144); // ultrawide
+        assert_eq!(frame_width(0, 0), 1440);
+        assert_eq!(frame_width(100_000, 10), 4320);
+        assert_eq!(layout_frame(1920, 1080, 1600, 900), (1920, 1080, 0, 0));
+        assert_eq!(layout_frame(1920, 1080, 1440, 900), layout(1920, 1080));
     }
 
     #[test]

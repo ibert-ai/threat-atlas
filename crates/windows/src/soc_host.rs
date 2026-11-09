@@ -17,7 +17,7 @@ use tao::{
 use threat_atlas_core::{
     feed::{self, Feed, State},
     render::soc::{Motion as CoreMotion, SocView, Theme as CoreTheme},
-    HEIGHT, WIDTH,
+    HEIGHT,
 };
 use windows_sys::Win32::{
     Foundation::{HWND, POINT},
@@ -194,7 +194,7 @@ fn menu(window: &Window, settings: &Settings, paused: bool) -> u32 {
     }
 }
 
-fn paint(display: &mut Display, rgba: &[u8]) -> Result<(), Box<dyn Error>> {
+fn paint(display: &mut Display, rgba: &[u8], frame_w: u32) -> Result<(), Box<dyn Error>> {
     let size = display.window.inner_size();
     let (Some(width), Some(height)) = (NonZeroU32::new(size.width), NonZeroU32::new(size.height))
     else {
@@ -205,14 +205,17 @@ fn paint(display: &mut Display, rgba: &[u8]) -> Result<(), Box<dyn Error>> {
         return Err("Display exceeds the 34-megapixel rendering limit".into());
     }
     display.surface.resize(width, height)?;
-    let (dw, dh, ox, oy) = soc_config::layout(size.width, size.height);
+    let (dw, dh, ox, oy) = soc_config::layout_frame(size.width, size.height, frame_w, HEIGHT);
+    if rgba.len() < frame_w as usize * HEIGHT as usize * 4 {
+        return Ok(());
+    }
     let mut buffer = display.surface.buffer_mut()?;
     buffer.fill(0x00060c14);
     for y in 0..dh {
         let sy = u64::from(y) * u64::from(HEIGHT) / u64::from(dh);
         for x in 0..dw {
-            let sx = u64::from(x) * u64::from(WIDTH) / u64::from(dw);
-            let i = ((sy * u64::from(WIDTH) + sx) * 4) as usize;
+            let sx = u64::from(x) * u64::from(frame_w) / u64::from(dw);
+            let i = ((sy * u64::from(frame_w) + sx) * 4) as usize;
             buffer[((y + oy) * size.width + x + ox) as usize] =
                 (u32::from(rgba[i]) << 16) | (u32::from(rgba[i + 1]) << 8) | u32::from(rgba[i + 2]);
         }
@@ -221,9 +224,9 @@ fn paint(display: &mut Display, rgba: &[u8]) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn frame_point(window: &Window, point: PhysicalPosition<f64>) -> Option<(f32, f32)> {
+fn frame_point(window: &Window, point: PhysicalPosition<f64>, frame_w: u32) -> Option<(f32, f32)> {
     let size = window.inner_size();
-    let (dw, dh, ox, oy) = soc_config::layout(size.width, size.height);
+    let (dw, dh, ox, oy) = soc_config::layout_frame(size.width, size.height, frame_w, HEIGHT);
     if dw == 0
         || dh == 0
         || point.x < f64::from(ox)
@@ -234,7 +237,7 @@ fn frame_point(window: &Window, point: PhysicalPosition<f64>) -> Option<(f32, f3
         return None;
     }
     Some((
-        ((point.x - f64::from(ox)) * f64::from(WIDTH) / f64::from(dw)) as f32,
+        ((point.x - f64::from(ox)) * f64::from(frame_w) / f64::from(dw)) as f32,
         ((point.y - f64::from(oy)) * f64::from(HEIGHT) / f64::from(dh)) as f32,
     ))
 }
@@ -303,12 +306,12 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                     WindowEvent::CloseRequested => *flow = ControlFlow::Exit,
                     WindowEvent::CursorMoved { position, .. } => {
                         cursor = position;
-                        let detail = frame_point(&display.window, position).and_then(|(x, y)| view.inspect(x, y, None)).and_then(|json| soc_config::inspection_label(&json));
+                        let detail = frame_point(&display.window, position, view.width()).and_then(|(x, y)| view.inspect(x, y, None)).and_then(|json| soc_config::inspection_label(&json));
                         display.window.set_title(&format!("AtlasSOC {VERSION}/{BUILD} by Ibert Consulting · {} · {}", if smoke { "OFFLINE TEST - NO NETWORK" } else if paused { "DISPLAY FROZEN - FEED CONTINUES" } else { "right-click or F1: controls" }, detail.unwrap_or_default()));
                     }
                     WindowEvent::MouseInput { state: ElementState::Released, button: MouseButton::Right, .. } => action = menu(&display.window, &settings, paused),
                     WindowEvent::MouseInput { state: ElementState::Released, button: MouseButton::Left, .. } => {
-                        if let Some((x, y)) = frame_point(&display.window, cursor) {
+                        if let Some((x, y)) = frame_point(&display.window, cursor, view.width()) {
                             let hit = view.country_at(x, y);
                             view.options.focus = if view.options.focus == hit { None } else { hit };
                         }
@@ -371,16 +374,21 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                         view.options.theme = match settings.theme { Theme::Classic => CoreTheme::Classic, Theme::Dashboard => CoreTheme::Dashboard };
                         let snapshot = feed.as_ref().map_or_else(|| offline.snapshot(feed::now_ms()), |f| f.snapshot());
                         let counts = feed.as_ref().map_or_else(|| offline.counts(feed::now_ms()), |f| f.counts());
+                        // Frame shape follows the first window (mirrors of another shape letterbox).
+                        if let Some(first) = windows.first() {
+                            let size = first.window.inner_size();
+                            view.set_width(soc_config::frame_width(size.width, size.height));
+                        }
                         rgba = view.draw(&snapshot, counts, None, 0).to_vec();
                     }
                     for window in &mut windows {
-                        if let Err(error) = paint(window, &rgba) { show_error(&error.to_string()); *flow = ControlFlow::Exit; break; }
+                        if let Err(error) = paint(window, &rgba, (rgba.len() / 4 / HEIGHT as usize) as u32) { show_error(&error.to_string()); *flow = ControlFlow::Exit; break; }
                     }
                     frames += 1;
                     last_frame = Instant::now();
                 }
                 if smoke && started.elapsed() >= Duration::from_secs(3) {
-                    let result = serde_json::json!({"product":"AtlasSOC", "version":VERSION, "build":BUILD, "offline_test":true, "feed_constructed":feed.is_some(), "frames_presented":frames, "windows":windows.len(), "width":WIDTH, "height":HEIGHT, "consent_written":false, "sentinel_icon_loaded":windows.iter().all(|w| w.icon_loaded)});
+                    let result = serde_json::json!({"product":"AtlasSOC", "version":VERSION, "build":BUILD, "offline_test":true, "feed_constructed":feed.is_some(), "frames_presented":frames, "windows":windows.len(), "width":view.width(), "height":HEIGHT, "consent_written":false, "sentinel_icon_loaded":windows.iter().all(|w| w.icon_loaded)});
                     if let Err(error) = soc_config::write_atomic(report.as_ref().unwrap(), &serde_json::to_vec_pretty(&result).unwrap()) { show_error(&error.to_string()); }
                     *flow = ControlFlow::Exit;
                 }
