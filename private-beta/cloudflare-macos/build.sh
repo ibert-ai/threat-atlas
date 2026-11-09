@@ -50,6 +50,8 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 PLIST
 cp ../../assets/atlassoc/sentinel/AtlasSOC.icns "$APP/Contents/Resources/AtlasSOC.icns"
 /usr/libexec/PlistBuddy -c "Add :CFBundleIconFile string AtlasSOC.icns" "$APP/Contents/Info.plist"
+# Customer guide for creating and adding a Cloudflare Radar token; opened by "How to get a token…".
+cp ../../docs/CLOUDFLARE-RADAR-TOKEN-GUIDE.md "$APP/Contents/Resources/Cloudflare-Radar-Token-Guide.md"
 codesign --force --sign - "$APP"
 # The CL Cloudflare Radar TEST token must never ship. On a machine whose Keychain holds it, fail the
 # build if its bytes appear in the app; elsewhere the check reports SKIP (exit 2) and the build goes on.

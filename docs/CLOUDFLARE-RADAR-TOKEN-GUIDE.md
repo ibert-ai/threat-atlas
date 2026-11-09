@@ -4,6 +4,9 @@ Threat Atlas SOC shows live GreyNoise records without any setup. If you also wan
 **Cloudflare Radar** country data on the map, you need your own free Cloudflare API token.
 This guide takes about five minutes.
 
+This guide also ships inside the macOS app: click **How to get a token…** next to the token
+field to open it.
+
 > **Which app?** Cloudflare Radar works in **Threat Atlas SOC for macOS**. The Windows
 > version shows GreyNoise data only and does not use a Cloudflare token yet.
 

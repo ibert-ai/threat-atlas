@@ -1,5 +1,13 @@
 import SwiftUI
 import Combine
+import AppKit
+
+/// Opens the customer token guide that build.sh copies into the app bundle.
+func openTokenGuide() {
+    if let url = Bundle.main.url(forResource: "Cloudflare-Radar-Token-Guide", withExtension: "md") {
+        NSWorkspace.shared.open(url)
+    }
+}
 
 struct RadarView: View {
     @StateObject private var model = RadarModel()
@@ -14,6 +22,7 @@ struct RadarView: View {
             HStack {
                 SecureField("Cloudflare API token · Account / Radar / Read", text: $token)
                 Button("Save in Keychain") { model.save(token: token); token = "" }
+                Button("How to get a token…") { openTokenGuide() }
             }
             HStack {
                 Button("Start") { model.start() }.disabled(model.enabled)
