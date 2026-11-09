@@ -13,7 +13,8 @@ development tests. Shipping versions must never contain it.
 - **Use:** test code reads it from Keychain at run time inside the test process. Never print it,
   put it in command arguments, environment files, logs, screenshots, Git, chat or handovers.
 - **Never shipped:** no build reads this Keychain item. Shipping builds use each user's own token,
-  entered in the app and stored in that user's Keychain.
+  entered in the app and stored in that user's Keychain (customer steps:
+  [CLOUDFLARE-RADAR-TOKEN-GUIDE.md](CLOUDFLARE-RADAR-TOKEN-GUIDE.md)).
 
 ## Leak check
 
