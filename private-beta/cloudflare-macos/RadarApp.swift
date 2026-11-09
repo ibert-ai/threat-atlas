@@ -3,10 +3,13 @@ import Combine
 import AppKit
 
 /// Opens the read-only customer token guide (HTML) that build.sh renders into the app bundle.
-func openTokenGuide() {
-    if let url = Bundle.main.url(forResource: "Cloudflare-Radar-Token-Guide", withExtension: "html") {
-        NSWorkspace.shared.open(url)
+/// Returns false when the guide is missing from this build or no app could open it.
+@discardableResult
+func openTokenGuide() -> Bool {
+    guard let url = Bundle.main.url(forResource: "Cloudflare-Radar-Token-Guide", withExtension: "html") else {
+        return false
     }
+    return NSWorkspace.shared.open(url)
 }
 
 struct RadarView: View {
@@ -22,7 +25,11 @@ struct RadarView: View {
             HStack {
                 SecureField("Cloudflare API token · Account / Radar / Read", text: $token)
                 Button("Save in Keychain") { model.save(token: token); token = "" }
-                Button("How to get a token…") { openTokenGuide() }
+                Button("How to get a token…") {
+                    if !openTokenGuide() {
+                        model.message = "The token guide could not be opened. See CLOUDFLARE-RADAR-TOKEN-GUIDE.md in the AtlasSOC documentation."
+                    }
+                }
             }
             HStack {
                 Button("Start") { model.start() }.disabled(model.enabled)
