@@ -51,4 +51,9 @@ PLIST
 cp ../../assets/atlassoc/sentinel/AtlasSOC.icns "$APP/Contents/Resources/AtlasSOC.icns"
 /usr/libexec/PlistBuddy -c "Add :CFBundleIconFile string AtlasSOC.icns" "$APP/Contents/Info.plist"
 codesign --force --sign - "$APP"
+# The CL Cloudflare Radar TEST token must never ship. On a machine whose Keychain holds it, fail the
+# build if its bytes appear in the app; elsewhere the check reports SKIP (exit 2) and the build goes on.
+token_check=0
+python3 -I ../../scripts/check-test-token-absent.py "$APP" || token_check=$?
+if [ "$token_check" -eq 1 ]; then echo "Build rejected: test token found in $APP" >&2; exit 1; fi
 printf '%s\n' "$APP"
