@@ -20,9 +20,14 @@ impl Default for Session {
 }
 impl Session {
     pub fn new() -> Self {
+        // Preview-only theme selector; replaced by the persisted setting when wired.
+        let theme = match std::env::var("THREAT_ATLAS_THEME").ok().as_deref() {
+            Some("seeker") => render::Theme::Seeker,
+            _ => render::Theme::Classic,
+        };
         Self {
             feed: Feed::shared(),
-            renderer: render::Renderer::new(),
+            renderer: render::Renderer::new_with_theme(theme),
         }
     }
     /// Session with the wide two-display layout for a window of this physical size.
