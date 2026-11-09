@@ -55,7 +55,22 @@ cp ../../assets/atlassoc/sentinel/AtlasSOC.icns "$APP/Contents/Resources/AtlasSO
 rm -f "$APP/Contents/Resources/Cloudflare-Radar-Token-Guide.md" "$APP/Contents/Resources/Cloudflare-Radar-Token-Guide.html"
 python3 -I ../../scripts/render-token-guide.py ../../docs/CLOUDFLARE-RADAR-TOKEN-GUIDE.md "$APP/Contents/Resources/Cloudflare-Radar-Token-Guide.html"
 chmod 444 "$APP/Contents/Resources/Cloudflare-Radar-Token-Guide.html"
-codesign --force --sign - "$APP"
+# Signing: ad-hoc by default. With MACOS_SIGN_IDENTITY (a Developer ID Application identity in the
+# local Keychain) the app gets a hardened-runtime, timestamped signature; with MACOS_NOTARY_PROFILE
+# (an existing `notarytool store-credentials` profile) it is also notarized and stapled.
+# No identity, password or key is stored in the repository. See docs/SIGNING.md.
+if [ -n "${MACOS_SIGN_IDENTITY:-}" ]; then
+  codesign --force --options runtime --timestamp --sign "$MACOS_SIGN_IDENTITY" "$APP"
+  codesign --verify --strict --verbose=2 "$APP"
+  if [ -n "${MACOS_NOTARY_PROFILE:-}" ]; then
+    ditto -c -k --keepParent "$APP" "$OUT/AtlasSOC-notarize.zip"
+    xcrun notarytool submit "$OUT/AtlasSOC-notarize.zip" --keychain-profile "$MACOS_NOTARY_PROFILE" --wait
+    xcrun stapler staple "$APP"
+    rm -f "$OUT/AtlasSOC-notarize.zip"
+  fi
+else
+  codesign --force --sign - "$APP"
+fi
 # The CL Cloudflare Radar TEST token must never ship. On a machine whose Keychain holds it, fail the
 # build if its bytes appear in the app; elsewhere the check reports SKIP (exit 2) and the build goes on.
 token_check=0
