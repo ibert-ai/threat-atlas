@@ -1,31 +1,31 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-07T15:22:46.758573Z",
+  "updated_at": "2026-11-10T02:32:40.546099Z",
   "monitoring_started_at": "2026-11-04T23:16:11.309183Z",
   "agents": [
     {
       "id": "mac",
       "name": "MacGyver",
-      "last_reported_at": "2026-11-07T15:20:49Z",
-      "last_heartbeat_at": "2026-11-07T07:31:11.436360Z",
-      "capacity": "low",
-      "capacity_reported_at": "2026-11-07T14:15:11Z"
+      "last_reported_at": "2026-11-10T02:27:55.626875Z",
+      "last_heartbeat_at": "2026-11-10T02:27:55.626875Z",
+      "capacity": "available",
+      "capacity_reported_at": "2026-11-10T02:27:55.626875Z"
     },
     {
       "id": "cl",
       "name": "Jean-Claude Van Damme",
-      "last_reported_at": "2026-11-07T15:18:31Z",
-      "last_heartbeat_at": "2026-11-07T15:18:31Z",
+      "last_reported_at": "2026-11-10T02:30:02Z",
+      "last_heartbeat_at": "2026-11-10T02:19:47Z",
       "capacity": "available",
-      "capacity_reported_at": "2026-11-07T15:18:31Z"
+      "capacity_reported_at": "2026-11-10T02:19:47Z"
     },
     {
       "id": "billy",
       "name": "BillyBadass",
-      "last_reported_at": "2026-11-06T19:01:06.926956Z",
-      "last_heartbeat_at": "2026-11-06T19:01:06.926956Z",
-      "capacity": "low",
-      "capacity_reported_at": "2026-11-06T19:00:53.338000Z"
+      "last_reported_at": "2026-11-10T02:21:02.030874Z",
+      "last_heartbeat_at": "2026-11-10T02:21:02.030874Z",
+      "capacity": "available",
+      "capacity_reported_at": "2026-11-10T02:20:36.801000Z"
     }
   ]
 }
