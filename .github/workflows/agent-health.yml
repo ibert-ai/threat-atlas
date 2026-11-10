@@ -1,0 +1,39 @@
+name: Agent health for the status page
+# Publishes status/agent-health.json on branch codex/release-status from the private Git handovers,
+# so https://ibert.se/Project/status/ stays current without any agent's computer (owner request,
+# 9 Nov 2026, ATLAS-STATUS-GIT-DIRECT-001). Only ids, names, times and the capacity class go public.
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "tools/status/**"
+      - ".github/workflows/agent-health.yml"
+permissions:
+  contents: write
+concurrency:
+  group: agent-health
+  cancel-in-progress: false
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1 (Node 24)
+      - run: python3 -I tools/status/test_agent_health.py
+  publish:
+    needs: test
+    # Only scheduled/manual runs in the real repository publish; pull requests (incl. forks) never get the token.
+    if: github.repository == 'ibert-ai/threat-atlas' && github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1 (Node 24)
+      - name: Publish public agent health
+        env:
+          # Fine-grained token with read-only Contents on ibert-ai/project-status-dashboard only.
+          HANDOVER_TOKEN: ${{ secrets.AGENT_HEALTH_READ_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -I tools/status/agent_health.py
