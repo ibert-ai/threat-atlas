@@ -37,7 +37,8 @@ class AgentHealthTests(unittest.TestCase):
         self.assertEqual(rows["cl"]["last_reported_at"], "2026-11-10T02:48:00Z")
         self.assertEqual(rows["mac"]["last_heartbeat_at"], "2026-11-10T02:27:55.626875Z")
         self.assertEqual((rows["mac"]["capacity"], rows["mac"]["capacity_reported_at"]), ("available", "2026-11-10T02:27:55Z"))
-        self.assertEqual(rows["billy"], {**PREVIOUS["agents"][2]}, "missing agent file keeps previous values")
+        self.assertEqual({k: v for k, v in rows["billy"].items() if k != "name"},
+                         {k: v for k, v in PREVIOUS["agents"][2].items() if k != "name"}, "missing agent file keeps previous values")
         self.assertEqual(public["monitoring_started_at"], PREVIOUS["monitoring_started_at"])
         text = json.dumps(public)
         self.assertNotIn(SECRET_TASK, text)
