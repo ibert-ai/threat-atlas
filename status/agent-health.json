@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-10T02:32:40.546099Z",
+  "updated_at": "2026-11-10T03:07:21.272118Z",
   "monitoring_started_at": "2026-11-04T23:16:11.309183Z",
   "agents": [
     {
@@ -14,18 +14,18 @@
     {
       "id": "cl",
       "name": "Jean-Claude Van Damme",
-      "last_reported_at": "2026-11-10T02:30:02Z",
-      "last_heartbeat_at": "2026-11-10T02:19:47Z",
+      "last_reported_at": "2026-11-10T03:03:21Z",
+      "last_heartbeat_at": "2026-11-10T03:03:21Z",
       "capacity": "available",
-      "capacity_reported_at": "2026-11-10T02:19:47Z"
+      "capacity_reported_at": "2026-11-10T03:03:21Z"
     },
     {
       "id": "billy",
       "name": "BillyBadass",
-      "last_reported_at": "2026-11-10T02:21:02.030874Z",
-      "last_heartbeat_at": "2026-11-10T02:21:02.030874Z",
+      "last_reported_at": "2026-11-10T03:06:05.247401Z",
+      "last_heartbeat_at": "2026-11-10T03:06:05.247401Z",
       "capacity": "available",
-      "capacity_reported_at": "2026-11-10T02:20:36.801000Z"
+      "capacity_reported_at": "2026-11-10T03:05:38.419000Z"
     }
   ]
 }
