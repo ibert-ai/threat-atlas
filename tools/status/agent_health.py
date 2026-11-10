@@ -20,7 +20,7 @@ import sys
 import urllib.error
 import urllib.request
 
-AGENTS = {"mac": "MacGyver", "cl": "Jean-Claude Van Damme (CBO – Chief Bot Officer)", "billy": "BillyBadass",
+AGENTS = {"mac": "MacGyver (Crew)", "cl": "Jean-Claude Van Damme (CBO – Chief Bot Officer)", "billy": "BillyBadass (Crew)",
           "noris": "Seek Norris (CMO – Chief Marketing Officer)"}
 CAPACITY = {"available", "low", "exhausted", "unknown"}
 PRIVATE_REPO = "ibert-ai/project-status-dashboard"
