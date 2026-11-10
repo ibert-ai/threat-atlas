@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-10T05:18:38Z",
-  "source_updated_at": "2026-11-10T05:18:38Z",
+  "generated_at": "2026-11-10T07:19:07Z",
+  "source_updated_at": "2026-11-10T07:19:07Z",
   "title": "Atlas — Project status",
   "state": "Screensaver 0.4.5 stable · 0.4.7-rc.1 (Windows, macOS, Linux) · AtlasSOC Desktop RC1",
-  "summary": "Stable screensaver 0.4.5/build13 remains Latest. Screensaver 0.4.7-rc.1 (build 15, Windows x64 MSI/ZIP, macOS universal ZIP and Linux x86_64 preview) was published on 10 Nov 2026 as a pre-release from commit 4a0068f after all CI checks passed; every asset was downloaded back and its SHA-256 verified. AtlasSOC Desktop 0.7.0 RC1 (Windows + macOS, build 12) was published on 9 Nov 2026. The macOS screensaver package is ad-hoc signed (Gatekeeper asks once); trusted signing is decided before stable.",
+  "summary": "Stable screensaver 0.4.5/build13 remains Latest. Screensaver 0.4.7-rc.1 (build 15, Windows x64 MSI/ZIP, macOS universal ZIP and Linux x86_64 preview) was published on 10 Nov 2026 as a pre-release from commit 4a0068f after all CI checks passed; every asset was downloaded back and its SHA-256 verified. AtlasSOC Desktop 0.7.0 RC1 (Windows + macOS, build 12) was published on 9 Nov 2026. macOS packages of both are now also available signed with Developer ID and notarized by Apple (no Gatekeeper warning); Windows packages are still unsigned.",
   "release": {
     "name": "Threat Atlas screensaver 0.4.5 stable / build 13",
     "decision": "PUBLISHED STABLE · Latest",
@@ -76,7 +76,7 @@
       "status": "checked"
     },
     {
-      "task": "Mac trusted signing (RC ships ad-hoc signed) and broader physical acceptance",
+      "task": "Mac trusted signing done (Developer ID + notarized); broader physical acceptance",
       "status": "pending"
     }
   ],
@@ -170,7 +170,7 @@
   "desktop": {
     "name": "AtlasSOC Desktop",
     "state": "RC1 published (Windows + macOS)",
-    "summary": "RC1 (build 12) for Windows x64 (installer and ZIP) and macOS universal, with Cloudflare Radar on both, wide layout, compact window and an update check. Packages are unsigned; Gatekeeper/SmartScreen warnings are expected. Known issues are tracked for the next release. Linux Desktop is a later phase.",
+    "summary": "RC1 (build 12) for Windows x64 (installer and ZIP) and macOS universal, with Cloudflare Radar on both, wide layout, compact window and an update check. macOS is available signed and notarized (Developer ID, no Gatekeeper warning); Windows packages are still unsigned, so SmartScreen may warn. Known issues are tracked for the next release. Linux Desktop is a later phase.",
     "updated_at": "2026-11-09T19:10:32Z",
     "release": {
       "name": "AtlasSOC Desktop 0.7.0 RC1 / build 12",
@@ -223,7 +223,7 @@
         "status": "checked"
       },
       {
-        "task": "Trusted code signing (Windows and macOS)",
+        "task": "Trusted code signing: macOS done (Developer ID + notarized), Windows pending",
         "status": "pending"
       },
       {
