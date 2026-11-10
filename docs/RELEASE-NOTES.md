@@ -1,22 +1,22 @@
-# Threat Atlas screensaver 0.4.6-beta.1 — Windows panorama beta
+# Threat Atlas screensaver 0.4.7-rc.1 — Windows + Linux release candidate
 
-Product 0.4.6, build 14. Robert approved the physical two-display result, visual layout and version/build identity on 7 November 2026. The candidate adds an undistorted panorama for two matching side-by-side displays, places the seam over the Atlantic and keeps each information panel on one display. Unsupported display layouts retain the standard renderer. The final edge-placement correction is included. Publication remains pending exact-package checks and successful CI on the reviewed integration commit.
+Product 0.4.7, build 15. First release candidate after 0.4.6-beta.1 (Windows panorama, build 14) and the Linux 0.4.6-beta.1 preview. Screensaver behaviour is unchanged from the beta: the owner-approved two-display panorama with the seam over the Atlantic, and the standard single-display layout everywhere else. The renderer is shared with AtlasSOC Desktop 0.7.0 RC1, whose wide-window offset is zero in screensaver mode. The numeric version advances to 0.4.7 because the installer payload changed. 0.4.5 stays the latest stable release.
 
 ## Included and excluded platforms
 
-Windows 10/11 x64 only: all-users MSI and portable ZIP. No Linux package is included because this is a Windows-specific panorama beta. No macOS package is included because normal quarantined installation remains blocked by Gatekeeper and trusted signing/notarization is unresolved. The packages remain unsigned.
+- Windows 10/11 x64: all-users MSI and portable ZIP. Unsigned.
+- Linux x86_64: windowed preview archive (extract and run `AppRun`).
+- macOS: excluded. Normal quarantined installation stays blocked by Gatekeeper until trusted signing/notarization is decided.
 
 ## Windows installation and updates
 
-The MSI installs one x64 SCR into System32, documents into Program Files and three Start Menu items. Check the checksum and approve the administrator prompt. Manual System32 copying requires **Run as administrator**; routine screensaver execution does not. Uninstall the older per-user install first; the MSI refuses overlap. Automatic updates are absent from the all-users MSI pending a reviewed redesign; use verified manual packages. Windows binaries remain unsigned.
+The MSI installs one x64 SCR into System32, documents into Program Files and three Start Menu items. Check the checksum and approve the administrator prompt. Uninstall an older per-user install first; the MSI refuses overlap. The MSI upgrades 0.4.5 and 0.4.6 installs. Automatic updates are absent from the all-users MSI; use verified manual packages.
 
 ## Known bugs and test limits
 
-- The owner approved physical two-display panorama behavior and the corrected visual layout. Exact-package reinstallation and upgrade checks remain pending.
-- Panorama is limited to two matching side-by-side displays. Mixed resolution, mixed DPI/scaling, hot-plug and extended soak testing remain untested.
-- Lock-on-resume and installation from a browser-downloaded MSI, including Zone.Identifier/SmartScreen behavior, remain untested.
-- Native Settings listing, small/full preview, one-minute idle start, upgrade from 0.4.5 and post-uninstall Settings state require final candidate verification.
-- Windows binaries remain unsigned and may trigger a trust warning.
+- Panorama is limited to two matching side-by-side displays. Mixed resolution, mixed DPI/scaling and hot-plug remain untested.
+- Windows binaries are unsigned and may trigger a SmartScreen warning.
+- Linux runs in a window: idle and lock integration, other distributions, DPI scaling, fullscreen and long-running stability are not verified.
 - OS DNS resolution can delay feed-worker shutdown. No immediate-zero-background-traffic guarantee is made.
 
 No simulated threats or TLS validation bypasses. Displayed records are real provider receipts, not verified unique attacks.
