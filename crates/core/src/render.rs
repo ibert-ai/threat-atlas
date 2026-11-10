@@ -11,12 +11,12 @@ const CYAN: [u8; 3] = [68, 220, 225];
 const MUTED: [u8; 3] = [100, 139, 159];
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Theme {
+pub enum SaverTheme {
     Classic,
     Seeker,
 }
 
-impl Default for Theme {
+impl Default for SaverTheme {
     fn default() -> Self {
         Self::Classic
     }
@@ -144,12 +144,18 @@ pub struct Renderer {
     /// Zero for the screensaver and the standard 1440x900 SOC frame, which stay unchanged.
     pub(crate) wide_dx: f32,
     pub(crate) wide_raw: bool,
-    theme: Theme,
+    theme: SaverTheme,
     pal: Palette,
     local_location: Option<(f64, f64)>,
 }
 /// Column boundary between the map and the right-hand panels in the 1440x900 layout.
 pub(crate) const WIDE_SPLIT: f32 = 1015.;
+/// Map viewport inside the frame (x, y, width, height). Shared by the panel layout and
+/// `ring_clipped`, so the ring clipping can never drift from the map it is drawn on.
+pub(crate) const MAP_X: f32 = 25.;
+pub(crate) const MAP_Y: f32 = 205.;
+pub(crate) const MAP_W: f32 = 980.;
+pub(crate) const MAP_H: f32 = 510.;
 impl Default for Renderer {
     fn default() -> Self {
         Self::new()
@@ -172,10 +178,10 @@ pub(crate) fn release_label(release: &str) -> String {
 }
 impl Renderer {
     pub fn new() -> Self {
-        Self::new_with_theme(Theme::Classic)
+        Self::new_with_theme(SaverTheme::Classic)
     }
     /// Renderer for an explicit visual theme. Layout, data and semantics are identical.
-    pub fn new_with_theme(theme: Theme) -> Self {
+    pub fn new_with_theme(theme: SaverTheme) -> Self {
         let mut r = Self::blank_sized(WIDTH, HEIGHT, theme);
         r.base_map();
         let pal = r.pal;
@@ -216,13 +222,13 @@ impl Renderer {
         r
     }
     fn blank() -> Self {
-        Self::blank_sized(WIDTH, HEIGHT, Theme::Classic)
+        Self::blank_sized(WIDTH, HEIGHT, SaverTheme::Classic)
     }
-    fn blank_sized(width: u32, height: u32, theme: Theme) -> Self {
+    fn blank_sized(width: u32, height: u32, theme: SaverTheme) -> Self {
         let pix = Pixmap::new(width, height).unwrap();
         let pal = match theme {
-            Theme::Classic => Palette::classic(),
-            Theme::Seeker => Palette::seeker(),
+            SaverTheme::Classic => Palette::classic(),
+            SaverTheme::Seeker => Palette::seeker(),
         };
         let base = pix.clone();
         let font = fontdue::Font::from_bytes(
@@ -265,7 +271,7 @@ impl Renderer {
         self.wide_dx = (width - WIDTH) as f32;
     }
     /// The theme this renderer was created with.
-    pub fn theme(&self) -> Theme {
+    pub fn theme(&self) -> SaverTheme {
         self.theme
     }
     /// The user's actual position, used to centre the Seeker rings.
@@ -291,7 +297,7 @@ impl Renderer {
         let pal = self.pal;
         self.pix.fill(Color::from_rgba8(pal.bg[0], pal.bg[1], pal.bg[2], 255));
         for (x, y, w, h) in [
-            (25., 205., 980., 510.),
+            (MAP_X, MAP_Y, MAP_W, MAP_H),
             (1025., 205., 390., 650.),
             (25., 735., 980., 120.),
         ] {
@@ -346,7 +352,9 @@ impl Renderer {
     }
 
     fn ring_clipped(&mut self, cx: f32, cy: f32, r: f32, c: [u8; 3], a: u8, width: f32) {
-        let inside = |x: f32, y: f32| x >= 25. && x <= 1005. && y >= 205. && y <= 715.;
+        let inside = |x: f32, y: f32| {
+            x >= MAP_X && x <= MAP_X + MAP_W && y >= MAP_Y && y <= MAP_Y + MAP_H
+        };
         let mut prev: Option<(f32, f32)> = None;
         for i in 0..=360 {
             let ang = (i as f32).to_radians();
@@ -921,14 +929,38 @@ mod tests {
     #[test]
     fn theme_defaults_to_classic() {
         let r = Renderer::new();
-        assert_eq!(r.theme(), Theme::Classic);
+        assert_eq!(r.theme(), SaverTheme::Classic);
         assert!(!r.pal.seeker);
     }
 
+
+    /// Guards "classic unchanged" in CI: the Classic frame for a fixed snapshot must hash to the
+    /// pinned value. Runs with TZ=UTC so the UTC offset line cannot make the hash machine-dependent.
+    #[test]
+    fn classic_frame_matches_pinned_hash() {
+        use sha2::{Digest, Sha256};
+        let prev = std::env::var("TZ").ok();
+        std::env::set_var("TZ", "UTC");
+        let mut r = Renderer::new();
+        let mut state = State::default();
+        state.ingest(
+            r#"[{"source":{"latitude":52,"longitude":5,"country":"NL"},"destination":{"latitude":40,"longitude":-100,"country":"US"},"intention":"malicious"}]"#,
+            1000,
+        );
+        let snap = state.snapshot(1500);
+        let px = r.draw(&snap).to_vec();
+        match prev {
+            Some(v) => std::env::set_var("TZ", v),
+            None => std::env::remove_var("TZ"),
+        }
+        let d = Sha256::digest(&px);
+        let hex: String = d.iter().map(|b| format!("{:02x}", b)).collect();
+        assert_eq!(hex, "b5e88106cfd869ed8faf3ee1d84a7865baf579d86b6e602c8aed2949d0e2f9c5", "Classic frame changed");
+    }
     #[test]
     fn seeker_theme_renders_a_full_frame() {
-        let mut r = Renderer::new_with_theme(Theme::Seeker);
-        assert_eq!(r.theme(), Theme::Seeker);
+        let mut r = Renderer::new_with_theme(SaverTheme::Seeker);
+        assert_eq!(r.theme(), SaverTheme::Seeker);
         let mut state = State::default();
         state.ingest(r#"[{"source":{"latitude":52,"longitude":5,"country":"NL"},"destination":{"latitude":40,"longitude":-100,"country":"US"},"intention":"malicious"}]"#, 1000);
         let snap = state.snapshot(1500);

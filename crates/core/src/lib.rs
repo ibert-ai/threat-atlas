@@ -20,16 +20,25 @@ impl Default for Session {
 }
 impl Session {
     pub fn new() -> Self {
-        // Preview-only theme selector; replaced by the persisted setting when wired.
+        // Preview-only selectors. Debug builds only: a release saver must never change look or
+        // position because of environment variables (ATLAS-CL-SEEK-HEARTBEAT-AND-THEME-REVIEW).
+        #[cfg(debug_assertions)]
         let theme = match std::env::var("THREAT_ATLAS_THEME").ok().as_deref() {
-            Some("seeker") => render::Theme::Seeker,
-            _ => render::Theme::Classic,
+            Some("seeker") => render::SaverTheme::Seeker,
+            _ => render::SaverTheme::Classic,
         };
+        #[cfg(not(debug_assertions))]
+        let theme = render::SaverTheme::Classic;
+
         let mut renderer = render::Renderer::new_with_theme(theme);
-        let lat = std::env::var("THREAT_ATLAS_LAT").ok().and_then(|v| v.parse::<f64>().ok());
-        let lon = std::env::var("THREAT_ATLAS_LON").ok().and_then(|v| v.parse::<f64>().ok());
-        if let (Some(lat), Some(lon)) = (lat, lon) {
-            renderer.set_local_location(lat, lon);
+
+        #[cfg(debug_assertions)]
+        {
+            let lat = std::env::var("THREAT_ATLAS_LAT").ok().and_then(|v| v.parse::<f64>().ok());
+            let lon = std::env::var("THREAT_ATLAS_LON").ok().and_then(|v| v.parse::<f64>().ok());
+            if let (Some(lat), Some(lon)) = (lat, lon) {
+                renderer.set_local_location(lat, lon);
+            }
         }
         Self {
             feed: Feed::shared(),
@@ -53,6 +62,11 @@ impl Session {
 }
 #[no_mangle]
 pub unsafe extern "C" fn ta_set_location(session: *mut Session, lat: f64, lon: f64) {
+    // Reject anything that is not a real coordinate: NaN, infinities and out-of-range values
+    // would place the rings nowhere or on an undefined projection (CL review requirement).
+    if !lat.is_finite() || !lon.is_finite() || !(-90.0..=90.0).contains(&lat) || !(-180.0..=180.0).contains(&lon) {
+        return;
+    }
     if let Some(session) = session.as_mut() {
         session.renderer.set_local_location(lat, lon);
     }
