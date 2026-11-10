@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-10T05:10:26.922079Z",
+  "updated_at": "2026-11-10T05:21:25.761042Z",
   "monitoring_started_at": "2026-11-04T23:16:11.309183Z",
   "agents": [
     {
       "id": "mac",
-      "name": "MacGyver",
+      "name": "MacGyver (Crew)",
       "last_reported_at": "2026-11-10T02:27:55.626875Z",
       "last_heartbeat_at": "2026-11-10T02:27:55.626875Z",
       "capacity": "available",
@@ -21,7 +21,7 @@
     },
     {
       "id": "billy",
-      "name": "BillyBadass",
+      "name": "BillyBadass (Crew)",
       "last_reported_at": "2026-11-10T03:51:00.274070Z",
       "last_heartbeat_at": "2026-11-10T03:51:00.274070Z",
       "capacity": "low",
