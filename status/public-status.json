@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-10T03:48:57Z",
-  "source_updated_at": "2026-11-10T03:48:57Z",
+  "generated_at": "2026-11-10T05:18:38Z",
+  "source_updated_at": "2026-11-10T05:18:38Z",
   "title": "Atlas — Project status",
-  "state": "Screensaver 0.4.5 stable · 0.4.7-rc.1 · AtlasSOC Desktop RC1",
-  "summary": "Stable screensaver 0.4.5/build13 remains Latest. Screensaver 0.4.7-rc.1 (build 15, Windows x64 MSI/ZIP + Linux x86_64 preview) was published on 10 Nov 2026 as a pre-release from commit 4a0068f after all CI checks passed; every asset was downloaded back and its SHA-256 verified. AtlasSOC Desktop 0.7.0 RC1 (Windows + macOS, build 12) was published on 9 Nov 2026. macOS screensaver still waits for trusted signing.",
+  "state": "Screensaver 0.4.5 stable · 0.4.7-rc.1 (Windows, macOS, Linux) · AtlasSOC Desktop RC1",
+  "summary": "Stable screensaver 0.4.5/build13 remains Latest. Screensaver 0.4.7-rc.1 (build 15, Windows x64 MSI/ZIP, macOS universal ZIP and Linux x86_64 preview) was published on 10 Nov 2026 as a pre-release from commit 4a0068f after all CI checks passed; every asset was downloaded back and its SHA-256 verified. AtlasSOC Desktop 0.7.0 RC1 (Windows + macOS, build 12) was published on 9 Nov 2026. The macOS screensaver package is ad-hoc signed (Gatekeeper asks once); trusted signing is decided before stable.",
   "release": {
     "name": "Threat Atlas screensaver 0.4.5 stable / build 13",
     "decision": "PUBLISHED STABLE · Latest",
@@ -49,7 +49,7 @@
     ]
   },
   "screensaver": {
-    "name": "0.4.7-rc.1/build15 · Windows + Linux preview",
+    "name": "0.4.7-rc.1/build15 · Windows + macOS + Linux preview",
     "decision": "PUBLISHED RC1 · pre-release, stable 0.4.5 stays Latest",
     "published_at": "2026-11-10T03:48:05Z",
     "url": "https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.7-rc.1"
@@ -76,7 +76,7 @@
       "status": "checked"
     },
     {
-      "task": "Mac trusted signing and broader physical acceptance",
+      "task": "Mac trusted signing (RC ships ad-hoc signed) and broader physical acceptance",
       "status": "pending"
     }
   ],
