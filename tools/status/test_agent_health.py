@@ -52,14 +52,19 @@ class AgentHealthTests(unittest.TestCase):
             "billy": {"updated_at": "not a time", "health": "broken", "credits": {"status": "rich", "reported_at": "2026-11-10T00:00:00Z"}},
         }
         public = merge(PREVIOUS, inputs, NOW)
-        self.assertEqual([{k: a[k] for k in a if k != "name"} for a in public["agents"]],
+        self.assertEqual([{k: a[k] for k in a if k != "name"} for a in public["agents"][:3]],
                          [{k: a[k] for k in a if k != "name"} for a in PREVIOUS["agents"]])
-        self.assertTrue(same_observations(PREVIOUS, public), "nothing new: no commit")
+        self.assertEqual(public["agents"][3]["id"], "noris")
+
+    def test_nothing_new_means_no_commit(self):
+        public = merge(PREVIOUS, {}, NOW)
+        self.assertFalse(same_observations(PREVIOUS, public), "new agent row is a change")
+        self.assertTrue(same_observations(public, merge(public, {"cl": {"health": {"reported_at": "2026-11-01T00:00:00Z"}}}, NOW + 60)))
 
     def test_first_run_without_previous_file(self):
         public = merge(None, {"cl": {"health": {"reported_at": "2026-11-10T02:59:00Z"}}}, NOW)
         self.assertEqual(public["monitoring_started_at"], iso(NOW))
-        self.assertEqual([a["id"] for a in public["agents"]], ["mac", "cl", "billy"])
+        self.assertEqual([a["id"] for a in public["agents"]], ["mac", "cl", "billy", "noris"])
         self.assertEqual(public["agents"][0]["last_heartbeat_at"], None)
         self.assertEqual(public["agents"][1]["capacity"], "unknown")
 
