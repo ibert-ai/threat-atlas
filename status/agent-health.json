@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-10T03:07:21.272118Z",
+  "updated_at": "2026-11-10T03:18:17.652103Z",
   "monitoring_started_at": "2026-11-04T23:16:11.309183Z",
   "agents": [
     {
@@ -13,7 +13,7 @@
     },
     {
       "id": "cl",
-      "name": "Jean-Claude Van Damme",
+      "name": "Jean-Claude Van Damme (BTO)",
       "last_reported_at": "2026-11-10T03:03:21Z",
       "last_heartbeat_at": "2026-11-10T03:03:21Z",
       "capacity": "available",
@@ -26,6 +26,14 @@
       "last_heartbeat_at": "2026-11-10T03:06:05.247401Z",
       "capacity": "available",
       "capacity_reported_at": "2026-11-10T03:05:38.419000Z"
+    },
+    {
+      "id": "noris",
+      "name": "Seek Norris (Chuck)",
+      "last_reported_at": "2026-11-10T03:00:59Z",
+      "last_heartbeat_at": "2026-11-10T03:00:56Z",
+      "capacity": "available",
+      "capacity_reported_at": "2026-11-10T03:00:56Z"
     }
   ]
 }
