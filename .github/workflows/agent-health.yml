@@ -4,7 +4,9 @@ name: Agent health for the status page
 # 9 Nov 2026, ATLAS-STATUS-GIT-DIRECT-001). Only ids, names, times and the capacity class go public.
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    # Every 15 min at off-peak minutes: GitHub delays or drops busy */5 and top-of-hour schedules.
+    # Pings are every 30/60 min (ATLAS-HEARTBEAT-SCHEDULE-20261110-01), so this is enough.
+    - cron: "4,19,34,49 * * * *"
   workflow_dispatch:
   pull_request:
     paths:
