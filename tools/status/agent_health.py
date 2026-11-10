@@ -122,7 +122,8 @@ def main():
         try:
             inputs[ident] = read_json(PRIVATE_REPO, f"handovers/{ident}.json", handover_token)[0]
         except (urllib.error.URLError, ValueError, KeyError) as error:
-            print(f"{ident}: unreadable, keeping previous values ({type(error).__name__})")
+            detail = " ".join(str(x) for x in (type(error).__name__, getattr(error, "code", "")) if x)
+            print(f"{ident}: unreadable, keeping previous values ({detail})")
     previous, sha = read_json(PUBLIC_REPO, PUBLIC_PATH, publish_token, PUBLIC_BRANCH)
     public = merge(previous, inputs, now)
     summary = ", ".join(f"{a['id']} heartbeat {a['last_heartbeat_at']}" for a in public["agents"])
