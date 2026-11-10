@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-10T03:12:42Z",
-  "source_updated_at": "2026-11-10T03:12:42Z",
+  "generated_at": "2026-11-10T03:48:57Z",
+  "source_updated_at": "2026-11-10T03:48:57Z",
   "title": "Atlas — Project status",
-  "state": "Screensaver 0.4.5 stable · 0.4.6-beta.1 · AtlasSOC Desktop RC1",
-  "summary": "Stable screensaver 0.4.5/build13 remains Latest. Screensaver 0.4.6-beta.1 (Windows panorama, build 14) and AtlasSOC Desktop 0.7.0 RC1 (Windows + macOS, build 12) were published on 9 Nov 2026 as pre-releases; every asset was downloaded back and its SHA-256 verified. macOS screensaver still waits for trusted signing.",
+  "state": "Screensaver 0.4.5 stable · 0.4.7-rc.1 · AtlasSOC Desktop RC1",
+  "summary": "Stable screensaver 0.4.5/build13 remains Latest. Screensaver 0.4.7-rc.1 (build 15, Windows x64 MSI/ZIP + Linux x86_64 preview) was published on 10 Nov 2026 as a pre-release from commit 4a0068f after all CI checks passed; every asset was downloaded back and its SHA-256 verified. AtlasSOC Desktop 0.7.0 RC1 (Windows + macOS, build 12) was published on 9 Nov 2026. macOS screensaver still waits for trusted signing.",
   "release": {
     "name": "Threat Atlas screensaver 0.4.5 stable / build 13",
     "decision": "PUBLISHED STABLE · Latest",
@@ -49,10 +49,10 @@
     ]
   },
   "screensaver": {
-    "name": "0.4.6-beta.1/build14 · Windows panorama",
-    "decision": "PUBLISHED BETA · pre-release, stable 0.4.5 stays Latest",
-    "published_at": "2026-11-09T18:22:05Z",
-    "url": "https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.6-beta.1"
+    "name": "0.4.7-rc.1/build15 · Windows + Linux preview",
+    "decision": "PUBLISHED RC1 · pre-release, stable 0.4.5 stays Latest",
+    "published_at": "2026-11-10T03:48:05Z",
+    "url": "https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.7-rc.1"
   },
   "tasks": [
     {
@@ -94,38 +94,42 @@
     }
   ],
   "build": {
-    "name": "Screensaver 0.4.5 stable / build 13",
-    "status": "Stable published · all downloads verified",
-    "commit": "ce986195d57237dc27a77b2d2161a50eb3127346",
-    "url": "https://github.com/ibert-ai/threat-atlas/actions/runs/41924443584",
-    "updated_at": "2026-11-04T22:30:45.620Z",
+    "name": "Screensaver 0.4.7-rc.1 / build 15",
+    "status": "RC1 published · all downloads verified",
+    "commit": "4a0068f0fa3fc8e9aef36dbad98c740a0370e3cc",
+    "url": "https://github.com/ibert-ai/threat-atlas/actions/runs/42751066546",
+    "updated_at": "2026-11-10T03:48:05Z",
     "stages": [
       {
-        "name": "Source & stable version checks",
+        "name": "Quality (fmt, tests, clippy, audit, source scan)",
         "status": "checked"
       },
       {
-        "name": "Quality · tests & dependency audit",
+        "name": "Windows build and tests",
         "status": "checked"
       },
       {
-        "name": "Linux build & Xvfb smoke",
+        "name": "MSI build and verification",
         "status": "checked"
       },
       {
-        "name": "Windows tests & build",
+        "name": "MSI install test",
         "status": "checked"
       },
       {
-        "name": "MSI structure & installer lifecycle",
+        "name": "Updater tests",
         "status": "checked"
       },
       {
-        "name": "Verify final packages",
+        "name": "Linux build and smoke test",
         "status": "checked"
       },
       {
-        "name": "Publish stable & verify downloads",
+        "name": "macOS build check",
+        "status": "checked"
+      },
+      {
+        "name": "Publish and verify downloads",
         "status": "checked"
       }
     ]
