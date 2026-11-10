@@ -8,11 +8,10 @@ GreyNoise public threat-map feed. The header shows both UTC and the computer's l
 
 ## Release status
 
-The next reviewed candidate is **0.4.6-beta.1**, build **14**, for Windows 10/11 x64.
-It adds an owner-approved panorama layout for two matching side-by-side displays.
-The corrected edge placement and visual layout were approved on 7 November 2026;
-exact-package installation, upgrade and release verification remain required before publication.
-This candidate is not yet a published download. macOS and Linux packages are excluded.
+The current release candidate is **0.4.7-rc.1**, build **15**, for Windows 10/11 x64
+(MSI and portable ZIP) and the Linux x86_64 windowed preview. Screensaver behaviour is
+unchanged from 0.4.6-beta.1, including the two-display panorama. **0.4.5** stays the latest
+stable release. macOS is excluded until trusted signing is resolved.
 
 The **0.4.5 stable release**, build **13**, promotes the approved 0.4.4-rc.1 implementation for Windows x64 (all-users MSI and portable ZIP) and Linux x86_64 (windowed X11/XWayland preview).
 [Release downloads](https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.5).
