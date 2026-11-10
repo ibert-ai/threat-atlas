@@ -1,3 +1,10 @@
+## 0.4.7-rc.1 — release candidate 1, 10 November 2026, build 15
+
+- Release candidate for Windows x64 (MSI and portable ZIP) and the Linux x86_64 windowed preview, built from current main.
+- Same screensaver behaviour as 0.4.6-beta.1, including the two-display Windows panorama. The shared renderer now also serves the AtlasSOC Desktop wide layout; that offset is zero in screensaver mode.
+- Advance the numeric version to 0.4.7 because the Windows installer payload changed (MSI upgrade identity).
+- macOS stays excluded until trusted signing/Gatekeeper is resolved.
+
 ## 0.4.6-beta.1 — release candidate, 7 November 2026, build 14
 
 - Add an owner-approved Windows panorama layout for two matching side-by-side displays.

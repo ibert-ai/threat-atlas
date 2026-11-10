@@ -2,9 +2,9 @@
 
 `version.json` is the authoritative release manifest. The official unsigned
 release is 0.4.0, build 8. Stable status does not imply trusted signatures.
-The current manifest prepares the Windows-only 0.4.6-beta.1 candidate, build 14.
-It may be published as a prerelease only after exact-source automated checks and
-package validation; 0.4.5 stays latest stable. Historical assets remain unchanged.
+The current manifest prepares the 0.4.7-rc.1 candidate, build 15, for Windows x64
+and the Linux preview. It may be published as a prerelease only after exact-source
+automated checks and package validation; 0.4.5 stays latest stable. Historical assets remain unchanged.
 
 The maintainer authorized unsigned publication on 29 October 2026. For 0.4.0,
 the signing and manual acceptance gates below remain incomplete and must be
@@ -50,8 +50,8 @@ Windows ZIP names include the derived tag. See UPDATES.md for signature/key rule
 Do not overwrite old release assets with new payloads under an old tag/version.
 Keep previous downloads available and publish a new preview when the checks pass.
 
-The current manual publication job is restricted to v0.4.6-beta.1 and creates a
-Windows-only prerelease without replacing latest stable. Preparing or merging
+The current manual publication job is restricted to v0.4.7-rc.1 and creates a
+Windows + Linux prerelease without replacing latest stable. Preparing or merging
 the version does not authorize publication. Review its exact tag guard, release
 notes, prerelease flag and acceptance evidence before manually dispatching it.
 
