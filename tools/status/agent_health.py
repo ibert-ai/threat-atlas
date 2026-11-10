@@ -113,7 +113,9 @@ def read_json(repo, path, token, ref=None):
 def main():
     handover_token, publish_token = os.environ.get("HANDOVER_TOKEN"), os.environ.get("GH_TOKEN")
     if not handover_token or not publish_token:
-        sys.exit("HANDOVER_TOKEN (read-only, private handovers) and GH_TOKEN are required")
+        # Not configured yet: warn and skip instead of failing every 5 minutes.
+        print("::warning::AGENT_HEALTH_READ_TOKEN secret is not set; agent health not published")
+        return
     now = dt.datetime.now(dt.timezone.utc).timestamp()
     inputs = {}
     for ident in AGENTS:
