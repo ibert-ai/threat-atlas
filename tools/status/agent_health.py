@@ -20,8 +20,8 @@ import sys
 import urllib.error
 import urllib.request
 
-AGENTS = {"mac": "MacGyver", "cl": "Jean-Claude Van Damme (CBO)", "billy": "BillyBadass",
-          "noris": "Seek Norris (Chuck)"}
+AGENTS = {"mac": "MacGyver", "cl": "Jean-Claude Van Damme (CBO – Chief Bot Officer)", "billy": "BillyBadass",
+          "noris": "Seek Norris (CMO – Chief Marketing Officer)"}
 CAPACITY = {"available", "low", "exhausted", "unknown"}
 PRIVATE_REPO = "ibert-ai/project-status-dashboard"
 PUBLIC_REPO = "ibert-ai/threat-atlas"
