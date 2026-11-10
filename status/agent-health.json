@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-10T03:18:17.652103Z",
+  "updated_at": "2026-11-10T05:08:06.056461Z",
   "monitoring_started_at": "2026-11-04T23:16:11.309183Z",
   "agents": [
     {
@@ -14,26 +14,26 @@
     {
       "id": "cl",
       "name": "Jean-Claude Van Damme (BTO)",
-      "last_reported_at": "2026-11-10T03:03:21Z",
-      "last_heartbeat_at": "2026-11-10T03:03:21Z",
+      "last_reported_at": "2026-11-10T05:00:06Z",
+      "last_heartbeat_at": "2026-11-10T05:00:06Z",
       "capacity": "available",
-      "capacity_reported_at": "2026-11-10T03:03:21Z"
+      "capacity_reported_at": "2026-11-10T04:03:23Z"
     },
     {
       "id": "billy",
       "name": "BillyBadass",
-      "last_reported_at": "2026-11-10T03:06:05.247401Z",
-      "last_heartbeat_at": "2026-11-10T03:06:05.247401Z",
-      "capacity": "available",
-      "capacity_reported_at": "2026-11-10T03:05:38.419000Z"
+      "last_reported_at": "2026-11-10T03:51:00.274070Z",
+      "last_heartbeat_at": "2026-11-10T03:51:00.274070Z",
+      "capacity": "low",
+      "capacity_reported_at": "2026-11-10T03:50:35.911000Z"
     },
     {
       "id": "noris",
       "name": "Seek Norris (Chuck)",
-      "last_reported_at": "2026-11-10T03:00:59Z",
-      "last_heartbeat_at": "2026-11-10T03:00:56Z",
+      "last_reported_at": "2026-11-10T04:01:08Z",
+      "last_heartbeat_at": "2026-11-10T04:01:08Z",
       "capacity": "available",
-      "capacity_reported_at": "2026-11-10T03:00:56Z"
+      "capacity_reported_at": "2026-11-10T04:00:53Z"
     }
   ]
 }
