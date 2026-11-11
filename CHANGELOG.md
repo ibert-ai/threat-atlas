@@ -1,3 +1,9 @@
+## AtlasSOC Desktop 0.7.0 — Linux x86_64 preview, 11 November 2026
+
+- First AtlasSOC Desktop build for Linux: the shared SOC view in a resizable X11/XWayland window, with keyboard controls, country focus by click and the wide layout. See docs/ATLAS-SOC-LINUX.md.
+- Preview scope: no Cloudflare Radar, update check, saved settings or fullscreen toggle. Checked by CI under a virtual display only; not tested on a physical Linux desktop.
+- Windows and macOS packages and the stable 0.7.0 release are unchanged.
+
 ## 0.4.8 — stable, 11 November 2026, build 16
 
 - Stable release for Windows x64 (MSI and portable ZIP), the Linux x86_64 windowed preview and macOS 12+ (Developer ID signed and notarized), by owner decision of 11 November 2026.

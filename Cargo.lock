@@ -2288,6 +2288,7 @@ name = "threat-atlas-linux"
 version = "0.4.8"
 dependencies = [
  "minifb",
+ "serde_json",
  "threat-atlas-core",
 ]
 

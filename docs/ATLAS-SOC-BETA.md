@@ -6,7 +6,7 @@ Standalone application for Windows x64 and macOS 14+ (Apple silicon and Intel). 
 
 Observe GreyNoise public threat-map records with provider classifications, received-record counters, country focus/inspection, severity filters and Realtime/Calm/Still display modes. Records are not unique attacks or guaranteed-current incidents. Animation is bounded and may sample received records. This is an observation tool, not prevention software or a production incident-response guarantee.
 
-macOS and Windows additionally support optional Cloudflare Radar past-day aggregate country values. They are not individual realtime attacks or inferred source/target events. Linux standalone is not included. Windows supports persistent native controls and mirrored windows; full SOC-wall roles/spanning are future work.
+macOS and Windows additionally support optional Cloudflare Radar past-day aggregate country values. They are not individual realtime attacks or inferred source/target events. A Linux x86_64 preview without Radar is a separate download; see [ATLAS-SOC-LINUX.md](ATLAS-SOC-LINUX.md). Windows supports persistent native controls and mirrored windows; full SOC-wall roles/spanning are future work.
 
 ## Installation
 
