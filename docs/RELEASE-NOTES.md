@@ -21,6 +21,7 @@ Windows binaries are unsigned. Windows SmartScreen may show a warning for the MS
 - Stable identity (no prerelease label on screen).
 - The code for an optional Seeker theme is included but is not selectable in release builds. Nothing changes on screen.
 - Internal: the on-screen clock can take a fixed offset in tests; no change in normal use.
+- Dependency lockfile: rustix 1.1.4 to 1.1.6 for advisory RUSTSEC-2026-0486. The crate is not compiled into the Windows, macOS or Linux x86_64 packages.
 
 ## Known bugs and test limits
 

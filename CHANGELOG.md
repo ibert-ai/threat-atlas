@@ -5,6 +5,7 @@
 - The numeric version advances to 0.4.8 because the Windows installer payload changed (MSI upgrade identity).
 - Contains the code for an optional Seeker theme; it is not selectable in release builds.
 - Released together with AtlasSOC Desktop 0.7.0 stable, build 13 (same code as 0.7.0 RC1 plus the macOS packaging fix for notarization).
+- Lockfile: rustix 1.1.4 to 1.1.6 for advisory RUSTSEC-2026-0486 (published 11 November 2026). The crate is not compiled into the Windows, macOS or Linux x86_64 packages.
 - Windows packages stay unsigned.
 
 ## 0.4.7-rc.1 — release candidate 1, 10 November 2026, build 15
