@@ -1,10 +1,17 @@
 # Versions and releases
 
-`version.json` is the authoritative release manifest. The official unsigned
-release is 0.4.0, build 8. Stable status does not imply trusted signatures.
-The current manifest prepares the 0.4.7-rc.1 candidate, build 15, for Windows x64
-and the Linux preview. It may be published as a prerelease only after exact-source
-automated checks and package validation; 0.4.5 stays latest stable. Historical assets remain unchanged.
+## Active preparation — 11 November 2026
+
+The owner reports that CL is building **0.4.8**. CL owns implementation and
+publication; this documentation update does not change the manifest or dispatch
+any release workflow. See [the 0.4.8 preparation record](RELEASE-0.4.8.md).
+
+`version.json` remains the authoritative package identity. At documentation base
+`78315c426b8eef5e263ec4b0cb87155a89419910` it still reads 0.4.7-rc.1, build 15.
+CL must reconcile the final 0.4.8 numeric version, build and prerelease identity
+with the exact release source before packaging. Do not infer that a documentation
+entry has bumped binaries, made a download available or passed acceptance.
+Historical assets remain unchanged; 0.4.5 is the latest stable recorded here.
 
 The maintainer authorized unsigned publication on 29 October 2026. For 0.4.0,
 the signing and manual acceptance gates below remain incomplete and must be
@@ -50,10 +57,12 @@ Windows ZIP names include the derived tag. See UPDATES.md for signature/key rule
 Do not overwrite old release assets with new payloads under an old tag/version.
 Keep previous downloads available and publish a new preview when the checks pass.
 
-The current manual publication job is restricted to v0.4.7-rc.1 and creates a
+At the documentation base, the manual publication job is restricted to v0.4.7-rc.1 and creates a
 Windows + Linux prerelease without replacing latest stable. Preparing or merging
 the version does not authorize publication. Review its exact tag guard, release
 notes, prerelease flag and acceptance evidence before manually dispatching it.
+CL must review and update the guard for the final 0.4.8 identity; the old guard
+is not a 0.4.8 publication path.
 
 ## Known bugs in every release
 
@@ -64,7 +73,7 @@ unverified reports and incomplete acceptance separately. Update
 version. Do not describe a candidate fix as available in an older download.
 
 ## OS-by-OS beta publication —4 November2026
-Robert directs each OS to ship its next beta after applicable checks pass,without waiting for another OS. A release may initially contain only one platform. List included/excluded assets and exact commit/version/test limits explicitly. Add a platform only from the same tagged source with matching metadata and accepted evidence;otherwise use a new version/tag rather than changing source of an existing release. Preserve historical binaries and signing/update restrictions. Old manual workflow remains guarded for0.4.2 and must not be used for this new release;MAC handles reviewed platform-specific publication.
+Robert directs each OS to ship its next beta after applicable checks pass,without waiting for another OS. A release may initially contain only one platform. List included/excluded assets and exact commit/version/test limits explicitly. Add a platform only from the same tagged source with matching metadata and accepted evidence;otherwise use a new version/tag rather than changing source of an existing release. Preserve historical binaries and signing/update restrictions. Historical 0.4.2 workflow guidance is superseded by the exact-source guard review above. CL handles owner-approved platform publication under the current publisher designation.
 
 ## Stable decision — 4 November 2026
 

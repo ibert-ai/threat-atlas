@@ -1,5 +1,13 @@
 # Known bugs and limitations
 
+## 0.4.8 preparation — 11 November 2026
+
+CL is building 0.4.8 according to the owner. No 0.4.8 fix, package acceptance
+or resolution of an earlier limitation is established by that report. Track
+exact-version findings in the [0.4.8 preparation record](RELEASE-0.4.8.md).
+The historical review and version scope below remain unchanged.
+
+
 Reviewed 31 October 2026. Applies to published 0.4.0, 0.4.1-rc.1 and 0.4.2-rc.1 unless stated otherwise. This is not a claim that no other bugs exist.
 
 ## Known behavior requiring improvement

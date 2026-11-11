@@ -1,3 +1,7 @@
+> **Next version: 0.4.8 is being built by CL** (owner report, 11 November 2026).
+> See [0.4.8 preparation and pending evidence](RELEASE-0.4.8.md).
+> The 0.4.7 notes below are historical and do not describe 0.4.8 packages or test results.
+
 # Threat Atlas screensaver 0.4.7-rc.1 — Windows + Linux release candidate
 
 Product 0.4.7, build 15. First release candidate after 0.4.6-beta.1 (Windows panorama, build 14) and the Linux 0.4.6-beta.1 preview. Screensaver behaviour is unchanged from the beta: the owner-approved two-display panorama with the seam over the Atlantic, and the standard single-display layout everywhere else. The renderer is shared with AtlasSOC Desktop 0.7.0 RC1, whose wide-window offset is zero in screensaver mode. The numeric version advances to 0.4.7 because the installer payload changed. 0.4.5 stays the latest stable release.

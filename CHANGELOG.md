@@ -1,3 +1,9 @@
+## 0.4.8 — build in progress, 11 November 2026
+
+- The owner reports that CL is building the next screensaver version, 0.4.8.
+- Final changes, prerelease suffix, build number, supported packages and exact-source validation remain to be recorded by CL.
+- This entry does not announce a release or transfer earlier test results to 0.4.8. See [the preparation record](docs/RELEASE-0.4.8.md).
+
 ## 0.4.7-rc.1 — release candidate 1, 10 November 2026, build 15
 
 - Release candidate for Windows x64 (MSI and portable ZIP) and the Linux x86_64 windowed preview, built from current main.

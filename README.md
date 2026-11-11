@@ -8,7 +8,13 @@ GreyNoise public threat-map feed. The header shows both UTC and the computer's l
 
 ## Release status
 
-The current release candidate is **0.4.7-rc.1**, build **15**, for Windows 10/11 x64
+**0.4.8 is being built by CL**, as reported by the owner on 11 November 2026.
+It is work in progress; a completed build, final source, package identity, platform
+coverage, test results and publication have not been verified here. See the
+[0.4.8 preparation record](docs/RELEASE-0.4.8.md).
+
+
+The preceding release candidate is **0.4.7-rc.1**, build **15**, for Windows 10/11 x64
 (MSI and portable ZIP) and the Linux x86_64 windowed preview. Screensaver behaviour is
 unchanged from 0.4.6-beta.1, including the two-display panorama. **0.4.5** stays the latest
 stable release. macOS is excluded until trusted signing is resolved.
