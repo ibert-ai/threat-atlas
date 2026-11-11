@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       publish:
-        description: Publish unsigned beta after all checks pass
+        description: Publish the stable release after all checks pass
         type: boolean
         default: false
 permissions:
@@ -125,7 +125,7 @@ jobs:
           set -euo pipefail
           python3 scripts/version.py --check
           TAG=$(python3 scripts/version.py --tag)
-          test "$TAG" = v0.4.7-rc.1
+          test "$TAG" = v0.4.8
           test -f "release/$(python3 scripts/version.py --msi-name)"
           cp README.md LICENSE SECURITY.md PRIVACY.md THIRD-PARTY-NOTICES.txt version.json release/windows/
           (cd release/windows && zip -r "../ThreatAtlas-Windows-$TAG.zip" .)
@@ -133,4 +133,4 @@ jobs:
           git archive --format=zip --prefix=ThreatAtlas/ HEAD > "release/ThreatAtlas-source-$TAG.zip"
           (cd release && sha256sum *.msi *.zip *.tar.gz > "ThreatAtlas-$TAG-SHA256SUMS.txt")
           printf '\nSource commit: `%s`\nProduct build: %s\n' "$GITHUB_SHA" "$(python3 scripts/version.py --build)" >> docs/RELEASE-NOTES.md
-          gh release create "$TAG" release/* --target "$GITHUB_SHA" --title 'Threat Atlas screensaver 0.4.7-rc.1 — Windows + Linux release candidate' --notes-file docs/RELEASE-NOTES.md --prerelease --latest=false
+          gh release create "$TAG" release/* --target "$GITHUB_SHA" --title 'Threat Atlas screensaver 0.4.8 — Stable · Windows + Linux' --notes-file docs/RELEASE-NOTES.md --latest
