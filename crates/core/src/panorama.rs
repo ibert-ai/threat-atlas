@@ -96,7 +96,7 @@ impl Renderer {
     pub fn new_panorama(width: u32, height: u32) -> Self {
         let view = View::new(width, height);
         let (map_width, map_height) = view.map_size();
-        let mut r = Self::blank_sized(view.width, FRAME_HEIGHT);
+        let mut r = Self::blank_sized(view.width, FRAME_HEIGHT, crate::render::SaverTheme::Classic);
         r.country_overlay = Pixmap::new(map_width, map_height).unwrap();
         r.panorama_base(&view);
         r.panorama = Some(view);
@@ -125,7 +125,12 @@ impl Renderer {
         }
         let (map_width, map_height) = view.map_size();
         let mut land = Pixmap::new(map_width, map_height).unwrap();
-        Self::draw_land(&mut land, view.map_transform(), view.thin(0.7));
+        Self::draw_land(
+            &mut land,
+            view.map_transform(),
+            view.thin(0.7),
+            &Palette::classic(),
+        );
         let (x, y) = view.map_origin();
         self.pix.draw_pixmap(
             x,

@@ -1,12 +1,30 @@
 //! Display both clocks from the same system-clock sample; receipt times remain UTC.
 use chrono::{DateTime, FixedOffset, Local, Utc};
 
+#[cfg(test)]
+thread_local! {
+    /// Fixed UTC offset (seconds east) for the current test thread, so a test can render a
+    /// machine-independent frame without changing the process environment.
+    pub(crate) static TEST_OFFSET: std::cell::Cell<Option<i32>> = const { std::cell::Cell::new(None) };
+}
+
+fn local_time(utc: DateTime<Utc>) -> DateTime<FixedOffset> {
+    #[cfg(test)]
+    if let Some(offset) = TEST_OFFSET
+        .with(|o| o.get())
+        .and_then(FixedOffset::east_opt)
+    {
+        return utc.with_timezone(&offset);
+    }
+    utc.with_timezone(&Local).fixed_offset()
+}
+
 pub fn labels(now_ms: u64) -> (String, String) {
     let utc = i64::try_from(now_ms)
         .ok()
         .and_then(DateTime::<Utc>::from_timestamp_millis);
     match utc {
-        Some(utc) => format_labels(utc, utc.with_timezone(&Local).fixed_offset()),
+        Some(utc) => format_labels(utc, local_time(utc)),
         None => ("UTC unavailable".into(), "LOCAL unavailable".into()),
     }
 }
