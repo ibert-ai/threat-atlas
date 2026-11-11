@@ -42,11 +42,9 @@ fn main() {
     snapshot.status = "LIVE".into();
     let mut renderer = Renderer::new_with_theme(SaverTheme::Seeker);
     let pixels = renderer.draw(&snapshot).to_vec();
-    let pix = tiny_skia::Pixmap::from_vec(
-        pixels,
-        tiny_skia::IntSize::from_wh(WIDTH, HEIGHT).unwrap(),
-    )
-    .unwrap();
+    let pix =
+        tiny_skia::Pixmap::from_vec(pixels, tiny_skia::IntSize::from_wh(WIDTH, HEIGHT).unwrap())
+            .unwrap();
     pix.save_png(Path::new(&output).join("seeker-test-fixture.png"))
         .unwrap();
     println!("seeker-test-fixture.png");

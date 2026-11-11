@@ -34,8 +34,12 @@ impl Session {
 
         #[cfg(debug_assertions)]
         {
-            let lat = std::env::var("THREAT_ATLAS_LAT").ok().and_then(|v| v.parse::<f64>().ok());
-            let lon = std::env::var("THREAT_ATLAS_LON").ok().and_then(|v| v.parse::<f64>().ok());
+            let lat = std::env::var("THREAT_ATLAS_LAT")
+                .ok()
+                .and_then(|v| v.parse::<f64>().ok());
+            let lon = std::env::var("THREAT_ATLAS_LON")
+                .ok()
+                .and_then(|v| v.parse::<f64>().ok());
             if let (Some(lat), Some(lon)) = (lat, lon) {
                 renderer.set_local_location(lat, lon);
             }
@@ -60,11 +64,19 @@ impl Session {
         self.feed.snapshot()
     }
 }
+/// Set the position the Seeker rings are centred on.
+///
+/// # Safety
+/// `session` must be null or a pointer returned by `ta_new` that has not been freed.
 #[no_mangle]
 pub unsafe extern "C" fn ta_set_location(session: *mut Session, lat: f64, lon: f64) {
     // Reject anything that is not a real coordinate: NaN, infinities and out-of-range values
     // would place the rings nowhere or on an undefined projection (CL review requirement).
-    if !lat.is_finite() || !lon.is_finite() || !(-90.0..=90.0).contains(&lat) || !(-180.0..=180.0).contains(&lon) {
+    if !lat.is_finite()
+        || !lon.is_finite()
+        || !(-90.0..=90.0).contains(&lat)
+        || !(-180.0..=180.0).contains(&lon)
+    {
         return;
     }
     if let Some(session) = session.as_mut() {

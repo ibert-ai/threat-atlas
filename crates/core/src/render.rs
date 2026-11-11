@@ -10,16 +10,11 @@ pub mod soc;
 const CYAN: [u8; 3] = [68, 220, 225];
 const MUTED: [u8; 3] = [100, 139, 159];
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum SaverTheme {
+    #[default]
     Classic,
     Seeker,
-}
-
-impl Default for SaverTheme {
-    fn default() -> Self {
-        Self::Classic
-    }
 }
 
 #[derive(Clone, Copy)]
@@ -188,12 +183,24 @@ impl Renderer {
         r.text(35, 28, 30, "THREAT ATLAS", pal.text);
         if pal.seeker {
             r.text(392, 30, 22, "// THE SEEKER", pal.gold);
-            r.text(36, 70, 14, "SECURITY OPERATIONS / GLOBAL TELEMETRY / NAUTICAL THEME", pal.muted);
+            r.text(
+                36,
+                70,
+                14,
+                "SECURITY OPERATIONS / GLOBAL TELEMETRY / NAUTICAL THEME",
+                pal.muted,
+            );
             r.text(1044, 225, 17, "RECENT OBSERVATIONS", pal.gold);
             r.text(45, 750, 14, "RECEIVED RECORDS / SECOND", pal.muted);
             r.text(35,875,12,"GREYNOISE PUBLIC THREAT MAP | RECEIPT TIMES UTC | COUNTS ARE RECEIVED RECORDS, NOT UNIQUE ATTACKS | THE SEEKER THEME",pal.muted);
         } else {
-            r.text(36, 70, 14, "SECURITY OPERATIONS / GLOBAL TELEMETRY", pal.muted);
+            r.text(
+                36,
+                70,
+                14,
+                "SECURITY OPERATIONS / GLOBAL TELEMETRY",
+                pal.muted,
+            );
             r.text(1044, 225, 17, "RECENT OBSERVATIONS", pal.cyan);
             r.text(45, 750, 14, "RECEIVED RECORDS / SECOND", pal.muted);
             r.text(35,875,12,"GREYNOISE PUBLIC THREAT MAP | RECEIPT TIMES UTC | COUNTS ARE RECEIVED RECORDS, NOT UNIQUE ATTACKS",pal.muted);
@@ -295,7 +302,8 @@ impl Renderer {
     /// Background, panels, graticule and land shared by the screensaver and the standalone SOC view.
     fn base_map(&mut self) {
         let pal = self.pal;
-        self.pix.fill(Color::from_rgba8(pal.bg[0], pal.bg[1], pal.bg[2], 255));
+        self.pix
+            .fill(Color::from_rgba8(pal.bg[0], pal.bg[1], pal.bg[2], 255));
         for (x, y, w, h) in [
             (MAP_X, MAP_Y, MAP_W, MAP_H),
             (1025., 205., 390., 650.),
@@ -319,6 +327,7 @@ impl Renderer {
         Self::draw_land(&mut self.pix, Transform::identity(), 0.7, &pal);
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn rect_outline(&mut self, x: f32, y: f32, w: f32, h: f32, c: [u8; 3], a: u8, width: f32) {
         if let Some(rect) = Rect::from_xywh(x, y, w, h) {
             let mut p = Paint::default();
@@ -327,7 +336,10 @@ impl Renderer {
             self.pix.stroke_path(
                 &path,
                 &p,
-                &Stroke { width, ..Default::default() },
+                &Stroke {
+                    width,
+                    ..Default::default()
+                },
                 Transform::identity(),
                 None,
             );
@@ -347,13 +359,14 @@ impl Renderer {
         if let Some(path) = b.finish() {
             let mut p = Paint::default();
             p.set_color_rgba8(c[0], c[1], c[2], a);
-            self.pix.fill_path(&path, &p, FillRule::Winding, Transform::identity(), None);
+            self.pix
+                .fill_path(&path, &p, FillRule::Winding, Transform::identity(), None);
         }
     }
 
     fn ring_clipped(&mut self, cx: f32, cy: f32, r: f32, c: [u8; 3], a: u8, width: f32) {
         let inside = |x: f32, y: f32| {
-            x >= MAP_X && x <= MAP_X + MAP_W && y >= MAP_Y && y <= MAP_Y + MAP_H
+            (MAP_X..=MAP_X + MAP_W).contains(&x) && (MAP_Y..=MAP_Y + MAP_H).contains(&y)
         };
         let mut prev: Option<(f32, f32)> = None;
         for i in 0..=360 {
@@ -384,9 +397,13 @@ impl Renderer {
             let r2 = if deg % 30 == 0 { cr - 16. } else { cr - 9. };
             let alpha = if deg % 30 == 0 { 170 } else { 90 };
             self.line(
-                ccx + r1 * a.cos(), ccy + r1 * a.sin(),
-                ccx + r2 * a.cos(), ccy + r2 * a.sin(),
-                gold, 1.2, alpha,
+                ccx + r1 * a.cos(),
+                ccy + r1 * a.sin(),
+                ccx + r2 * a.cos(),
+                ccy + r2 * a.sin(),
+                gold,
+                1.2,
+                alpha,
             );
         }
         for k in 0..8 {
@@ -396,8 +413,10 @@ impl Renderer {
             let perp = a + std::f32::consts::FRAC_PI_2;
             let tip = (ccx + long * a.cos(), ccy + long * a.sin());
             let l = (ccx + wdt * perp.cos(), ccy + wdt * perp.sin());
-            let r = (ccx + wdt * (a - std::f32::consts::FRAC_PI_2).cos(),
-                     ccy + wdt * (a - std::f32::consts::FRAC_PI_2).sin());
+            let r = (
+                ccx + wdt * (a - std::f32::consts::FRAC_PI_2).cos(),
+                ccy + wdt * (a - std::f32::consts::FRAC_PI_2).sin(),
+            );
             let col = if k % 2 == 0 { gold } else { cyan };
             self.poly(&[tip, l, r], col, if k % 2 == 0 { 70 } else { 45 });
         }
@@ -434,7 +453,13 @@ impl Renderer {
             rcx as i32 + 10,
             rcy as i32 - 8,
             8,
-            &format!("LOCAL POSITION {:.1}°{} {:.1}°{}", lat.abs(), ns, lon.abs(), ew),
+            &format!(
+                "LOCAL POSITION {:.1}°{} {:.1}°{}",
+                lat.abs(),
+                ns,
+                lon.abs(),
+                ew
+            ),
             gold,
         );
     }
@@ -467,7 +492,12 @@ impl Renderer {
                         let mut paint = Paint::default();
                         paint.set_color_rgba8(pal.land[0], pal.land[1], pal.land[2], 255);
                         target.fill_path(&path, &paint, FillRule::EvenOdd, transform, None);
-                        paint.set_color_rgba8(pal.coast[0], pal.coast[1], pal.coast[2], pal.coast_alpha);
+                        paint.set_color_rgba8(
+                            pal.coast[0],
+                            pal.coast[1],
+                            pal.coast[2],
+                            pal.coast_alpha,
+                        );
                         target.stroke_path(
                             &path,
                             &paint,
@@ -594,7 +624,9 @@ impl Renderer {
         for (i, (label, value)) in boxes.iter().enumerate() {
             let x = 35 + i as i32 * 280;
             self.rect(x as f32, 112., 265., 70., pal.counter, 255);
-            if let Some((c, a)) = pal.counter_border { self.rect_outline(x as f32, 112., 265., 70., c, a, 1.); }
+            if let Some((c, a)) = pal.counter_border {
+                self.rect_outline(x as f32, 112., 265., 70., c, a, 1.);
+            }
             self.text(x + 12, 119, 12, label, pal.muted);
             let value: String = value.chars().take(22).collect();
             self.text(
@@ -826,7 +858,11 @@ impl Renderer {
             80,
             14,
             &format!("FEED / {}", s.status),
-            if s.status == "LIVE" { pal.color(2) } else { pal.color(1) },
+            if s.status == "LIVE" {
+                pal.color(2)
+            } else {
+                pal.color(1)
+            },
         );
         for (i, (label, value)) in [
             ("RECORDS", s.records),
@@ -840,14 +876,20 @@ impl Renderer {
         {
             let x = 35 + i as i32 * 280;
             self.rect(x as f32, 112., 265., 70., pal.counter, 255);
-            if let Some((c, a)) = pal.counter_border { self.rect_outline(x as f32, 112., 265., 70., c, a, 1.); }
+            if let Some((c, a)) = pal.counter_border {
+                self.rect_outline(x as f32, 112., 265., 70., c, a, 1.);
+            }
             self.text(x + 12, 119, 12, label, pal.muted);
             self.text(
                 x + 12,
                 142,
                 25,
                 &value.to_string(),
-                if i > 0 && i < 4 { pal.color(i - 1) } else { pal.cyan },
+                if i > 0 && i < 4 {
+                    pal.color(i - 1)
+                } else {
+                    pal.cyan
+                },
             );
         }
         for (i, r) in s.recent.iter().take(9).enumerate() {
@@ -886,7 +928,14 @@ impl Renderer {
         let max = *s.rate.iter().max().unwrap_or(&1);
         for (i, v) in s.rate.iter().enumerate() {
             let h = *v as f32 / max.max(1) as f32 * 55.;
-            self.rect(45. + i as f32 * 10.4, 835. - h, 7., h.max(1.), pal.cyan, 180);
+            self.rect(
+                45. + i as f32 * 10.4,
+                835. - h,
+                7.,
+                h.max(1.),
+                pal.cyan,
+                180,
+            );
         }
         if s.status != "LIVE" {
             self.rect(210., 430., 600., 70., [5, 12, 21], 235);
@@ -933,14 +982,13 @@ mod tests {
         assert!(!r.pal.seeker);
     }
 
-
     /// Guards "classic unchanged" in CI: the Classic frame for a fixed snapshot must hash to the
-    /// pinned value. Runs with TZ=UTC so the UTC offset line cannot make the hash machine-dependent.
+    /// pinned value. The local clock uses a fixed offset for this thread only, and the release
+    /// label is blanked, so neither the machine's time zone nor a version bump changes the hash.
     #[test]
     fn classic_frame_matches_pinned_hash() {
         use sha2::{Digest, Sha256};
-        let prev = std::env::var("TZ").ok();
-        std::env::set_var("TZ", "UTC");
+        crate::clock::TEST_OFFSET.with(|o| o.set(Some(0)));
         let mut r = Renderer::new();
         let mut state = State::default();
         state.ingest(
@@ -948,14 +996,20 @@ mod tests {
             1000,
         );
         let snap = state.snapshot(1500);
-        let px = r.draw(&snap).to_vec();
-        match prev {
-            Some(v) => std::env::set_var("TZ", v),
-            None => std::env::remove_var("TZ"),
+        let mut px = r.draw(&snap).to_vec();
+        crate::clock::TEST_OFFSET.with(|o| o.set(None));
+        for y in 868..HEIGHT as usize {
+            let row = y * WIDTH as usize * 4;
+            px[row + 1110 * 4..row + WIDTH as usize * 4].fill(0);
         }
-        let d = Sha256::digest(&px);
-        let hex: String = d.iter().map(|b| format!("{:02x}", b)).collect();
-        assert_eq!(hex, "b5e88106cfd869ed8faf3ee1d84a7865baf579d86b6e602c8aed2949d0e2f9c5", "Classic frame changed");
+        let hex: String = Sha256::digest(&px)
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect();
+        assert_eq!(
+            hex, "50306dd6d87fcd29a531fa7d87a5c23cefad229ed6533f1ee16a5553a2f0b3e5",
+            "Classic frame changed"
+        );
     }
     #[test]
     fn seeker_theme_renders_a_full_frame() {

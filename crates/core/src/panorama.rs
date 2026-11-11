@@ -125,7 +125,12 @@ impl Renderer {
         }
         let (map_width, map_height) = view.map_size();
         let mut land = Pixmap::new(map_width, map_height).unwrap();
-        Self::draw_land(&mut land, view.map_transform(), view.thin(0.7), &Palette::classic());
+        Self::draw_land(
+            &mut land,
+            view.map_transform(),
+            view.thin(0.7),
+            &Palette::classic(),
+        );
         let (x, y) = view.map_origin();
         self.pix.draw_pixmap(
             x,

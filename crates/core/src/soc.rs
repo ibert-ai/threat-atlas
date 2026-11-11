@@ -304,7 +304,12 @@ impl Renderer {
             let (c, d) = xy(180., lat as f64);
             self.line(a, b, c, d, DASH_GRID, 1., 200);
         }
-        Self::draw_land(&mut self.pix, Transform::identity(), 0.7, &super::Palette::classic());
+        Self::draw_land(
+            &mut self.pix,
+            Transform::identity(),
+            0.7,
+            &super::Palette::classic(),
+        );
         for &(x, y, tw, th, label) in &tiles {
             self.tile_frame(x, y, tw, th);
             self.text(x as i32 + 10, y as i32 + 8, 11, label, ACCENT);
