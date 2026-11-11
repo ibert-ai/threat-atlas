@@ -1,3 +1,13 @@
+## 0.4.8 — stable, 11 November 2026, build 16
+
+- Stable release for Windows x64 (MSI and portable ZIP), the Linux x86_64 windowed preview and macOS 12+ (Developer ID signed and notarized), by owner decision of 11 November 2026.
+- Promotes the 0.4.7-rc.1 implementation: the two-display Windows panorama and the renderer shared with AtlasSOC Desktop. The Classic look is unchanged and now pinned by an automated test.
+- The numeric version advances to 0.4.8 because the Windows installer payload changed (MSI upgrade identity).
+- Contains the code for an optional Seeker theme; it is not selectable in release builds.
+- Released together with AtlasSOC Desktop 0.7.0 stable, build 13 (same code as 0.7.0 RC1 plus the macOS packaging fix for notarization).
+- Lockfile: rustix 1.1.4 to 1.1.6 for advisory RUSTSEC-2026-0486 (published 11 November 2026). The crate is not compiled into the Windows, macOS or Linux x86_64 packages.
+- Windows packages stay unsigned.
+
 ## 0.4.7-rc.1 — release candidate 1, 10 November 2026, build 15
 
 - Release candidate for Windows x64 (MSI and portable ZIP) and the Linux x86_64 windowed preview, built from current main.

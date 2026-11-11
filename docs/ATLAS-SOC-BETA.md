@@ -1,6 +1,6 @@
-# AtlasSOC 0.7.0 RC1 (release candidate 1) — build 12
+# AtlasSOC Desktop 0.7.0 — stable, build 13
 
-Standalone beta for Windows x64 and macOS 14+ (Apple silicon and Intel). Separate from the existing Threat Atlas screensaver. Product: AtlasSOC by Ibert Consulting; Sentinel is the current working icon, with final design selection still open.
+Standalone application for Windows x64 and macOS 14+ (Apple silicon and Intel). Separate from the existing Threat Atlas screensaver. Product: AtlasSOC by Ibert Consulting; Sentinel is the current working icon, with final design selection still open.
 
 ## What it does
 
@@ -10,9 +10,9 @@ macOS and Windows additionally support optional Cloudflare Radar past-day aggreg
 
 ## Installation
 
-**Windows:** run `AtlasSOC-Setup-0.7.0-build12.exe` and choose **Just me** (no administrator rights) or **Everyone**, plus optional desktop and Start menu shortcuts; or extract the portable `AtlasSOC-Windows-x64-v0.7.0-build12.zip` into a user-owned folder and run `AtlasSOC.exe`. Windows 10/11 x64. Both are unsigned: follow OS trust policy and do not disable security protections. At start AtlasSOC asks `api.github.com` whether a newer AtlasSOC exists and offers it in the right-click menu; nothing installs without your confirmation. Settings/consent stay in `%LOCALAPPDATA%\ThreatAtlasSOC`. Existing screensaver installers are separate products.
+**Windows:** run `AtlasSOC-Setup-0.7.0-build13.exe` and choose **Just me** (no administrator rights) or **Everyone**, plus optional desktop and Start menu shortcuts; or extract the portable `AtlasSOC-Windows-x64-v0.7.0-build13.zip` into a user-owned folder and run `AtlasSOC.exe`. Windows 10/11 x64. Both are unsigned: follow OS trust policy and do not disable security protections. At start AtlasSOC asks `api.github.com` whether a newer AtlasSOC exists and offers it in the right-click menu; nothing installs without your confirmation. Settings/consent stay in `%LOCALAPPDATA%\ThreatAtlasSOC`. Existing screensaver installers are separate products.
 
-**macOS:** unzip `AtlasSOC-macOS-universal-v0.7.0-build12.zip`, then copy `AtlasSOC.app` to your chosen Applications location. Requires macOS14+. The app is ad-hoc signed, not Developer ID signed or notarised; Gatekeeper or organisational policy may refuse to open it. Do not disable Gatekeeper or strip quarantine as a workaround. It installs no startup agent or automatic updater; check the releases page for new versions. Quit before replacement/removal. The existing development bundle identifier `dev.threatatlas.private.radar` and Radar support/Keychain locations are retained for continuity; this bundle is separate from the stable screensaver.
+**macOS:** unzip `AtlasSOC-macOS-universal-v0.7.0-build13-signed.zip`, then copy `AtlasSOC.app` to your chosen Applications location. Requires macOS14+. The app is signed with Developer ID (Robert Ibert, team 7NXP86HMVH), notarised by Apple and stapled; organisational policy may still restrict it. Do not disable Gatekeeper or strip quarantine as a workaround. It installs no startup agent or automatic updater; check the releases page for new versions. Quit before replacement/removal. The existing development bundle identifier `dev.threatatlas.private.radar` and Radar support/Keychain locations are retained for continuity; this bundle is separate from the stable screensaver.
 
 The Windows installer offers `%LocalAppData%\Programs\AtlasSOC` for one user (default, no elevation) or `%ProgramFiles%\AtlasSOC` for all users, with independent desktop and Start menu shortcut choices; it upgrades an earlier AtlasSOC installation in place. See ATLAS-SOC-INSTALLER.md.
 
@@ -24,7 +24,7 @@ After consent, GreyNoise uses `wss://threat-map-api.greynoise.io/ws` with TLS va
 
 ## Known limits
 
-Unsigned Windows and ad-hoc/unnotarised Mac distribution; no trusted automatic update. No standalone installer/upgrade acceptance, physical mixed-DPI/multimonitor/hotplug/Intel-hardware certification, eight-hour soak or full sleep/wake validation. Mirroring is not per-display SOC wall roles or spanning. Dense Radar labels can overlap. Immediate feed-worker shutdown can be delayed during DNS/connect. See SECURITY.md and the versioned verification record; passing offline smoke does not prove live networking or physical hardware coverage.
+Unsigned Windows distribution (the Mac app is Developer ID signed and notarised); no trusted automatic update. No standalone installer/upgrade acceptance, physical mixed-DPI/multimonitor/hotplug/Intel-hardware certification, eight-hour soak or full sleep/wake validation. Mirroring is not per-display SOC wall roles or spanning. Dense Radar labels can overlap. Immediate feed-worker shutdown can be delayed during DNS/connect. See SECURITY.md and the versioned verification record; passing offline smoke does not prove live networking or physical hardware coverage.
 
 Unfiltered audit reports three inherited warnings: proc-macro-error1.0.4/RUSTSEC-2024-0370 and glib0.18.5/RUSTSEC-2024-0429 in the Linux-only GTK branch, and ttf-parser0.25.1/RUSTSEC-2026-0192 in the bundled immutable-font path. Existing reviewed exceptions remain unchanged; this is not a clean unfiltered audit. No Linux binary or user/network-font loading is introduced. Maintenance work remains tracked. No claim of vulnerability-free software.
 

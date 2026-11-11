@@ -2,9 +2,9 @@
 
 `version.json` is the authoritative release manifest. The official unsigned
 release is 0.4.0, build 8. Stable status does not imply trusted signatures.
-The current manifest prepares the 0.4.7-rc.1 candidate, build 15, for Windows x64
-and the Linux preview. It may be published as a prerelease only after exact-source
-automated checks and package validation; 0.4.5 stays latest stable. Historical assets remain unchanged.
+The current manifest is the stable 0.4.8 release, build 16, for Windows x64, the
+Linux preview and macOS. It is published only after exact-source automated checks
+and package validation, and replaces 0.4.5 as latest stable. Historical assets remain unchanged.
 
 The maintainer authorized unsigned publication on 29 October 2026. For 0.4.0,
 the signing and manual acceptance gates below remain incomplete and must be
@@ -50,8 +50,10 @@ Windows ZIP names include the derived tag. See UPDATES.md for signature/key rule
 Do not overwrite old release assets with new payloads under an old tag/version.
 Keep previous downloads available and publish a new preview when the checks pass.
 
-The current manual publication job is restricted to v0.4.7-rc.1 and creates a
-Windows + Linux prerelease without replacing latest stable. Preparing or merging
+The current manual publication job is restricted to v0.4.8 and creates the
+Windows + Linux stable release as latest. AtlasSOC releases share this repository:
+always create them with `--latest=false`, because the screensaver updaters read
+`releases/latest`. Preparing or merging
 the version does not authorize publication. Review its exact tag guard, release
 notes, prerelease flag and acceptance evidence before manually dispatching it.
 
@@ -69,3 +71,7 @@ Robert directs each OS to ship its next beta after applicable checks pass,withou
 ## Stable decision — 4 November 2026
 
 Robert authorizes Windows/Linux stable0.4.5/build13 from the approved0.4.4RC implementation after final exact-source checks. The numeric version advances for new MSI payload identity;prerelease=null. macOS is excluded while Gatekeeper trust is unresolved. Unsigned publication and disclosed manual/hardware test limits remain explicitly accepted;stable status does not manufacture missing results or weaken updater signing enforcement. The earlier prerelease-only checklist applies to previews;this scoped owner decision authorizes this stable publication.
+
+## Stable decision — 11 November 2026
+
+Robert (owner) orders the stable release now instead of Friday 13 November: screensaver 0.4.8/build 16 and AtlasSOC Desktop 0.7.0/build 13, built from main after the Seeker theme merge (not selectable in release builds). The screensaver's numeric version advances from 0.4.7-rc.1 for MSI payload identity; prerelease=null for both. Windows stays unsigned; macOS packages are Developer ID signed and notarized. Disclosed hardware/manual test limits remain accepted and are listed in the release notes; stable status does not manufacture missing results.

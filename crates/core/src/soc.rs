@@ -1499,7 +1499,7 @@ mod tests {
         assert_eq!(desktop["build"], windows["build"]);
         let label = crate::render::release_label(&desktop.to_string());
         let (version, build) = (desktop["version"].as_str().unwrap(), &desktop["build"]);
-        assert!(label.starts_with(&format!("v{version}-")), "{label}");
+        assert!(label.starts_with(&format!("v{version}")), "{label}");
         assert!(label.ends_with(&format!("| b{build}")), "{label}");
         let saver_label = crate::render::release_label(&saver.to_string());
         assert_ne!(label, saver_label);

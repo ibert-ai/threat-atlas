@@ -8,12 +8,18 @@ GreyNoise public threat-map feed. The header shows both UTC and the computer's l
 
 ## Release status
 
-The current release candidate is **0.4.7-rc.1**, build **15**, for Windows 10/11 x64
-(MSI and portable ZIP) and the Linux x86_64 windowed preview. Screensaver behaviour is
-unchanged from 0.4.6-beta.1, including the two-display panorama. **0.4.5** stays the latest
-stable release. macOS is excluded until trusted signing is resolved.
+The latest stable release is **0.4.8**, build **16**, for Windows 10/11 x64 (MSI and
+portable ZIP), the Linux x86_64 windowed preview and macOS 12+ (Developer ID signed and
+notarized). It promotes the 0.4.7-rc.1 implementation, including the two-display Windows
+panorama. Windows packages are unsigned. Stable is the maintainer's release decision, not a
+claim that every hardware/manual check passed; see the release notes for test limits.
+[Release downloads](https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.8).
 
-The **0.4.5 stable release**, build **13**, promotes the approved 0.4.4-rc.1 implementation for Windows x64 (all-users MSI and portable ZIP) and Linux x86_64 (windowed X11/XWayland preview).
+**AtlasSOC Desktop 0.7.0**, build **13**, is the stable standalone SOC view for Windows x64
+and macOS 14+; see [docs/ATLAS-SOC-BETA.md](docs/ATLAS-SOC-BETA.md) and its
+[release downloads](https://github.com/ibert-ai/threat-atlas/releases/tag/atlassoc-v0.7.0).
+
+The earlier **0.4.5 stable release**, build **13**, promoted the approved 0.4.4-rc.1 implementation for Windows x64 (all-users MSI and portable ZIP) and Linux x86_64 (windowed X11/XWayland preview).
 [Release downloads](https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.5).
 No macOS package is included: Gatekeeper trust remains unresolved. Stable is the maintainer's release decision, not trusted signing or a claim that every hardware/manual check passed. Lock-on-resume and browser-downloaded MSI installation remain UNTESTED; see release notes. Existing releases are preserved.
 
