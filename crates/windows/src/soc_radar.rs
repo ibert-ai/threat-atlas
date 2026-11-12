@@ -13,6 +13,7 @@ use std::{
 };
 use threat_atlas_core::{
     feed::now_ms,
+    i18n::{self, Language},
     radar::{self, Aggregate},
     radar_poll::{self, PollState, Response, Status},
 };
@@ -88,9 +89,9 @@ fn delete_token() {
 }
 
 /// Asks with the Windows credential prompt, so the token never passes through app UI text.
-fn prompt_token(owner: HWND) -> Option<String> {
-    let caption = wide("AtlasSOC · Cloudflare Radar");
-    let message = wide("Paste your own Cloudflare API token with Account / Radar / Read as the password. It is stored in Windows Credential Manager for this user.");
+fn prompt_token(owner: HWND, lang: Language) -> Option<String> {
+    let caption = wide(i18n::tr(lang, "radar.token_title"));
+    let message = wide(i18n::tr(lang, "radar.token_body"));
     let target = wide(TARGET);
     let mut user = wide(ACCOUNT);
     user.resize(CREDUI_MAX_USERNAME_LENGTH as usize + 1, 0);
@@ -448,13 +449,13 @@ impl Radar {
             }
         });
     }
-    pub fn set_token(&self, owner: HWND) {
-        let Some(token) = prompt_token(owner) else {
+    pub fn set_token(&self, owner: HWND, lang: Language) {
+        let Some(token) = prompt_token(owner, lang) else {
             return;
         };
         if !valid_token(&token) || !write_token(&token) {
-            let text = wide("That token could not be saved. No request was sent.");
-            let title = wide("AtlasSOC");
+            let text = wide(i18n::tr(lang, "radar.save_error"));
+            let title = wide(i18n::tr(lang, "radar.token_title"));
             // SAFETY: both strings are NUL-terminated and outlive the call.
             unsafe { MessageBoxW(owner, text.as_ptr(), title.as_ptr(), MB_OK | MB_ICONWARNING) };
             return;

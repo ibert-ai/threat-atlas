@@ -42,7 +42,12 @@
     "title.initial": "AtlasSOC by Ibert Consulting - right-click or F1 for controls",
     "title.controls": "right-click or F1: controls",
     "title.frozen": "DISPLAY FROZEN - FEED CONTINUES",
-    "title.offline": "OFFLINE TEST - NO NETWORK"
+    "title.offline": "OFFLINE TEST - NO NETWORK",
+    "radar.token_title": "AtlasSOC · Cloudflare Radar",
+    "radar.token_body": "Paste your own Cloudflare API token with Account / Radar / Read as the password. It is stored in Windows Credential Manager for this user.",
+    "radar.save_error": "That token could not be saved. No request was sent.",
+    "update.title": "Update AtlasSOC",
+    "update.body": "{label}\n\nAtlasSOC will close, download the installer from GitHub, check it and replace this version. Windows may ask for approval. The app then opens again and asks you to review the licence for the new version.\n\nContinue?"
   },
   "sv": {
     "app.starting": "Threat Atlas startar…",
@@ -87,7 +92,12 @@
     "title.initial": "AtlasSOC av Ibert Consulting – högerklicka eller F1 för kontroller",
     "title.controls": "högerklicka eller F1: kontroller",
     "title.frozen": "VISNINGEN FRYST – FLÖDET FORTSÄTTER",
-    "title.offline": "OFFLINETEST – INGET NÄTVERK"
+    "title.offline": "OFFLINETEST – INGET NÄTVERK",
+    "radar.token_title": "AtlasSOC · Cloudflare Radar",
+    "radar.token_body": "Klistra in din egen Cloudflare API-token med Account / Radar / Read som lösenord. Den sparas i Windows Credential Manager för den här användaren.",
+    "radar.save_error": "Token kunde inte sparas. Ingen begäran skickades.",
+    "update.title": "Uppdatera AtlasSOC",
+    "update.body": "{label}\n\nAtlasSOC stängs, hämtar installationsprogrammet från GitHub, kontrollerar det och ersätter den här versionen. Windows kan begära godkännande. Sedan öppnas appen igen och ber dig granska licensen för den nya versionen.\n\nFortsätt?"
   },
   "de": {
     "app.starting": "Threat Atlas wird gestartet…",
@@ -132,7 +142,12 @@
     "title.initial": "AtlasSOC von Ibert Consulting – Rechtsklick oder F1 für Steuerung",
     "title.controls": "Rechtsklick oder F1: Steuerung",
     "title.frozen": "ANZEIGE EINGEFROREN – FEED LÄUFT WEITER",
-    "title.offline": "OFFLINE-TEST – KEIN NETZWERK"
+    "title.offline": "OFFLINE-TEST – KEIN NETZWERK",
+    "radar.token_title": "AtlasSOC · Cloudflare Radar",
+    "radar.token_body": "Füge dein eigenes Cloudflare-API-Token mit Account / Radar / Read als Passwort ein. Es wird für diesen Benutzer im Windows-Anmeldeinformationsmanager gespeichert.",
+    "radar.save_error": "Das Token konnte nicht gespeichert werden. Es wurde keine Anfrage gesendet.",
+    "update.title": "AtlasSOC aktualisieren",
+    "update.body": "{label}\n\nAtlasSOC wird geschlossen, lädt das Installationsprogramm von GitHub herunter, prüft es und ersetzt diese Version. Windows kann eine Bestätigung anfordern. Danach öffnet sich die App erneut und bittet dich, die Lizenz für die neue Version zu prüfen.\n\nFortfahren?"
   },
   "es": {
     "app.starting": "Threat Atlas se está iniciando…",
@@ -177,7 +192,12 @@
     "title.initial": "AtlasSOC de Ibert Consulting: clic derecho o F1 para los controles",
     "title.controls": "clic derecho o F1: controles",
     "title.frozen": "PANTALLA CONGELADA: EL FLUJO CONTINÚA",
-    "title.offline": "PRUEBA SIN CONEXIÓN: SIN RED"
+    "title.offline": "PRUEBA SIN CONEXIÓN: SIN RED",
+    "radar.token_title": "AtlasSOC · Cloudflare Radar",
+    "radar.token_body": "Pega tu propio token de API de Cloudflare con Account / Radar / Read como contraseña. Se guarda en el Administrador de credenciales de Windows para este usuario.",
+    "radar.save_error": "No se pudo guardar el token. No se envió ninguna solicitud.",
+    "update.title": "Actualizar AtlasSOC",
+    "update.body": "{label}\n\nAtlasSOC se cerrará, descargará el instalador de GitHub, lo comprobará y reemplazará esta versión. Windows puede pedir aprobación. Después, la app se abrirá de nuevo y te pedirá revisar la licencia de la nueva versión.\n\n¿Continuar?"
   },
   "it": {
     "app.starting": "Threat Atlas si sta avviando…",
@@ -222,6 +242,11 @@
     "title.initial": "AtlasSOC di Ibert Consulting – clic destro o F1 per i controlli",
     "title.controls": "clic destro o F1: controlli",
     "title.frozen": "VISUALIZZAZIONE BLOCCATA – IL FLUSSO CONTINUA",
-    "title.offline": "TEST OFFLINE – NESSUNA RETE"
+    "title.offline": "TEST OFFLINE – NESSUNA RETE",
+    "radar.token_title": "AtlasSOC · Cloudflare Radar",
+    "radar.token_body": "Incolla il tuo token API Cloudflare con Account / Radar / Read come password. Viene salvato in Windows Credential Manager per questo utente.",
+    "radar.save_error": "Impossibile salvare il token. Nessuna richiesta è stata inviata.",
+    "update.title": "Aggiorna AtlasSOC",
+    "update.body": "{label}\n\nAtlasSOC si chiuderà, scaricherà il programma di installazione da GitHub, lo verificherà e sostituirà questa versione. Windows potrebbe chiedere approvazione. Poi l'app si riaprirà e ti chiederà di rivedere la licenza per la nuova versione.\n\nContinuare?"
   }
 }

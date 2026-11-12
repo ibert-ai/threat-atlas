@@ -282,16 +282,14 @@ fn menu(
 }
 
 /// Asks first, then hands over to the update script. Returns true when the app should close.
-fn start_update(window: &Window, update: &UpdateStatus) -> bool {
-    let text = format!(
-        "{}\n\nAtlasSOC will close, download the installer from GitHub, check it and replace this version. Windows may ask for approval. The app then opens again and asks you to review the licence for the new version.\n\nContinue?",
-        update.label().trim_end_matches("...")
-    );
+fn start_update(window: &Window, update: &UpdateStatus, lang: Language) -> bool {
+    let text =
+        i18n::tr(lang, "update.body").replace("{label}", update.label().trim_end_matches("..."));
     let answer = unsafe {
         MessageBoxW(
             window.hwnd() as HWND,
             wide(&text).as_ptr(),
-            wide("Update AtlasSOC").as_ptr(),
+            wide(i18n::tr(lang, "update.title")).as_ptr(),
             MB_YESNO | MB_ICONQUESTION,
         )
     };
@@ -487,13 +485,13 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                     14 => { settings = Settings::default(); rebuild = true; }
                     15 => help(&display.window, settings.language),
                     17 => { if let Some(radar) = &radar { radar.toggle_collecting(); } }
-                    18 => { if let Some(radar) = &radar { radar.set_token(display.window.hwnd() as HWND); } }
+                    18 => { if let Some(radar) = &radar { radar.set_token(display.window.hwnd() as HWND, settings.language); } }
                     19 => { if let Some(radar) = &radar { radar.remove_token(); } }
                     20 => settings.radar_layer = !settings.radar_layer,
                     16 => *flow = ControlFlow::Exit,
                     21 => {
                         if let Some(update) = updater.as_ref().map(Updater::status) {
-                            if start_update(&display.window, &update) {
+                            if start_update(&display.window, &update, settings.language) {
                                 *flow = ControlFlow::Exit;
                             }
                         }
