@@ -38,6 +38,13 @@ jobs:
         with:
           name: ThreatAtlas-Linux-preview
           path: dist/ThreatAtlas-Linux-*.tar.gz
+      - run: bash scripts/build-linux-soc.sh
+      - run: xvfb-run -a target/release/atlassoc --smoke-test
+      - run: xvfb-run -a dist/AtlasSOC-Linux-x86_64.AppDir/AppRun --smoke-test
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2 (Node 24)
+        with:
+          name: AtlasSOC-Linux-preview
+          path: dist/AtlasSOC-Linux-*.tar.gz
   macos:
     runs-on: macos-latest
     steps:

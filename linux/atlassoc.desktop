@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=AtlasSOC
+Comment=Live SOC view of public threat telemetry (Linux preview)
+Exec=atlassoc
+Icon=atlassoc
+Terminal=false
+Categories=Network;Monitor;
