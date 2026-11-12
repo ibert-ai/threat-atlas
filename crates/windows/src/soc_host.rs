@@ -239,7 +239,7 @@ fn menu(
                     } else {
                         0
                     },
-                30 + index as u32,
+                30 + index,
                 wide(language.native_name()).as_ptr(),
             );
         }

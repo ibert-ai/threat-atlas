@@ -1,5 +1,5 @@
 //! Disk state has no tokens or live telemetry; the Radar cache is Cloudflare's published aggregate. Consent is independent of resettable UI settings.
-#![cfg_attr(not(windows), allow(dead_code))]
+#![allow(dead_code)]
 use serde::{Deserialize, Serialize};
 use std::{fs, io, path::Path};
 use threat_atlas_core::i18n::Language;
