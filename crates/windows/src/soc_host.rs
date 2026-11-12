@@ -18,6 +18,7 @@ use tao::{
 };
 use threat_atlas_core::{
     feed::{self, Feed, State},
+    i18n::{self, Language},
     render::soc::{Motion as CoreMotion, SocView, Theme as CoreTheme},
     HEIGHT,
 };
@@ -130,13 +131,13 @@ fn displays(
     Ok(result)
 }
 
-fn help(window: &Window) {
+fn help(window: &Window, lang: Language) {
     let text = "Right-click anywhere for settings.\n\nF11: fullscreen/windowed\nSpace: freeze/resume display (the shared feed continues)\nR / C / S: Realtime / Calm / Still animation\nL: Classic / Dashboard layout\n1 / 2 / 3: malicious / suspicious / benign visibility\nM: mirror all detected displays (one shared feed)\nT: always on top\nF1: this help\nEscape: leave fullscreen/mirroring, otherwise close\n\nLeft-click a country to focus; hover shows country details in the title.\nSettings save under LocalAppData/ThreatAtlasSOC. Reset settings never resets licence acceptance.\n\nCloudflare Radar (optional): right-click > Set Cloudflare Radar token (collection starts when it is saved); Collect Cloudflare Radar data pauses or resumes it. Past-day aggregate shares, at most one request every 15 minutes; the token stays in Windows Credential Manager. Right-click > How to get a Cloudflare token opens the step-by-step guide.\n\nGreyNoise live receipts, not unique attacks.\nMirroring is implemented; independent display roles/spanning and physical multimonitor acceptance remain pending. No sleep or lock settings are changed.";
     unsafe {
         MessageBoxW(
             window.hwnd() as HWND,
             wide(text).as_ptr(),
-            wide("Threat Atlas SOC controls").as_ptr(),
+            wide(i18n::tr(lang, "help.title")).as_ptr(),
             MB_OK,
         );
     }
@@ -154,37 +155,62 @@ fn menu(
         if menu.is_null() {
             return 0;
         }
+        let lang = settings.language;
         let options = [
-            (1, "Fullscreen / windowed (F11)", settings.fullscreen),
-            (2, "Mirror all displays (M)", settings.mirror_all_displays),
-            (3, "Always on top (T)", settings.always_on_top),
-            (4, "Freeze display (Space; feed continues)", paused),
-            (5, "Realtime (R)", settings.motion == Motion::Realtime),
-            (6, "Calm (C)", settings.motion == Motion::Calm),
-            (7, "Still (S)", settings.motion == Motion::Still),
-            (8, "Malicious (1)", settings.severities[0]),
-            (9, "Suspicious (2)", settings.severities[1]),
-            (10, "Benign (3)", settings.severities[2]),
-            (11, "5 frames/second", settings.fps == 5),
-            (12, "10 frames/second", settings.fps == 10),
-            (13, "20 frames/second", settings.fps == 20),
+            (1, i18n::tr(lang, "menu.fullscreen"), settings.fullscreen),
+            (
+                2,
+                i18n::tr(lang, "menu.mirror"),
+                settings.mirror_all_displays,
+            ),
+            (
+                3,
+                i18n::tr(lang, "menu.always_on_top"),
+                settings.always_on_top,
+            ),
+            (4, i18n::tr(lang, "menu.freeze"), paused),
+            (
+                5,
+                i18n::tr(lang, "menu.realtime"),
+                settings.motion == Motion::Realtime,
+            ),
+            (
+                6,
+                i18n::tr(lang, "menu.calm"),
+                settings.motion == Motion::Calm,
+            ),
+            (
+                7,
+                i18n::tr(lang, "menu.still"),
+                settings.motion == Motion::Still,
+            ),
+            (8, i18n::tr(lang, "menu.malicious"), settings.severities[0]),
+            (9, i18n::tr(lang, "menu.suspicious"), settings.severities[1]),
+            (10, i18n::tr(lang, "menu.benign"), settings.severities[2]),
+            (11, i18n::tr(lang, "menu.fps5"), settings.fps == 5),
+            (12, i18n::tr(lang, "menu.fps10"), settings.fps == 10),
+            (13, i18n::tr(lang, "menu.fps20"), settings.fps == 20),
             (
                 17,
-                "Collect Cloudflare Radar data",
+                i18n::tr(lang, "menu.radar_collect"),
                 radar.is_some_and(Radar::collecting),
             ),
-            (18, "Set Cloudflare Radar token...", false),
-            (19, "Remove Cloudflare Radar token", false),
-            (20, "Show Cloudflare Radar on the map", settings.radar_layer),
-            (25, "Classic layout (L)", settings.theme == Theme::Classic),
+            (18, i18n::tr(lang, "menu.radar_set_token"), false),
+            (19, i18n::tr(lang, "menu.radar_remove_token"), false),
+            (20, i18n::tr(lang, "menu.radar_show"), settings.radar_layer),
+            (
+                25,
+                i18n::tr(lang, "menu.classic"),
+                settings.theme == Theme::Classic,
+            ),
             (
                 26,
-                "Dashboard layout (L)",
+                i18n::tr(lang, "menu.dashboard"),
                 settings.theme == Theme::Dashboard,
             ),
-            (27, "How to get a Cloudflare token...", false),
-            (14, "Reset display settings", false),
-            (15, "Controls and limitations (F1)", false),
+            (27, i18n::tr(lang, "menu.radar_guide"), false),
+            (14, i18n::tr(lang, "menu.reset"), false),
+            (15, i18n::tr(lang, "menu.help"), false),
         ];
         for (id, text, checked) in options {
             AppendMenuW(
@@ -194,6 +220,36 @@ fn menu(
                 wide(text).as_ptr(),
             );
         }
+        let language_menu = CreatePopupMenu();
+        for (index, language) in [
+            Language::En,
+            Language::Sv,
+            Language::De,
+            Language::Es,
+            Language::It,
+        ]
+        .iter()
+        .enumerate()
+        {
+            AppendMenuW(
+                language_menu,
+                MF_STRING
+                    | if settings.language == *language {
+                        MF_CHECKED
+                    } else {
+                        0
+                    },
+                30 + index as u32,
+                wide(language.native_name()).as_ptr(),
+            );
+        }
+        AppendMenuW(menu, MF_SEPARATOR, 0, std::ptr::null());
+        AppendMenuW(
+            menu,
+            MF_POPUP,
+            language_menu as usize,
+            wide(i18n::tr(lang, "menu.language")).as_ptr(),
+        );
         if let Some(update) = update {
             let enabled = matches!(update, UpdateStatus::Available(_));
             AppendMenuW(
@@ -203,7 +259,12 @@ fn menu(
                 wide(&update.label()).as_ptr(),
             );
         }
-        AppendMenuW(menu, MF_STRING, 16, wide("Exit").as_ptr());
+        AppendMenuW(
+            menu,
+            MF_STRING,
+            16,
+            wide(i18n::tr(lang, "menu.exit")).as_ptr(),
+        );
         let mut point: POINT = std::mem::zeroed();
         GetCursorPos(&mut point);
         let chosen = TrackPopupMenu(
@@ -421,9 +482,10 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                     8..=10 => settings.severities[(action - 8) as usize] = !settings.severities[(action - 8) as usize],
                     11 => settings.fps = 5, 12 => settings.fps = 10, 13 => settings.fps = 20,
                     25 => settings.theme = Theme::Classic, 26 => settings.theme = Theme::Dashboard,
+                    30..=34 => settings.language = [Language::En, Language::Sv, Language::De, Language::Es, Language::It][(action - 30) as usize],
                     27 => open_token_guide(&display.window),
                     14 => { settings = Settings::default(); rebuild = true; }
-                    15 => help(&display.window),
+                    15 => help(&display.window, settings.language),
                     17 => { if let Some(radar) = &radar { radar.toggle_collecting(); } }
                     18 => { if let Some(radar) = &radar { radar.set_token(display.window.hwnd() as HWND); } }
                     19 => { if let Some(radar) = &radar { radar.remove_token(); } }
