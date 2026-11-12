@@ -90,7 +90,7 @@ fn displays(
         monitors
     } {
         let mut builder = WindowBuilder::new()
-            .with_title("AtlasSOC by Ibert Consulting - right-click or F1 for controls")
+            .with_title(i18n::tr(settings.language, "title.initial"))
             .with_inner_size(PhysicalSize::new(settings.width, settings.height))
             .with_min_inner_size(PhysicalSize::new(640, 400))
             .with_always_on_top(settings.always_on_top);
@@ -132,7 +132,7 @@ fn displays(
 }
 
 fn help(window: &Window, lang: Language) {
-    let text = "Right-click anywhere for settings.\n\nF11: fullscreen/windowed\nSpace: freeze/resume display (the shared feed continues)\nR / C / S: Realtime / Calm / Still animation\nL: Classic / Dashboard layout\n1 / 2 / 3: malicious / suspicious / benign visibility\nM: mirror all detected displays (one shared feed)\nT: always on top\nF1: this help\nEscape: leave fullscreen/mirroring, otherwise close\n\nLeft-click a country to focus; hover shows country details in the title.\nSettings save under LocalAppData/ThreatAtlasSOC. Reset settings never resets licence acceptance.\n\nCloudflare Radar (optional): right-click > Set Cloudflare Radar token (collection starts when it is saved); Collect Cloudflare Radar data pauses or resumes it. Past-day aggregate shares, at most one request every 15 minutes; the token stays in Windows Credential Manager. Right-click > How to get a Cloudflare token opens the step-by-step guide.\n\nGreyNoise live receipts, not unique attacks.\nMirroring is implemented; independent display roles/spanning and physical multimonitor acceptance remain pending. No sleep or lock settings are changed.";
+    let text = i18n::tr(lang, "help.body");
     unsafe {
         MessageBoxW(
             window.hwnd() as HWND,
@@ -447,7 +447,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                         cursor = position;
                         let hover_radar = radar.as_ref().map_or((None, 0), Radar::data).0;
                         let detail = frame_point(&display.window, position, view.width()).and_then(|(x, y)| view.inspect(x, y, hover_radar.as_deref())).and_then(|json| soc_config::inspection_label(&json));
-                        display.window.set_title(&format!("AtlasSOC {VERSION}/{BUILD} by Ibert Consulting · {} · {}", if smoke { "OFFLINE TEST - NO NETWORK" } else if paused { "DISPLAY FROZEN - FEED CONTINUES" } else { "right-click or F1: controls" }, detail.unwrap_or_default()));
+                        display.window.set_title(&format!("AtlasSOC {VERSION}/{BUILD} by Ibert Consulting · {} · {}", i18n::tr(settings.language, if smoke { "title.offline" } else if paused { "title.frozen" } else { "title.controls" }), detail.unwrap_or_default()));
                     }
                     WindowEvent::MouseInput { state: ElementState::Released, button: MouseButton::Right, .. } => action = menu(&display.window, &settings, paused, radar.as_ref(), updater.as_ref().map(Updater::status).as_ref()),
                     WindowEvent::MouseInput { state: ElementState::Released, button: MouseButton::Left, .. } => {
