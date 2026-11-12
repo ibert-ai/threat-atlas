@@ -33,7 +33,11 @@
     "menu.reset": "Reset display settings",
     "menu.help": "Controls and limitations (F1)",
     "menu.exit": "Exit",
-    "help.title": "Threat Atlas SOC controls"
+    "help.title": "Threat Atlas SOC controls",
+    "screensaver.title": "Threat Atlas Screen Saver",
+    "screensaver.mode.panorama": "Panorama",
+    "screensaver.mode.standard": "Standard",
+    "screensaver.body": "Current display mode: {mode}\n\nYes: Panorama across two matching side-by-side displays\nNo: Standard display mode\nCancel: Keep the current mode\n\nLive GreyNoise public threat-map telemetry. No cookies, browser, account or API key required.\nGreen LIVE means records arrived within 10 seconds. Routes expire after 6 seconds. Offline feeds reconnect automatically.\nThe header shows UTC and system local time. Observation times are receipt times in UTC.\nUse Windows Screen Saver Settings for idle time and lock behavior."
   },
   "sv": {
     "app.starting": "Threat Atlas startar…",
@@ -69,7 +73,11 @@
     "menu.reset": "Återställ visningsinställningar",
     "menu.help": "Kontroller och begränsningar (F1)",
     "menu.exit": "Avsluta",
-    "help.title": "Kontroller för Threat Atlas SOC"
+    "help.title": "Kontroller för Threat Atlas SOC",
+    "screensaver.title": "Threat Atlas skärmsläckare",
+    "screensaver.mode.panorama": "Panorama",
+    "screensaver.mode.standard": "Standard",
+    "screensaver.body": "Aktuellt visningsläge: {mode}\n\nJa: Panorama över två matchande skärmar sida vid sida\nNej: Standardvisning\nAvbryt: Behåll aktuellt läge\n\nLive GreyNoise offentlig hotkartstelemetri. Inga cookies, ingen webbläsare, inget konto och ingen API-nyckel krävs.\nGrön LIVE betyder att poster kom inom 10 sekunder. Rutter upphör efter 6 sekunder. Offline-flöden återansluter automatiskt.\nRubriken visar UTC och systemets lokala tid. Observationstider är mottagningstider i UTC.\nAnvänd Windows inställningar för skärmsläckare för inaktivitetstid och låsbeteende."
   },
   "de": {
     "app.starting": "Threat Atlas wird gestartet…",
@@ -105,7 +113,11 @@
     "menu.reset": "Anzeigeeinstellungen zurücksetzen",
     "menu.help": "Steuerung und Einschränkungen (F1)",
     "menu.exit": "Beenden",
-    "help.title": "Threat Atlas SOC – Steuerung"
+    "help.title": "Threat Atlas SOC – Steuerung",
+    "screensaver.title": "Threat Atlas Bildschirmschoner",
+    "screensaver.mode.panorama": "Panorama",
+    "screensaver.mode.standard": "Standard",
+    "screensaver.body": "Aktueller Anzeigemodus: {mode}\n\nJa: Panorama über zwei passende nebeneinanderliegende Displays\nNein: Standardanzeigemodus\nAbbrechen: Aktuellen Modus beibehalten\n\nLive-Telemetrie der öffentlichen GreyNoise-Hotmap. Keine Cookies, kein Browser, kein Konto und kein API-Schlüssel erforderlich.\nGrünes LIVE bedeutet, dass Datensätze innerhalb von 10 Sekunden eingetroffen sind. Routen verfallen nach 6 Sekunden. Offline-Feeds verbinden sich automatisch neu.\nDie Kopfzeile zeigt UTC und die lokale Systemzeit. Beobachtungszeiten sind Empfangszeiten in UTC.\nLeerlaufzeit und Sperrverhalten in den Windows-Bildschirmschonereinstellungen festlegen."
   },
   "es": {
     "app.starting": "Threat Atlas se está iniciando…",
@@ -141,7 +153,11 @@
     "menu.reset": "Restablecer ajustes de pantalla",
     "menu.help": "Controles y limitaciones (F1)",
     "menu.exit": "Salir",
-    "help.title": "Controles de Threat Atlas SOC"
+    "help.title": "Controles de Threat Atlas SOC",
+    "screensaver.title": "Protector de pantalla Threat Atlas",
+    "screensaver.mode.panorama": "Panorama",
+    "screensaver.mode.standard": "Estándar",
+    "screensaver.body": "Modo de pantalla actual: {mode}\n\nSí: Panorama en dos pantallas contiguas idénticas\nNo: Modo de pantalla estándar\nCancelar: Mantener el modo actual\n\nTelemetría pública en vivo del mapa de amenazas de GreyNoise. No se necesitan cookies, navegador, cuenta ni clave de API.\nLIVE en verde significa que los registros llegaron en un plazo de 10 segundos. Las rutas caducan a los 6 segundos. Los flujos sin conexión se reconectan automáticamente.\nEl encabezado muestra UTC y la hora local del sistema. Las horas de observación son horas de recepción en UTC.\nUsa la configuración del protector de pantalla de Windows para el tiempo de inactividad y el bloqueo."
   },
   "it": {
     "app.starting": "Threat Atlas si sta avviando…",
@@ -177,6 +193,10 @@
     "menu.reset": "Ripristina le impostazioni di visualizzazione",
     "menu.help": "Controlli e limitazioni (F1)",
     "menu.exit": "Esci",
-    "help.title": "Controlli di Threat Atlas SOC"
+    "help.title": "Controlli di Threat Atlas SOC",
+    "screensaver.title": "Salvaschermo Threat Atlas",
+    "screensaver.mode.panorama": "Panorama",
+    "screensaver.mode.standard": "Standard",
+    "screensaver.body": "Modalità di visualizzazione attuale: {mode}\n\nSì: Panorama su due display affiancati identici\nNo: Modalità di visualizzazione standard\nAnnulla: Mantieni la modalità attuale\n\nTelemetria pubblica in tempo reale della mappa delle minacce GreyNoise. Non servono cookie, browser, account o chiave API.\nLIVE verde significa che i record sono arrivati entro 10 secondi. Le rotte scadono dopo 6 secondi. I feed offline si riconnettono automaticamente.\nL'intestazione mostra UTC e l'ora locale di sistema. Gli orari delle osservazioni sono orari di ricezione in UTC.\nUsa le impostazioni del salvaschermo di Windows per il tempo di inattività e il blocco."
   }
 }

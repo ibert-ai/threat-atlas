@@ -12,7 +12,11 @@ use tao::{
     platform::windows::WindowBuilderExtWindows,
     window::{Fullscreen, WindowBuilder},
 };
-use threat_atlas_core::{render::panorama, Session, HEIGHT, WIDTH};
+use threat_atlas_core::{
+    i18n::{self, Language},
+    render::panorama,
+    Session, HEIGHT, WIDTH,
+};
 use windows_sys::Win32::{
     Foundation::{HWND, POINT, RECT},
     UI::{
@@ -49,6 +53,17 @@ fn scaled_frame_layout(width: u32, height: u32) -> (u32, u32, u32, u32) {
     (draw_width, draw_height, offset_x, offset_y)
 }
 
+fn language() -> Language {
+    std::env::var_os("LOCALAPPDATA")
+        .map(|root| {
+            PathBuf::from(root)
+                .join("ThreatAtlasSOC")
+                .join("settings.json")
+        })
+        .map(|path| crate::soc_config::Settings::load(&path).0.language)
+        .unwrap_or(Language::En)
+}
+
 fn panorama_setting() -> Option<PathBuf> {
     std::env::var_os("LOCALAPPDATA").map(|root| {
         PathBuf::from(root)
@@ -66,14 +81,21 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     if command.starts_with("/c") || command.starts_with("-c") {
         let path = panorama_setting().ok_or("Cannot find the local settings folder")?;
         let enabled = fs::read_to_string(&path).is_ok_and(|mode| mode.trim() == "panorama");
-        let mode = if enabled { "Panorama" } else { "Standard" };
-        let message: Vec<u16> = format!(
-            "Current display mode: {mode}\n\nYes: Panorama across two matching side-by-side displays\nNo: Standard display mode\nCancel: Keep the current mode\n\nLive GreyNoise public threat-map telemetry. No cookies, browser, account or API key required.\nGreen LIVE means records arrived within 10 seconds. Routes expire after 6 seconds. Offline feeds reconnect automatically.\nThe header shows UTC and system local time. Observation times are receipt times in UTC.\nUse Windows Screen Saver Settings for idle time and lock behavior."
-        )
-        .encode_utf16()
-        .chain(Some(0))
-        .collect();
-        let title: Vec<u16> = "Threat Atlas Screen Saver"
+        let lang = language();
+        let mode = i18n::tr(
+            lang,
+            if enabled {
+                "screensaver.mode.panorama"
+            } else {
+                "screensaver.mode.standard"
+            },
+        );
+        let message: Vec<u16> = i18n::tr(lang, "screensaver.body")
+            .replace("{mode}", mode)
+            .encode_utf16()
+            .chain(Some(0))
+            .collect();
+        let title: Vec<u16> = i18n::tr(lang, "screensaver.title")
             .encode_utf16()
             .chain(Some(0))
             .collect();

@@ -1,4 +1,5 @@
 #![cfg_attr(target_os = "windows", windows_subsystem = "windows")]
+mod soc_config;
 #[cfg(windows)]
 mod windows;
 #[cfg(windows)]
