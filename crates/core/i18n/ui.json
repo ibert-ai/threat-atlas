@@ -1,0 +1,57 @@
+{
+  "en": {
+    "app.starting": "Threat Atlas is starting…",
+    "sheet.body": "Native Rust SOC display • GreyNoise public telemetry\n\nNo browser, cookie approval, API key or account needed.\n\nLIVE means records arrived within 10 seconds. Routes expire after 6 seconds. Disconnections trigger automatic retry. The header shows UTC and system local time. Observation times are receipt times in UTC; the provider supplies no event timestamps.\n\nUse macOS settings for idle time and password requirements.",
+    "sheet.done": "Done",
+    "sheet.language": "Language",
+    "language.en": "English",
+    "language.sv": "Svenska",
+    "language.de": "Deutsch",
+    "language.es": "Español",
+    "language.it": "Italiano"
+  },
+  "sv": {
+    "app.starting": "Threat Atlas startar…",
+    "sheet.body": "Native Rust-SOC-display • Öppen GreyNoise-telemetri\n\nIngen webbläsare, cookie-godkännande, API-nyckel eller konto krävs.\n\nLIVE betyder att poster kom inom 10 sekunder. Rutter upphör efter 6 sekunder. Avbrott utlöser automatisk återanslutning. Rubriken visar UTC och systemets lokala tid. Observationstider är mottagningstider i UTC; leverantören anger inga händelsetider.\n\nAnvänd macOS-inställningarna för inaktivitetstid och lösenordskrav.",
+    "sheet.done": "Klar",
+    "sheet.language": "Språk",
+    "language.en": "English",
+    "language.sv": "Svenska",
+    "language.de": "Deutsch",
+    "language.es": "Español",
+    "language.it": "Italiano"
+  },
+  "de": {
+    "app.starting": "Threat Atlas wird gestartet…",
+    "sheet.body": "Native Rust-SOC-Anzeige • Öffentliche GreyNoise-Telemetrie\n\nKein Browser, keine Cookie-Zustimmung, kein API-Schlüssel und kein Konto erforderlich.\n\nLIVE bedeutet, dass Datensätze innerhalb von 10 Sekunden eingetroffen sind. Routen verfallen nach 6 Sekunden. Bei Verbindungsabbrüchen wird automatisch erneut verbunden. Die Kopfzeile zeigt UTC und die lokale Systemzeit. Beobachtungszeiten sind Empfangszeiten in UTC; der Anbieter liefert keine Ereigniszeitstempel.\n\nLeerlaufzeit und Passwortanforderungen in den macOS-Einstellungen festlegen.",
+    "sheet.done": "Fertig",
+    "sheet.language": "Sprache",
+    "language.en": "English",
+    "language.sv": "Svenska",
+    "language.de": "Deutsch",
+    "language.es": "Español",
+    "language.it": "Italiano"
+  },
+  "es": {
+    "app.starting": "Threat Atlas se está iniciando…",
+    "sheet.body": "Pantalla SOC nativa en Rust • Telemetría pública de GreyNoise\n\nNo se necesita navegador, aprobación de cookies, clave de API ni cuenta.\n\nLIVE significa que los registros llegaron en un plazo de 10 segundos. Las rutas caducan a los 6 segundos. Las desconexiones activan un reintento automático. El encabezado muestra UTC y la hora local del sistema. Las horas de observación son horas de recepción en UTC; el proveedor no facilita marcas de tiempo de eventos.\n\nUsa los ajustes de macOS para el tiempo de inactividad y los requisitos de contraseña.",
+    "sheet.done": "Hecho",
+    "sheet.language": "Idioma",
+    "language.en": "English",
+    "language.sv": "Svenska",
+    "language.de": "Deutsch",
+    "language.es": "Español",
+    "language.it": "Italiano"
+  },
+  "it": {
+    "app.starting": "Threat Atlas si sta avviando…",
+    "sheet.body": "Display SOC nativo in Rust • Telemetria pubblica di GreyNoise\n\nNon servono browser, approvazione dei cookie, chiave API o account.\n\nLIVE significa che i record sono arrivati entro 10 secondi. Le rotte scadono dopo 6 secondi. Le disconnessioni attivano un nuovo tentativo automatico. L'intestazione mostra UTC e l'ora locale di sistema. Gli orari delle osservazioni sono orari di ricezione in UTC; il fornitore non fornisce timestamp degli eventi.\n\nUsa le impostazioni di macOS per il tempo di inattività e i requisiti della password.",
+    "sheet.done": "Fatto",
+    "sheet.language": "Lingua",
+    "language.en": "English",
+    "language.sv": "Svenska",
+    "language.de": "Deutsch",
+    "language.es": "Español",
+    "language.it": "Italiano"
+  }
+}

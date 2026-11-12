@@ -2,6 +2,7 @@
 #![cfg_attr(not(windows), allow(dead_code))]
 use serde::{Deserialize, Serialize};
 use std::{fs, io, path::Path};
+use threat_atlas_core::i18n::Language;
 
 pub const VERSION: &str = env!("ATLAS_SOC_VERSION");
 include!(concat!(env!("OUT_DIR"), "/soc_build.rs"));
@@ -67,6 +68,8 @@ pub struct Settings {
     /// Omitted while Classic, so settings files stay readable by earlier builds.
     #[serde(skip_serializing_if = "Theme::is_classic")]
     pub theme: Theme,
+    #[serde(default, skip_serializing_if = "Language::is_english")]
+    pub language: Language,
     pub radar_layer: bool,
 }
 impl Default for Settings {
@@ -82,6 +85,7 @@ impl Default for Settings {
             motion: Motion::Realtime,
             mirror_all_displays: false,
             theme: Theme::Classic,
+            language: Language::En,
             radar_layer: true,
         }
     }
@@ -370,5 +374,25 @@ mod tests {
             let ratio = f64::from(dw) / f64::from(dh);
             assert!((ratio - 1.6).abs() < 0.01, "{w}x{h}: {ratio}");
         }
+    }
+    #[test]
+    fn language_defaults_to_english_and_non_english_roundtrips() {
+        let path = scratch("language.json");
+        Settings::default().save(&path).unwrap();
+        assert!(!fs::read_to_string(&path).unwrap().contains("language"));
+        let german = Settings {
+            language: Language::De,
+            ..Settings::default()
+        };
+        german.save(&path).unwrap();
+        assert!(fs::read_to_string(&path)
+            .unwrap()
+            .contains(r#""language": "de""#));
+        assert_eq!(Settings::load(&path), (german, None));
+        // Unknown language is rejected and the original file is preserved.
+        fs::write(&path, br#"{"schema_version":1,"language":"xx"}"#).unwrap();
+        assert!(Settings::load(&path).1.is_some());
+        assert_eq!(Settings::load(&path).0.language, Language::En);
+        fs::remove_file(path).unwrap();
     }
 }

@@ -1,6 +1,7 @@
 pub mod clock;
 mod countries;
 pub mod feed;
+pub mod i18n;
 pub mod radar;
 pub mod radar_poll;
 pub mod render;

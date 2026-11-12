@@ -9,6 +9,10 @@ extern uint32_t ta_height(void);
 @property(nonatomic) void *session;
 @property(nonatomic, strong) NSPanel *options;
 @property(nonatomic, strong) NSTimer *fallbackTimer;
+@property(nonatomic, strong) NSTextField *bodyText;
+@property(nonatomic, strong) NSTextField *languageLabel;
+@property(nonatomic, strong) NSPopUpButton *languagePopup;
+@property(nonatomic, strong) NSButton *doneButton;
 @end
 @implementation ThreatAtlasSOCView
 - (instancetype)initWithFrame:(NSRect)frame isPreview:(BOOL)preview {
@@ -42,7 +46,7 @@ extern uint32_t ta_height(void);
 - (void)drawRect:(NSRect)dirty {
     [[NSColor colorWithCalibratedRed:6.0/255 green:12.0/255 blue:20.0/255 alpha:1] setFill];NSRectFill(self.bounds);
     if (!self.session) {
-        [@"Threat Atlas is starting…" drawAtPoint:NSMakePoint(20,20) withAttributes:@{NSForegroundColorAttributeName:NSColor.whiteColor}];
+        [[self uiString:@"app.starting"] drawAtPoint:NSMakePoint(20,20) withAttributes:@{NSForegroundColorAttributeName:NSColor.whiteColor}];
         return;
     }
     const unsigned char *bytes=ta_frame(self.session);if (!bytes) return;
@@ -60,13 +64,56 @@ extern uint32_t ta_height(void);
     CGContextRestoreGState(context);
     CGImageRelease(image);CGDataProviderRelease(provider);CGColorSpaceRelease(space);
 }
+- (NSString *)currentLanguageCode {
+    NSUserDefaults *defaults=[ScreenSaverDefaults defaultsForModuleWithName:@"dev.threatatlas.soc.screensaver"] ?: [NSUserDefaults standardUserDefaults];
+    return [defaults stringForKey:@"ThreatAtlasUILanguage"] ?: @"en";
+}
+- (NSString *)uiString:(NSString *)key {
+    static NSDictionary *catalog;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        NSURL *url=[[NSBundle bundleForClass:self.class] URLForResource:@"ui" withExtension:@"json"];
+        NSData *data=url ? [NSData dataWithContentsOfURL:url] : nil;
+        catalog=data ? [NSJSONSerialization JSONObjectWithData:data options:0 error:nil] : @{};
+    });
+    NSDictionary *language=catalog[[self currentLanguageCode]] ?: catalog[@"en"];
+    NSString *value=language[key] ?: catalog[@"en"][key];
+    return value ?: key;
+}
 - (BOOL)hasConfigureSheet {return YES;}
 - (NSWindow *)configureSheet {
-    self.options=[[NSPanel alloc] initWithContentRect:NSMakeRect(0,0,520,240) styleMask:NSWindowStyleMaskTitled backing:NSBackingStoreBuffered defer:NO];
+    self.options=[[NSPanel alloc] initWithContentRect:NSMakeRect(0,0,520,320) styleMask:NSWindowStyleMaskTitled backing:NSBackingStoreBuffered defer:NO];
     self.options.title=[NSString stringWithFormat:@"Threat Atlas SOC %@", [NSBundle bundleForClass:self.class].infoDictionary[@"CFBundleShortVersionString"]];
-    NSTextField *text=[NSTextField wrappingLabelWithString:@"Native Rust SOC display • GreyNoise public telemetry\n\nNo browser, cookie approval, API key or account needed.\n\nLIVE means records arrived within 10 seconds. Routes expire after 6 seconds. Disconnections trigger automatic retry. The header shows UTC and system local time. Observation times are receipt times in UTC; the provider supplies no event timestamps.\n\nUse macOS settings for idle time and password requirements."];
-    text.frame=NSMakeRect(20,55,480,170);[self.options.contentView addSubview:text];
-    NSButton *done=[NSButton buttonWithTitle:@"Done" target:self action:@selector(closeOptions:)];done.frame=NSMakeRect(405,15,95,32);[self.options.contentView addSubview:done];return self.options;
+    self.bodyText=[NSTextField wrappingLabelWithString:[self uiString:@"sheet.body"]];
+    self.bodyText.frame=NSMakeRect(20,85,480,215);
+    self.bodyText.font=[NSFont systemFontOfSize:11];
+    [self.options.contentView addSubview:self.bodyText];
+    self.languageLabel=[NSTextField labelWithString:[self uiString:@"sheet.language"]];
+    self.languageLabel.frame=NSMakeRect(20,32,80,20);
+    [self.options.contentView addSubview:self.languageLabel];
+    self.languagePopup=[[NSPopUpButton alloc] initWithFrame:NSMakeRect(100,27,180,26) pullsDown:NO];
+    [self.languagePopup addItemsWithTitles:@[@"English",@"Svenska",@"Deutsch",@"Español",@"Italiano"]];
+    NSArray *codes=@[@"en",@"sv",@"de",@"es",@"it"];
+    NSUInteger index=[codes indexOfObject:[self currentLanguageCode]];
+    [self.languagePopup selectItemAtIndex:index==NSNotFound?0:index];
+    self.languagePopup.target=self;
+    self.languagePopup.action=@selector(languageChanged:);
+    [self.options.contentView addSubview:self.languagePopup];
+    self.doneButton=[NSButton buttonWithTitle:[self uiString:@"sheet.done"] target:self action:@selector(closeOptions:)];
+    self.doneButton.frame=NSMakeRect(405,20,95,32);
+    [self.options.contentView addSubview:self.doneButton];
+    return self.options;
+}
+- (void)languageChanged:(NSPopUpButton *)sender {
+    NSArray *codes=@[@"en",@"sv",@"de",@"es",@"it"];
+    NSInteger index=sender.indexOfSelectedItem;
+    if (index < 0 || index >= (NSInteger)codes.count) return;
+    NSUserDefaults *defaults=[ScreenSaverDefaults defaultsForModuleWithName:@"dev.threatatlas.soc.screensaver"] ?: [NSUserDefaults standardUserDefaults];
+    [defaults setObject:codes[index] forKey:@"ThreatAtlasUILanguage"];
+    [defaults synchronize];
+    self.bodyText.stringValue=[self uiString:@"sheet.body"];
+    self.languageLabel.stringValue=[self uiString:@"sheet.language"];
+    self.doneButton.title=[self uiString:@"sheet.done"];
 }
 - (void)closeOptions:(id)sender {[self.options.sheetParent endSheet:self.options];}
 @end

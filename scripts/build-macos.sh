@@ -19,6 +19,7 @@ else
 fi
 mkdir -p dist/ThreatAtlasSOC.saver/Contents/MacOS dist/ThreatAtlasSOC.saver/Contents/Resources
 cp macos/thumbnail*.png dist/ThreatAtlasSOC.saver/Contents/Resources/
+cp crates/core/i18n/ui.json dist/ThreatAtlasSOC.saver/Contents/Resources/
 cp macos/Info.plist dist/ThreatAtlasSOC.saver/Contents/
 sign_identity="${MACOS_SIGN_IDENTITY:--}"
 sign_options=(--force --sign "$sign_identity")
