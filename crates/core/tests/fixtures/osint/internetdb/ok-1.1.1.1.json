@@ -1,0 +1,1 @@
+{"cpes":["cpe:/a:cloudflare:cloudflare"],"hostnames":["one.one.one.one","bplwifi.bramlib.on.ca","wlan.wagner-sinto.de"],"ip":"1.1.1.1","ports":[53,69,80,443,2082,2083,2086,2087,2095,2096,8443,8880],"tags":["pqc"],"vulns":[]}
