@@ -19,12 +19,17 @@ use tao::{
 };
 use threat_atlas_core::{
     feed::{self, Feed, State},
+    osint_internetdb,
     render::soc::{Motion as CoreMotion, SocView, Theme as CoreTheme},
     HEIGHT,
 };
 use windows_sys::Win32::{
     Foundation::{HWND, POINT},
-    System::LibraryLoader::GetModuleHandleW,
+    System::{
+        DataExchange::{CloseClipboard, GetClipboardData, OpenClipboard},
+        LibraryLoader::GetModuleHandleW,
+        Memory::{GlobalLock, GlobalUnlock},
+    },
     UI::{Shell::ShellExecuteW, WindowsAndMessaging::*},
 };
 
@@ -132,7 +137,7 @@ fn displays(
 }
 
 fn help(window: &Window) {
-    let text = "Right-click anywhere for settings.\n\nF11: fullscreen/windowed\nSpace: freeze/resume display (the shared feed continues)\nR / C / S: Realtime / Calm / Still animation\nL: Classic / Dashboard layout\n1 / 2 / 3: malicious / suspicious / benign visibility\nM: mirror all detected displays (one shared feed)\nT: always on top\nF1: this help\nEscape: leave fullscreen/mirroring, otherwise close\n\nLeft-click a country to focus; hover shows country details in the title.\nSettings save under LocalAppData/ThreatAtlasSOC. Reset settings never resets licence acceptance.\n\nOSINT: right-click > Known exploited (KEV + EPSS), Tor exit nodes, SANS ISC top ports, Refresh OSINT or OSINT sources / licences.
+    let text = "Right-click anywhere for settings.\n\nF11: fullscreen/windowed\nSpace: freeze/resume display (the shared feed continues)\nR / C / S: Realtime / Calm / Still animation\nL: Classic / Dashboard layout\n1 / 2 / 3: malicious / suspicious / benign visibility\nM: mirror all detected displays (one shared feed)\nT: always on top\nF1: this help\nEscape: leave fullscreen/mirroring, otherwise close\n\nLeft-click a country to focus; hover shows country details in the title.\nSettings save under LocalAppData/ThreatAtlasSOC. Reset settings never resets licence acceptance.\n\nOSINT: right-click > Known exploited (KEV + EPSS), Tor exit nodes, SANS ISC top ports, Refresh OSINT, OSINT sources / licences, or Look up IP from clipboard (Shodan InternetDB; click-only, asks first).
 
 Cloudflare Radar (optional): right-click > Set Cloudflare Radar token (collection starts when it is saved); Collect Cloudflare Radar data pauses or resumes it. Past-day aggregate shares, at most one request every 15 minutes; the token stays in Windows Credential Manager. Right-click > How to get a Cloudflare token opens the step-by-step guide.\n\nGreyNoise live receipts, not unique attacks.\nMirroring is implemented; independent display roles/spanning and physical multimonitor acceptance remain pending. No sleep or lock settings are changed.";
     unsafe {
@@ -283,6 +288,125 @@ fn show_sans(window: &Window, view: Option<&OsintView>) {
     };
 }
 
+/// Text on the clipboard, at most 256 characters. `None` when empty or not text.
+fn clipboard_text(window: &Window) -> Option<String> {
+    const CF_UNICODETEXT: u32 = 13;
+    // SAFETY: the clipboard is closed on every path; the locked block is read only up to the first
+    // NUL or 256 UTF-16 units and unlocked before returning.
+    unsafe {
+        if OpenClipboard(window.hwnd() as HWND) == 0 {
+            return None;
+        }
+        let mut text = None;
+        let handle = GetClipboardData(CF_UNICODETEXT);
+        if !handle.is_null() {
+            let ptr = GlobalLock(handle) as *const u16;
+            if !ptr.is_null() {
+                let mut units = Vec::new();
+                for i in 0..256 {
+                    let unit = *ptr.add(i);
+                    if unit == 0 {
+                        break;
+                    }
+                    units.push(unit);
+                }
+                text = String::from_utf16(&units).ok();
+                GlobalUnlock(handle);
+            }
+        }
+        CloseClipboard();
+        text
+    }
+}
+
+fn info_box(window: &Window, title: &str, text: &str) {
+    unsafe {
+        MessageBoxW(
+            window.hwnd() as HWND,
+            wide(text).as_ptr(),
+            wide(title).as_ptr(),
+            MB_OK | MB_ICONINFORMATION,
+        )
+    };
+}
+
+/// Click-only InternetDB lookup of the address on the clipboard, after an explicit confirmation.
+fn start_internetdb_lookup(window: &Window, osint: Option<&Osint>) {
+    const TITLE: &str = "Threat Atlas SOC - Shodan InternetDB";
+    let Some(osint) = osint else {
+        info_box(window, TITLE, "OSINT worker is not running in this mode.");
+        return;
+    };
+    let Some(ip) = clipboard_text(window)
+        .as_deref()
+        .and_then(osint_internetdb::parse_ip_text)
+    else {
+        info_box(window, TITLE, "Copy one IP address first (for example 8.8.8.8), then choose this item again. Nothing was sent.");
+        return;
+    };
+    if !osint_internetdb::is_lookup_allowed(ip) {
+        info_box(window, TITLE, "That is not a public internet address (private, loopback, reserved or documentation range). Nothing was sent.");
+        return;
+    }
+    let ask = format!(
+        "Send {ip} to internetdb.shodan.io?\n\nShodan receives this address and your public IP address. Free for non-commercial use only. Answers are kept for 24 hours; the address is not looked up again before that.\n\nYES: look it up.  NO: cancel."
+    );
+    let answer = unsafe {
+        MessageBoxW(
+            window.hwnd() as HWND,
+            wide(&ask).as_ptr(),
+            wide(TITLE).as_ptr(),
+            MB_YESNO | MB_DEFBUTTON2 | MB_ICONQUESTION,
+        )
+    };
+    if answer == IDYES {
+        osint.lookup(ip);
+        info_box(
+            window,
+            TITLE,
+            "Lookup started. Choose \"Show last InternetDB result\" in a few seconds.",
+        );
+    }
+}
+
+fn show_internetdb(window: &Window, view: Option<&OsintView>) {
+    const TITLE: &str = "Threat Atlas SOC - Shodan InternetDB";
+    let Some(view) = view else {
+        info_box(window, TITLE, "OSINT worker is not running in this mode.");
+        return;
+    };
+    let mut text = String::new();
+    match &view.lookup {
+        None if view.lookup_pending => {
+            text.push_str("Lookup in progress. Try again in a few seconds.")
+        }
+        None => text.push_str(
+            "No lookup yet. Copy an IP address and choose \"Look up IP from clipboard\".",
+        ),
+        Some(found) => {
+            match &found.outcome {
+                Ok(Some(host)) => text.push_str(&osint_internetdb::describe(host)),
+                Ok(None) => text.push_str(&format!("{}\nShodan has no information about this address. That does not mean it is safe.\n", found.ip)),
+                Err(error) => text.push_str(&format!("{}\n{error}\n", found.ip)),
+            }
+            text.push_str(&format!(
+                "\nFetched: {}{}\n",
+                age(found.at_ms),
+                if found.from_cache {
+                    " (stored answer)"
+                } else {
+                    ""
+                }
+            ));
+            if view.lookup_pending {
+                text.push_str("A newer lookup is in progress.\n");
+            }
+        }
+    }
+    text.push_str("\nSource: Shodan InternetDB, https://internetdb.shodan.io/ . Context only; open ports and CVEs are what Shodan observed, not confirmation of a compromise. Non-commercial use with attribution.");
+    info_box(window, TITLE, &text);
+}
+
 fn show_osint_sources(window: &Window) {
     let mut text = String::from("Threat Atlas SOC - OSINT sources\nNon-commercial use only. Provider terms, attribution and minimum intervals are part of the contract.\n\n");
     for source in threat_atlas_core::osint::SOURCES {
@@ -355,6 +479,12 @@ fn menu(
             (37, "Refresh OSINT", false),
             (38, "OSINT sources / licences", false),
             (39, "SANS ISC top ports", false),
+            (
+                40,
+                "Look up IP from clipboard (Shodan InternetDB)...",
+                false,
+            ),
+            (41, "Show last InternetDB result", false),
         ];
         for (id, text, checked) in options {
             AppendMenuW(
@@ -601,6 +731,8 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                     37 => { if let Some(osint) = &osint { osint.refresh(); } }
                     38 => show_osint_sources(&display.window),
                     39 => { let view = osint.as_ref().map(Osint::view); show_sans(&display.window, view.as_ref()); }
+                    40 => start_internetdb_lookup(&display.window, osint.as_ref()),
+                    41 => { let view = osint.as_ref().map(Osint::view); show_internetdb(&display.window, view.as_ref()); }
                     14 => { settings = Settings::default(); rebuild = true; }
                     15 => help(&display.window),
                     17 => { if let Some(radar) = &radar { radar.toggle_collecting(); } }
