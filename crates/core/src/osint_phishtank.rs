@@ -211,6 +211,11 @@ impl FeedState {
         self.fetched_at_ms = Some(now_ms);
     }
 
+    /// When the list was last downloaded successfully, if ever.
+    pub fn fetched_at_ms(&self) -> Option<u64> {
+        self.fetched_at_ms
+    }
+
     /// Time for the next download? A clock that moved backwards counts as due.
     pub fn refresh_due(&self, now_ms: u64) -> bool {
         match self.fetched_at_ms {

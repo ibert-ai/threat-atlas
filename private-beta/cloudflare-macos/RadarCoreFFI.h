@@ -13,6 +13,8 @@ uint32_t ta_height(void);
 
 // Live SOC session: GreyNoise public threat-map feed (shared with the screensaver core) plus Radar.
 // Creating a session opens the GreyNoise WebSocket; dropping it lets the feed thread stop.
+void ta_soc_set_beta(const char *label);
+void ta_soc_set_intel(void *session, void *osint);
 void *ta_soc_new(void);
 int32_t ta_soc_set_radar(void *session, const uint8_t *body, size_t len, uint64_t received_ms);
 // severities: bit 0 malicious, bit 1 suspicious, bit 2 benign. motion: 0 calm, 1 still, 2 realtime.
@@ -29,3 +31,15 @@ int32_t ta_soc_focus_at(void *session, float x, float y);
 size_t ta_soc_inspect(void *session, float x, float y, uint8_t *out, size_t capacity);
 const uint8_t *ta_soc_frame(void *session);
 void ta_soc_drop(void *session);
+
+// Shared OSINT worker (crates/core/src/osint_ffi.rs). Strings are NUL-terminated UTF-8.
+void *ta_osint_start(const char *directory, const char *enabled_json);
+void ta_osint_set_enabled(void *handle, const char *enabled_json);
+void ta_osint_refresh(void *handle);
+// 0 = queued, -1 = refused (not a public address, source off, bad input). Ask the user first.
+int32_t ta_osint_lookup(void *handle, const char *ip);
+// Writes the page text and returns its full length in bytes.
+size_t ta_osint_page(void *handle, const char *source_id, const char *clipboard, uint8_t *out, size_t cap);
+size_t ta_osint_status(void *handle, const char *source_id, uint8_t *out, size_t cap);
+size_t ta_osint_sources(uint8_t *out, size_t cap);
+void ta_osint_drop(void *handle);

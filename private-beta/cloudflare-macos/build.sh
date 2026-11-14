@@ -39,7 +39,7 @@ for arch in ${ATLAS_BETA_ARCHS:-arm64 x86_64}; do
   cargo build --locked --release -p threat-atlas-core --target "$target" --manifest-path ../../Cargo.toml
   CORE="${CARGO_TARGET_DIR:-../../target}/$target/release/libthreat_atlas_core.a"
   xcrun swiftc -target "$arch-apple-macos14" -module-cache-path "$OUT/module-cache-$arch" -parse-as-library \
-    -import-objc-header RadarCoreFFI.h RadarCore.swift RadarModel.swift CoreAtlasView.swift LicenseConsent.swift \
+    -import-objc-header RadarCoreFFI.h RadarCore.swift RadarModel.swift CoreAtlasView.swift LicenseConsent.swift OsintController.swift OsintSettingsView.swift \
     "$TERMS" RadarApp.swift "$CORE" -o "$OUT/AtlasRadar-$arch" \
     -framework SwiftUI -framework Security -framework CoreFoundation -framework SystemConfiguration -liconv
   set -- "$@" "$OUT/AtlasRadar-$arch"

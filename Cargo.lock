@@ -2275,6 +2275,7 @@ name = "threat-atlas-core"
 version = "0.4.8"
 dependencies = [
  "chrono",
+ "flate2",
  "fontdue",
  "rustls",
  "serde",
@@ -2282,6 +2283,7 @@ dependencies = [
  "sha2",
  "tiny-skia",
  "tungstenite",
+ "webpki-roots 0.26.11",
 ]
 
 [[package]]
