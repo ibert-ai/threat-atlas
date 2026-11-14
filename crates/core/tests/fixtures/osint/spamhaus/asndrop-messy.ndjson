@@ -1,0 +1,6 @@
+{"asn":245,"rir":"arin","domain":"x.example","cc":"US","asname":"PRC-AS"}
+{"asn":"abc","rir":"arin","cc":"US","asname":"X"}
+{"asn":4294967296,"rir":"arin","cc":"US","asname":"Too big"}
+{"asn":65000,"rir":"arin","cc":"United States","asname":"Bad cc"}
+{"asn":65001,"rir":"arin","cc":"US","asname":"Ctrl\u0001Name"}
+{"asn":65002,"rir":"ripencc","cc":"SE","asname":"OK-AS","domain":"ok.example"}

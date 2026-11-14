@@ -1,0 +1,11 @@
+{"cidr":"1.10.16.0/20","sblid":"SBL256894","rir":"apnic"}
+{"cidr":"1.10.16.5/20","sblid":"SBL1","rir":"apnic"}
+{"cidr":"10.0.0.0/8","sblid":"SBL2","rir":"arin"}
+{"cidr":"1.19.0.0/16","sblid":"not-an-id","rir":"apnic"}
+{"cidr":"1.19.0.0/16","sblid":"SBL434604","rir":"apnic\u0007"}
+not json at all
+{"cidr":"1.32.128.0/18"}
+{"cidr":"2001:db8::/32","sblid":"SBL3","rir":"ripencc"}
+{"cidr":"127.0.0.0/8","sblid":"SBL4","rir":"arin"}
+{"cidr":"2.26.75.0/24","sblid":"SBL698389","rir":"ripencc"}
+{"type":"metadata","timestamp":1794585404,"size":10,"records":9,"copyright":"x"}
