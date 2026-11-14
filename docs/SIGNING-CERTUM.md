@@ -1,7 +1,7 @@
 # Windows signing with Certum Open Source Code Signing in the Cloud
 
-Status: **prepared, not yet used.** No certificate exists until the owner has bought, verified and
-activated it. Nothing below has been run against a real Certum certificate; the first real signing
+Status: **prepared, not yet used.** The owner has bought the certificate (14 Nov 2026); identity
+verification and activation are still open. No certificate exists until then. Nothing below has been run against a real Certum certificate; the first real signing
 must be done step by step and the results recorded.
 
 ## What the certificate is
@@ -63,6 +63,27 @@ Open points that must be settled before the first signed release:
 - Published assets are never overwritten. Signed packages are a new version with new checksums,
   new release notes and a new tag; the old unsigned versions stay available.
 - Signing does not give instant SmartScreen reputation; say so in the release notes.
+
+## Release signing run (planned order, 14 Nov 2026)
+
+`scripts/sign-release-windows.ps1` signs several files in the order given, then checks each with
+`Get-AuthenticodeSignature` (status Valid, timestamp present, expected certificate, optional signer text)
+and prints a report with the SHA-256 of every file. `-VerifyOnly` checks without signing.
+It has not been run yet; do the first run on copies of test files.
+
+On the signing PC, after the owner has logged in to SimplySign Desktop:
+
+1. Take the unsigned Windows build output (`ThreatAtlas.scr`, `AtlasSOC.exe`).
+2. `.\scripts\sign-release-windows.ps1 -Thumbprint <T> -File ThreatAtlas.scr,AtlasSOC.exe`
+3. Build the MSI and the AtlasSOC installer from those signed files (the MSI is built on macOS or Linux
+   by `scripts/build-msi.sh`; copy the signed SCR there, build, and copy the MSI back).
+4. `.\scripts\sign-release-windows.ps1 -Thumbprint <T> -File ThreatAtlas.msi,AtlasSOC-Setup-<version>-build<n>.exe`
+5. `.\scripts\sign-release-windows.ps1 -VerifyOnly -File <all four>` and keep the report.
+6. New checksums, new release notes and a new tag; then the publish gates in `docs/QUALITY.md` and
+   `docs/VERSION-FEATURES.md` apply as for any release.
+
+CI never signs: the SimplySign login needs the owner's one-time code, and automating it is not allowed
+(see "Who does what").
 
 ## After signing
 
