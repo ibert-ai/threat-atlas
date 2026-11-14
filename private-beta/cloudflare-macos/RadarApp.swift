@@ -57,6 +57,7 @@ struct RadarView: View {
             if !fullScreen { attribution }
         }
         .padding(fullScreen ? 0 : 24)
+        .navigationTitle("AtlasSOC Desktop BETA")
         .frame(minWidth: 1000, minHeight: 760)
         .background(fullScreen ? Color.black : Color.clear)
         .ignoresSafeArea(edges: fullScreen ? .all : [])
@@ -100,7 +101,7 @@ struct RadarView: View {
     /// First run, or the token is missing or no longer accepted: the full setup and explanation.
     private var setupHeader: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Threat Atlas SOC").font(.largeTitle.bold())
+            Text("Threat Atlas SOC Desktop").font(.largeTitle.bold())
             Text("AtlasSOC BETA \(radarLicenseTerms.version) · build \(radarLicenseTerms.build) · Ibert Consulting").foregroundStyle(.orange)
             Text("Live: GreyNoise public threat-map records as received (not unique attacks), classified by the provider. Cloudflare Radar: past-day aggregate shares; never turned into routes or individual events.")
             HStack {
@@ -135,8 +136,9 @@ struct RadarView: View {
     /// Title, beta label and Radar state; details (received time, last message) in the tooltip.
     private var statusItems: some View {
         HStack(spacing: 8) {
-            Text("Threat Atlas SOC").font(.headline)
-            Text("BETA \(radarLicenseTerms.version) · \(radarLicenseTerms.build)").font(.caption).foregroundStyle(.orange)
+            Text("Threat Atlas SOC DESKTOP").font(.headline)
+            Text("BETA \(radarLicenseTerms.version) · \(radarLicenseTerms.build)").font(.caption.bold()).foregroundStyle(.black)
+                .padding(.horizontal, 6).padding(.vertical, 1).background(Color.orange, in: Capsule())
             Circle().fill(model.enabled ? Color.green : Color.secondary).frame(width: 8, height: 8)
             Text(model.busy ? "Radar…" : model.enabled ? "Radar on" : "Radar paused").font(.callout)
         }
@@ -266,6 +268,7 @@ struct TokenSettings: View {
     }
 }
 @main struct PrivateRadarApp: App {
+    init() { ta_soc_set_beta(1) }
     // The licence gate wraps everything: no feed, worker or Keychain access before acceptance.
     var body: some Scene {
         WindowGroup { ConsentGate(terms: radarLicenseTerms) { RadarView().onAppear { OsintController.shared.start() } } }

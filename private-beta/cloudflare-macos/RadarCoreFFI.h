@@ -13,6 +13,7 @@ uint32_t ta_height(void);
 
 // Live SOC session: GreyNoise public threat-map feed (shared with the screensaver core) plus Radar.
 // Creating a session opens the GreyNoise WebSocket; dropping it lets the feed thread stop.
+void ta_soc_set_beta(uint32_t on);
 void *ta_soc_new(void);
 int32_t ta_soc_set_radar(void *session, const uint8_t *body, size_t len, uint64_t received_ms);
 // severities: bit 0 malicious, bit 1 suspicious, bit 2 benign. motion: 0 calm, 1 still, 2 realtime.

@@ -11,6 +11,17 @@ use tiny_skia::*;
 pub const RED: [u8; 3] = [235, 87, 87];
 pub const YELLOW: [u8; 3] = [242, 201, 76];
 pub const GREEN: [u8; 3] = [72, 199, 142];
+static BETA_STAMP: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Hosts of beta builds call this before the first frame so the heading carries a BETA stamp.
+pub fn set_beta_stamp(on: bool) {
+    BETA_STAMP.store(on, std::sync::atomic::Ordering::Relaxed);
+}
+
+fn beta_stamp() -> bool {
+    BETA_STAMP.load(std::sync::atomic::Ordering::Relaxed)
+}
+
 /// Informational layers (Radar aggregates, status) must never read as severity.
 pub const INFO: [u8; 3] = [116, 151, 189];
 const TEXT: [u8; 3] = [203, 222, 235];
@@ -255,6 +266,7 @@ impl Renderer {
                 }
                 self.wide_raw = false;
                 self.text(35, 28, 30, "THREAT ATLAS", [223, 241, 249]);
+                self.desktop_badge(275, 31, 22);
                 self.text(
                     36,
                     70,
@@ -276,6 +288,25 @@ impl Renderer {
         );
         self.desktop_version_label();
         self.base = self.pix.clone();
+    }
+    /// "SOC DESKTOP" after the title, so this window is never mistaken for the screensaver, and an
+    /// orange BETA stamp while the host says this is a beta build.
+    fn desktop_badge(&mut self, x: i32, y: i32, size: u16) {
+        self.text(x, y, size, "SOC DESKTOP", [150, 190, 210]);
+        if beta_stamp() {
+            let bx = x + (size as i32 * 7) + 18;
+            let (w, h) = (size as f32 * 3.2, size as f32 * 1.35);
+            self.rect(bx as f32, y as f32 - 3., w, h, [255, 159, 10], 255);
+            self.rect(
+                bx as f32 + 2.,
+                y as f32 - 1.,
+                w - 4.,
+                h - 4.,
+                [8, 18, 28],
+                255,
+            );
+            self.text(bx + 8, y, size - 4, "BETA", [255, 159, 10]);
+        }
     }
     fn dashboard_base(&mut self) {
         let (w, h) = (self.pix.width(), self.pix.height());
@@ -315,6 +346,7 @@ impl Renderer {
             self.text(x as i32 + 10, y as i32 + 8, 11, label, ACCENT);
         }
         self.text(35, 22, 26, "THREAT ATLAS", [223, 241, 249]);
+        self.desktop_badge(255, 27, 20);
         self.text(
             37,
             60,

@@ -263,6 +263,11 @@ impl SocSession {
         )
     }
 }
+/// Marks this host as a beta build: the heading gets a BETA stamp. Call before `ta_soc_new`.
+#[no_mangle]
+pub extern "C" fn ta_soc_set_beta(on: u32) {
+    render::soc::set_beta_stamp(on != 0);
+}
 #[no_mangle]
 pub extern "C" fn ta_soc_new() -> *mut SocSession {
     std::panic::catch_unwind(|| Box::into_raw(Box::new(SocSession::new())))
