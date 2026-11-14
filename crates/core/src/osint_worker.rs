@@ -77,6 +77,7 @@ const SPAMHAUS_FILES: [(&str, &str); 3] = [
     (osint_spamhaus::DROP_V6_PATH, "spamhaus-drop_v6.json"),
     (osint_spamhaus::ASN_DROP_PATH, "spamhaus-asndrop.json"),
 ];
+const EPSS_FILE: &str = "osint-epss.json";
 const PHISH_FILE: &str = "phishingdb-domains.txt";
 const INTERNETDB_HOST: &str = "internetdb.shodan.io";
 const INTERNETDB_CACHE_MAX: usize = 200;
@@ -131,6 +132,9 @@ pub struct LookupView {
 struct Cache {
     kev: Vec<KevWithEpss>,
     kev_updated_ms: u64,
+    /// About 400,000 scores. Kept in its own file (`osint-epss.json`) so the small cache is not rewritten
+    /// with 25 MB every time a source updates; still read from an older cache file.
+    #[serde(skip_serializing)]
     epss: Vec<EpssScore>,
     epss_updated_ms: u64,
     tor: Vec<IpAddr>,
@@ -431,6 +435,9 @@ fn worker(
     let cache_path = directory.join("osint-cache.json");
     let mut gates: Gates = read_json(&state_path).unwrap_or_default();
     let mut cache: Cache = read_json(&cache_path).unwrap_or_default();
+    if cache.epss.is_empty() {
+        cache.epss = read_json(&directory.join(EPSS_FILE)).unwrap_or_default();
+    }
     let mut note = String::new();
     let mut last_internetdb: Option<u64> = None;
     publish(&shared, &cache, &note);
@@ -459,6 +466,7 @@ fn worker(
                 Ok(Some(fetched)) => {
                     match gunzip(&fetched.body).and_then(|csv| osint::parse_epss(&csv)) {
                         Ok(scores) => {
+                            save(&directory.join(EPSS_FILE), &scores);
                             cache.epss = scores;
                             cache.epss_updated_ms = now;
                             remember(&mut gates, Source::Epss, &fetched);
@@ -824,5 +832,36 @@ mod tests {
         let on = vec!["cisa-kev".to_string()];
         assert!(is_enabled(&on, Source::Epss));
         assert!(!is_enabled(&["first-epss".to_string()], Source::CisaKev));
+    }
+
+    static CALLS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
+    fn counting_fetch(_: &str, _: &str, _: &str, _: usize) -> Option<Reply> {
+        CALLS.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        None
+    }
+
+    /// Owner rule: a source that is switched off makes no request at all, and switching it on starts requests.
+    #[test]
+    fn nothing_is_requested_while_every_source_is_off() {
+        use std::sync::atomic::Ordering::SeqCst;
+        let dir = std::env::temp_dir().join(format!("atlassoc-offtest-{}", std::process::id()));
+        let worker = Osint::start(dir.clone(), Vec::new(), counting_fetch);
+        worker.lookup("1.1.1.1".parse().unwrap());
+        worker.refresh();
+        thread::sleep(Duration::from_millis(2500));
+        assert_eq!(CALLS.load(SeqCst), 0, "a source that is off made a request");
+        worker.set_enabled(vec!["tor-exit".to_string()]);
+        let started = std::time::Instant::now();
+        while CALLS.load(SeqCst) == 0 && started.elapsed() < Duration::from_secs(10) {
+            thread::sleep(Duration::from_millis(100));
+        }
+        assert!(
+            CALLS.load(SeqCst) > 0,
+            "switching a source on did not start requests"
+        );
+        // Only the Tor list was switched on: no other host may have been asked.
+        worker.set_enabled(Vec::new());
+        let _ = std::fs::remove_dir_all(dir);
     }
 }
