@@ -531,6 +531,56 @@ fn show_sslbl(window: &Window, view: Option<&OsintView>) {
     info_box(window, TITLE, &text);
 }
 
+/// Sources that have a working integration in this build, in the order of the Settings menu.
+const LIVE_SOURCES: [threat_atlas_core::osint::Source; 9] = {
+    use threat_atlas_core::osint::Source::*;
+    [
+        CisaKev,
+        Epss,
+        TorExit,
+        SansIsc,
+        RansomwareLive,
+        ShodanInternetDb,
+        SpamhausDrop,
+        PhishTank,
+        Sslbl,
+    ]
+};
+const SOURCE_BASE_ID: u32 = 100;
+
+fn source_on(settings: &Settings, source: threat_atlas_core::osint::Source) -> bool {
+    crate::soc_osint::is_enabled(&settings.enabled_sources, source)
+}
+
+/// Shows a notice and returns false when the source is off, so the caller does nothing.
+fn require_source(
+    window: &Window,
+    settings: &Settings,
+    source: threat_atlas_core::osint::Source,
+) -> bool {
+    if source_on(settings, source) {
+        return true;
+    }
+    let name = threat_atlas_core::osint::source_spec(source).name;
+    info_box(window, "Threat Atlas SOC", &format!("{name} is turned off, so it makes no requests. Turn it on under Settings > Data sources."));
+    false
+}
+
+/// Opens the key and setup guide in the browser; the guide lives on GitHub to keep the install small.
+fn open_key_guide(window: &Window) {
+    let url = wide("https://github.com/ibert-ai/threat-atlas/blob/main/docs/OSINT-API-KEYS.md");
+    unsafe {
+        ShellExecuteW(
+            window.hwnd() as HWND,
+            wide("open").as_ptr(),
+            url.as_ptr(),
+            std::ptr::null(),
+            std::ptr::null(),
+            SW_SHOWNORMAL,
+        )
+    };
+}
+
 fn show_osint_sources(window: &Window) {
     let mut text = String::from("Threat Atlas SOC - OSINT sources\nNon-commercial use only. Provider terms, attribution and minimum intervals are part of the contract.\n\n");
     for source in threat_atlas_core::osint::SOURCES {
@@ -598,21 +648,6 @@ fn menu(
             (27, "How to get a Cloudflare token...", false),
             (14, "Reset display settings", false),
             (15, "Controls and limitations (F1)", false),
-            (35, "Known exploited (KEV + EPSS)", false),
-            (36, "Tor exit nodes", false),
-            (37, "Refresh OSINT", false),
-            (38, "OSINT sources / licences", false),
-            (39, "SANS ISC top ports", false),
-            (
-                40,
-                "Look up IP from clipboard (Shodan InternetDB)...",
-                false,
-            ),
-            (41, "Show last InternetDB result", false),
-            (42, "Ransomware incidents (ransomware.live)", false),
-            (43, "Spamhaus DROP: check IP from clipboard", false),
-            (44, "Phishing.Database: check domain from clipboard", false),
-            (45, "Blacklisted SSL certificates (abuse.ch SSLBL)", false),
         ];
         for (id, text, checked) in options {
             AppendMenuW(
@@ -622,13 +657,83 @@ fn menu(
                 wide(text).as_ptr(),
             );
         }
-        if let Some(update) = update {
-            let enabled = matches!(update, UpdateStatus::Available(_));
+        let settings_menu = CreatePopupMenu();
+        let sources_menu = CreatePopupMenu();
+        let view_menu = CreatePopupMenu();
+        if !settings_menu.is_null() && !sources_menu.is_null() && !view_menu.is_null() {
+            for (i, source) in LIVE_SOURCES.iter().enumerate() {
+                let spec = threat_atlas_core::osint::source_spec(*source);
+                let flags = MF_STRING
+                    | if source_on(settings, *source) {
+                        MF_CHECKED
+                    } else {
+                        0
+                    };
+                AppendMenuW(
+                    sources_menu,
+                    flags,
+                    SOURCE_BASE_ID as usize + i,
+                    wide(spec.name).as_ptr(),
+                );
+            }
+            let viewing = [
+                (35, "Known exploited (KEV + EPSS)"),
+                (36, "Tor exit nodes"),
+                (39, "SANS ISC top ports"),
+                (42, "Ransomware incidents (ransomware.live)"),
+                (43, "Spamhaus DROP: check IP from clipboard"),
+                (44, "Phishing.Database: check domain from clipboard"),
+                (45, "Blacklisted SSL certificates (abuse.ch SSLBL)"),
+                (40, "Look up IP from clipboard (Shodan InternetDB)..."),
+                (41, "Show last InternetDB result"),
+            ];
+            for (id, text) in viewing {
+                AppendMenuW(view_menu, MF_STRING, id, wide(text).as_ptr());
+            }
+            AppendMenuW(
+                settings_menu,
+                MF_POPUP,
+                sources_menu as usize,
+                wide("Data sources (on = may make requests)").as_ptr(),
+            );
+            AppendMenuW(
+                settings_menu,
+                MF_POPUP,
+                view_menu as usize,
+                wide("View data").as_ptr(),
+            );
+            AppendMenuW(
+                settings_menu,
+                MF_STRING,
+                37,
+                wide("Refresh data now").as_ptr(),
+            );
+            AppendMenuW(
+                settings_menu,
+                MF_STRING,
+                38,
+                wide("Sources, licences and attribution").as_ptr(),
+            );
+            AppendMenuW(
+                settings_menu,
+                MF_STRING,
+                46,
+                wide("API keys: how to add them (opens GitHub)...").as_ptr(),
+            );
+            if let Some(update) = update {
+                let enabled = matches!(update, UpdateStatus::Available(_));
+                AppendMenuW(
+                    settings_menu,
+                    MF_STRING | if enabled { 0 } else { MF_GRAYED },
+                    21,
+                    wide(&update.label()).as_ptr(),
+                );
+            }
             AppendMenuW(
                 menu,
-                MF_STRING | if enabled { 0 } else { MF_GRAYED },
-                21,
-                wide(&update.label()).as_ptr(),
+                MF_POPUP,
+                settings_menu as usize,
+                wide("Settings").as_ptr(),
             );
         }
         AppendMenuW(menu, MF_STRING, 16, wide("Exit").as_ptr());
@@ -778,7 +883,6 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         Some(Feed::shared())
     };
     let radar = (!smoke).then(|| Radar::start(state_dir.clone()));
-    let osint = (!smoke).then(|| Osint::start(state_dir.clone()));
     let updater = (!smoke).then(Updater::start);
     let path = state_dir.join("settings.json");
     let (mut settings, warning) = if smoke {
@@ -786,6 +890,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     } else {
         Settings::load(&path)
     };
+    let osint = (!smoke).then(|| Osint::start(state_dir.clone(), settings.enabled_sources.clone()));
     if let Some(warning) = warning {
         show_error(&warning);
     }
@@ -854,17 +959,24 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                     11 => settings.fps = 5, 12 => settings.fps = 10, 13 => settings.fps = 20,
                     25 => settings.theme = Theme::Classic, 26 => settings.theme = Theme::Dashboard,
                     27 => open_token_guide(&display.window),
-                    35 => { let view = osint.as_ref().map(Osint::view); show_kev(&display.window, view.as_ref()); }
-                    36 => { let view = osint.as_ref().map(Osint::view); show_tor(&display.window, view.as_ref()); }
+                    100..=108 => {
+                        let source = LIVE_SOURCES[(action - SOURCE_BASE_ID) as usize];
+                        let id = threat_atlas_core::osint::source_spec(source).id.to_owned();
+                        if source_on(&settings, source) { settings.enabled_sources.retain(|e| *e != id); } else { settings.enabled_sources.push(id); }
+                        if let Some(osint) = &osint { osint.set_enabled(settings.enabled_sources.clone()); }
+                    }
+                    46 => open_key_guide(&display.window),
+                    35 => if require_source(&display.window, &settings, threat_atlas_core::osint::Source::CisaKev) { { let view = osint.as_ref().map(Osint::view); show_kev(&display.window, view.as_ref()); } }
+                    36 => if require_source(&display.window, &settings, threat_atlas_core::osint::Source::TorExit) { { let view = osint.as_ref().map(Osint::view); show_tor(&display.window, view.as_ref()); } }
                     37 => { if let Some(osint) = &osint { osint.refresh(); } }
                     38 => show_osint_sources(&display.window),
-                    39 => { let view = osint.as_ref().map(Osint::view); show_sans(&display.window, view.as_ref()); }
-                    40 => start_internetdb_lookup(&display.window, osint.as_ref()),
-                    42 => { let view = osint.as_ref().map(Osint::view); show_ransomware(&display.window, view.as_ref()); }
-                    43 => { let view = osint.as_ref().map(Osint::view); show_spamhaus(&display.window, view.as_ref()); }
-                    44 => { let view = osint.as_ref().map(Osint::view); show_phishing(&display.window, view.as_ref()); }
-                    45 => { let view = osint.as_ref().map(Osint::view); show_sslbl(&display.window, view.as_ref()); }
-                    41 => { let view = osint.as_ref().map(Osint::view); show_internetdb(&display.window, view.as_ref()); }
+                    39 => if require_source(&display.window, &settings, threat_atlas_core::osint::Source::SansIsc) { { let view = osint.as_ref().map(Osint::view); show_sans(&display.window, view.as_ref()); } }
+                    40 => if require_source(&display.window, &settings, threat_atlas_core::osint::Source::ShodanInternetDb) { start_internetdb_lookup(&display.window, osint.as_ref()) },
+                    42 => if require_source(&display.window, &settings, threat_atlas_core::osint::Source::RansomwareLive) { { let view = osint.as_ref().map(Osint::view); show_ransomware(&display.window, view.as_ref()); } }
+                    43 => if require_source(&display.window, &settings, threat_atlas_core::osint::Source::SpamhausDrop) { { let view = osint.as_ref().map(Osint::view); show_spamhaus(&display.window, view.as_ref()); } }
+                    44 => if require_source(&display.window, &settings, threat_atlas_core::osint::Source::PhishTank) { { let view = osint.as_ref().map(Osint::view); show_phishing(&display.window, view.as_ref()); } }
+                    45 => if require_source(&display.window, &settings, threat_atlas_core::osint::Source::Sslbl) { { let view = osint.as_ref().map(Osint::view); show_sslbl(&display.window, view.as_ref()); } }
+                    41 => if require_source(&display.window, &settings, threat_atlas_core::osint::Source::ShodanInternetDb) { { let view = osint.as_ref().map(Osint::view); show_internetdb(&display.window, view.as_ref()); } }
                     14 => { settings = Settings::default(); rebuild = true; }
                     15 => help(&display.window),
                     17 => { if let Some(radar) = &radar { radar.toggle_collecting(); } }

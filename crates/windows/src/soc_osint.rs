@@ -152,15 +152,35 @@ enum Command {
 pub struct Osint {
     shared: Arc<Mutex<View>>,
     wake: Sender<Command>,
+    enabled: Arc<Mutex<Vec<String>>>,
+}
+
+/// Whether a source may make requests, given the ids the user turned on.
+pub fn is_enabled(enabled: &[String], source: Source) -> bool {
+    let id = osint::source_spec(source).id;
+    enabled.iter().any(|e| e == id)
 }
 
 impl Osint {
-    pub fn start(directory: PathBuf) -> Self {
+    pub fn start(directory: PathBuf, enabled: Vec<String>) -> Self {
         let shared = Arc::new(Mutex::new(View::default()));
+        let enabled = Arc::new(Mutex::new(enabled));
         let (wake, rx) = mpsc::channel();
         let state = shared.clone();
-        thread::spawn(move || worker(directory, state, rx));
-        Self { shared, wake }
+        let switches = enabled.clone();
+        thread::spawn(move || worker(directory, state, rx, switches));
+        Self {
+            shared,
+            wake,
+            enabled,
+        }
+    }
+
+    /// Replaces the set of sources that may make requests and wakes the worker. A source that is off
+    /// makes no request at all, including no lookup.
+    pub fn set_enabled(&self, enabled: Vec<String>) {
+        *self.enabled.lock().unwrap() = enabled;
+        let _ = self.wake.send(Command::Refresh);
     }
 
     pub fn view(&self) -> View {
@@ -174,7 +194,9 @@ impl Osint {
     /// Queues one InternetDB lookup. Only the host's click handler calls this, after the user has
     /// confirmed that the address will be sent to Shodan.
     pub fn lookup(&self, ip: IpAddr) {
-        if osint_internetdb::is_lookup_allowed(ip) {
+        if osint_internetdb::is_lookup_allowed(ip)
+            && is_enabled(&self.enabled.lock().unwrap(), Source::ShodanInternetDb)
+        {
             self.shared.lock().unwrap().lookup_pending = true;
             let _ = self.wake.send(Command::Lookup(ip));
         }
@@ -363,7 +385,13 @@ fn gunzip(bytes: &[u8]) -> Result<Vec<u8>, String> {
     Ok(out)
 }
 
-fn worker(directory: PathBuf, shared: Arc<Mutex<View>>, rx: Receiver<Command>) {
+fn worker(
+    directory: PathBuf,
+    shared: Arc<Mutex<View>>,
+    rx: Receiver<Command>,
+    enabled: Arc<Mutex<Vec<String>>>,
+) {
+    let on = |source: Source| is_enabled(&enabled.lock().unwrap(), source);
     let _ = fs::create_dir_all(&directory);
     let state_path = directory.join("osint-state.json");
     let cache_path = directory.join("osint-cache.json");
@@ -372,12 +400,15 @@ fn worker(directory: PathBuf, shared: Arc<Mutex<View>>, rx: Receiver<Command>) {
     let mut note = String::new();
     let mut last_internetdb: Option<u64> = None;
     publish(&shared, &cache, &note);
-    if let Ok(body) = fs::read(directory.join(PHISH_FILE)) {
+    if let Some(body) = on(Source::PhishTank)
+        .then(|| fs::read(directory.join(PHISH_FILE)).ok())
+        .flatten()
+    {
         if let Ok(set) = osint_phishtank::parse_list(&body) {
             shared.lock().unwrap().phish = Some(Arc::new(set));
         }
     }
-    if cache.spamhaus_updated_ms != 0 {
+    if cache.spamhaus_updated_ms != 0 && on(Source::SpamhausDrop) {
         let loaded = load_spamhaus(&directory, cache.spamhaus_updated_ms).map(Arc::new);
         shared.lock().unwrap().spamhaus = loaded;
     }
@@ -388,7 +419,7 @@ fn worker(directory: PathBuf, shared: Arc<Mutex<View>>, rx: Receiver<Command>) {
 
         // EPSS first: KEV is joined against the latest usable scores.
         let epss_spec = osint::source_spec(Source::Epss);
-        if gate(&mut gates, Source::Epss).due(now) {
+        if on(Source::Epss) && gate(&mut gates, Source::Epss).due(now) {
             let saved = validators(&gates, Source::Epss);
             match get(EPSS_HOST, EPSS_PATH, MAX_EPSS_BYTES, &saved) {
                 Ok(Some(fetched)) => {
@@ -423,7 +454,7 @@ fn worker(directory: PathBuf, shared: Arc<Mutex<View>>, rx: Receiver<Command>) {
         }
 
         let kev_spec = osint::source_spec(Source::CisaKev);
-        if gate(&mut gates, Source::CisaKev).due(now) {
+        if on(Source::CisaKev) && gate(&mut gates, Source::CisaKev).due(now) {
             let saved = validators(&gates, Source::CisaKev);
             match get(KEV_HOST, KEV_PATH, MAX_KEV_BYTES, &saved) {
                 Ok(Some(fetched)) => match osint::parse_kev(&fetched.body) {
@@ -458,7 +489,7 @@ fn worker(directory: PathBuf, shared: Arc<Mutex<View>>, rx: Receiver<Command>) {
         }
 
         let tor_spec = osint::source_spec(Source::TorExit);
-        if gate(&mut gates, Source::TorExit).due(now) {
+        if on(Source::TorExit) && gate(&mut gates, Source::TorExit).due(now) {
             let saved = validators(&gates, Source::TorExit);
             match get(TOR_HOST, TOR_PATH, MAX_TOR_BYTES, &saved) {
                 Ok(Some(fetched)) => {
@@ -487,7 +518,7 @@ fn worker(directory: PathBuf, shared: Arc<Mutex<View>>, rx: Receiver<Command>) {
         }
 
         let sans_spec = osint::source_spec(Source::SansIsc);
-        if gate(&mut gates, Source::SansIsc).due(now) {
+        if on(Source::SansIsc) && gate(&mut gates, Source::SansIsc).due(now) {
             let saved = validators(&gates, Source::SansIsc);
             match get(SANS_HOST, SANS_PATH, MAX_SANS_BYTES, &saved) {
                 Ok(Some(fetched)) => match osint::parse_sans_ports(&fetched.body) {
@@ -521,7 +552,7 @@ fn worker(directory: PathBuf, shared: Arc<Mutex<View>>, rx: Receiver<Command>) {
         }
 
         let ransom_spec = osint::source_spec(Source::RansomwareLive);
-        if gate(&mut gates, Source::RansomwareLive).due(now) {
+        if on(Source::RansomwareLive) && gate(&mut gates, Source::RansomwareLive).due(now) {
             let headers =
                 "Accept: application/json\r\nUser-Agent: AtlasSOC-OSINT (+https://ibert.se)\r\n";
             match https_get_public(
@@ -569,7 +600,7 @@ fn worker(directory: PathBuf, shared: Arc<Mutex<View>>, rx: Receiver<Command>) {
         }
 
         let phish_spec = osint::source_spec(Source::PhishTank);
-        if gate(&mut gates, Source::PhishTank).due(now) {
+        if on(Source::PhishTank) && gate(&mut gates, Source::PhishTank).due(now) {
             let saved = validators(&gates, Source::PhishTank);
             match get(
                 osint_phishtank::HOST,
@@ -619,7 +650,7 @@ fn worker(directory: PathBuf, shared: Arc<Mutex<View>>, rx: Receiver<Command>) {
         }
 
         let sslbl_spec = osint::source_spec(Source::Sslbl);
-        if gate(&mut gates, Source::Sslbl).due(now) {
+        if on(Source::Sslbl) && gate(&mut gates, Source::Sslbl).due(now) {
             match get(
                 osint_abusech::SSLBL_HOST,
                 osint_abusech::SSLBL_CERTS_PATH,
@@ -665,7 +696,7 @@ fn worker(directory: PathBuf, shared: Arc<Mutex<View>>, rx: Receiver<Command>) {
         }
 
         let drop_spec = osint::source_spec(Source::SpamhausDrop);
-        if gate(&mut gates, Source::SpamhausDrop).due(now) {
+        if on(Source::SpamhausDrop) && gate(&mut gates, Source::SpamhausDrop).due(now) {
             // One attempt covers all three files; any failure backs off for the full interval.
             let mut bodies = Vec::new();
             let mut failure = None;
@@ -725,12 +756,15 @@ fn worker(directory: PathBuf, shared: Arc<Mutex<View>>, rx: Receiver<Command>) {
 
         match rx.recv_timeout(Duration::from_secs(60)) {
             Ok(Command::Refresh) => {}
-            Ok(Command::Lookup(ip)) => {
+            Ok(Command::Lookup(ip)) if on(Source::ShodanInternetDb) => {
                 let result = lookup_internetdb(ip, &mut cache, &mut last_internetdb);
                 save(&cache_path, &cache);
                 let mut view = shared.lock().unwrap();
                 view.lookup = Some(result);
                 view.lookup_pending = false;
+            }
+            Ok(Command::Lookup(_)) => {
+                shared.lock().unwrap().lookup_pending = false;
             }
             Err(RecvTimeoutError::Timeout) => {}
             Err(RecvTimeoutError::Disconnected) => break,

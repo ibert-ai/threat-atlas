@@ -56,6 +56,24 @@ pub const SOURCES: &[Source] = &[
     Source::PhishTank,
 ];
 
+/// Sources that are on in a new installation. They were part of the first OSINT release and keep running;
+/// every other source is off until the user turns it on in Settings.
+pub fn default_enabled(source: Source) -> bool {
+    matches!(
+        source,
+        Source::CisaKev | Source::Epss | Source::TorExit | Source::SansIsc
+    )
+}
+
+/// Ids of the sources that are on by default, for a fresh settings file.
+pub fn default_enabled_ids() -> Vec<String> {
+    SOURCES
+        .iter()
+        .filter(|s| default_enabled(**s))
+        .map(|s| source_spec(*s).id.to_owned())
+        .collect()
+}
+
 /// Licence and rate-limit contract for one source.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SourceSpec {
@@ -655,5 +673,17 @@ mod tests {
         let list = b"# comment\n1.2.3.4\n2001:db8::1\n1.2.3.4\nnot-an-ip\n\n";
         let exits = parse_tor_exits(list);
         assert_eq!(exits.len(), 2);
+    }
+
+    #[test]
+    fn only_the_first_release_sources_are_on_by_default() {
+        let on = default_enabled_ids();
+        assert_eq!(on, ["cisa-kev", "first-epss", "tor-exit", "sans-isc"]);
+        // Every other source, including every one that needs a key or sends a user's data, starts off.
+        for source in SOURCES {
+            if !on.iter().any(|id| id == source_spec(*source).id) {
+                assert!(!default_enabled(*source), "{source:?}");
+            }
+        }
     }
 }
