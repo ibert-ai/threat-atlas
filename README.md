@@ -6,6 +6,10 @@ Native Rust SOC screensaver for macOS 12+ and Windows 10/11 x64. It draws a worl
 map, animated routes, receipt counters and a recent-observations log from the
 GreyNoise public threat-map feed. The header shows both UTC and the computer's local time, including its current UTC offset, using the operating system's timezone and daylight-saving rules. No embedded website, cookies, login or API key.
 
+## Maintainer
+
+Threat Atlas SOC and AtlasSOC Desktop are free and open source software under the [MIT licence](LICENSE), maintained by Robert Ibert ([Ibert Consulting](https://ibert.se)) in this repository, [github.com/ibert-ai/threat-atlas](https://github.com/ibert-ai/threat-atlas). Releases are published here and the software is free to use.
+
 ## Release status
 
 The latest stable release is **0.4.8**, build **16**, for Windows 10/11 x64 (MSI and
