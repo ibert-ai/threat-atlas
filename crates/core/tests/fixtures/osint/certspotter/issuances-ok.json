@@ -1,0 +1,27 @@
+[
+	{
+		"id": "12809115180",
+		"tbs_sha256": "a7781bc044f9e19ba8009c0299b404f3816642d5185ed73bae6c05e8f7fa9d35",
+		"cert_sha256": "4973b48cf244e4981d43ff0485c347d50a22f0b827f9d0c96f9233a9e7646bf5",
+		"dns_names": ["example.com", "example.edu", "example.net", "example.org"],
+		"pubkey_sha256": "54d18757bf715a84566fb9722785e9f78109c2a1e66a2c63ab2c57d94f41b627",
+		"issuer": {
+			"friendly_name": "Sectigo",
+			"pubkey_sha256": "2aa918617e4b60060fed719e9aacdbb4f3c803cc7b052fc16ce21c0177f78f69",
+			"name": "C=GB, O=Sectigo Limited, CN=Sectigo Public Server Authentication CA OV R36"
+		},
+		"not_before": "2025-11-20T00:00:00Z",
+		"not_after": "2026-11-20T23:59:59Z",
+		"revoked": true
+	},
+	{
+		"id": "12822827438",
+		"tbs_sha256": "cc93628df568482176fc494c75cfbea1979a75693520a0c402b94de00cee7157",
+		"cert_sha256": "04d54ae0d1b89c0477a054e9bf5823ec3fc4876884edd1700137bcc4b0d9da2a",
+		"dns_names": ["example.com", "www.example.com", "*.example.net"],
+		"issuer": {"friendly_name": "Sectigo", "name": "C=GB, O=Sectigo Limited, CN=Sectigo Public Server Authentication CA OV R36"},
+		"not_before": "2025-11-21T00:00:00Z",
+		"not_after": "2026-11-21T23:59:59Z",
+		"revoked": false
+	}
+]

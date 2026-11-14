@@ -1,0 +1,7 @@
+# comment line in case the project adds a header
+evil-login.example
+Secure-Bank.EXAMPLE
+paypa1-verify.example.net
+sub.phish-kit.example.org
+000webhostapp.com
+fake-bank.000webhostapp.com
