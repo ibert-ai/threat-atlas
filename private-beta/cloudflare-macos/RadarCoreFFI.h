@@ -38,5 +38,6 @@ void ta_osint_refresh(void *handle);
 int32_t ta_osint_lookup(void *handle, const char *ip);
 // Writes the page text and returns its full length in bytes.
 size_t ta_osint_page(void *handle, const char *source_id, const char *clipboard, uint8_t *out, size_t cap);
+size_t ta_osint_status(void *handle, const char *source_id, uint8_t *out, size_t cap);
 size_t ta_osint_sources(uint8_t *out, size_t cap);
 void ta_osint_drop(void *handle);

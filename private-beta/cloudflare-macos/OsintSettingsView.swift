@@ -36,11 +36,16 @@ struct OsintSettingsView: View {
                                 Button("Look up copied IP…") { askLookup() }.disabled(!osint.isOn(source.id))
                             }
                         }
+                        Text(source.what).font(.caption)
+                        Text(osint.status(source)).font(.caption).foregroundStyle(osint.isOn(source.id) ? Color.accentColor : Color.secondary)
+                            .id(osint.tick)
                         Text("\(source.licence) Interval at least \(source.min_minutes) min. \(source.requires_key ? "Needs your own API key." : "No key needed.")")
-                            .font(.caption).foregroundStyle(.secondary)
+                            .font(.caption2).foregroundStyle(.secondary)
                     }
                 }
                 Button("Refresh data now") { osint.refresh() }
+                Text("Refresh asks every switched-on source for new data, but each source keeps its own minimum interval (see the grey line), so some will say they are already up to date. The data is shown as text here for now; map panels come next.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
             Section("API keys") {
                 Text("Sources that need your own API key will appear here once their key entry is added. Step-by-step instructions for every provider are kept on GitHub.")
@@ -58,6 +63,8 @@ struct OsintSettingsView: View {
             }
         }
         .formStyle(.grouped)
+        .onAppear { osint.startTicking() }
+        .onDisappear { osint.stopTicking() }
         .frame(minWidth: 620, minHeight: 640)
         .sheet(item: $page) { p in
             VStack(alignment: .leading, spacing: 12) {

@@ -134,6 +134,32 @@ pub unsafe extern "C" fn ta_osint_page(
     )
 }
 
+/// One status line for a source (what has arrived and when). Returns the full length in bytes.
+/// # Safety
+/// `handle` must be a live pointer; `source_id` a valid string; `out` writable for `cap` bytes or null.
+#[no_mangle]
+pub unsafe extern "C" fn ta_osint_status(
+    handle: *mut OsintHandle,
+    source_id: *const c_char,
+    out: *mut u8,
+    cap: usize,
+) -> usize {
+    let (Some(h), Some(id)) = (handle.as_ref(), text(source_id)) else {
+        return 0;
+    };
+    let Some(source) = LIVE_SOURCES
+        .iter()
+        .find(|s| osint::source_spec(**s).id == id)
+    else {
+        return 0;
+    };
+    copy_out(
+        &osint_text::status(*source, &h.osint.view(), now_ms()),
+        out,
+        cap,
+    )
+}
+
 /// JSON array describing the live sources: id, name, licence, attribution, min_minutes, requires_key,
 /// default_on. Returns the full length in bytes.
 /// # Safety
@@ -152,6 +178,7 @@ pub unsafe extern "C" fn ta_osint_sources(out: *mut u8, cap: usize) -> usize {
                 "min_minutes": spec.min_interval_ms / 60_000,
                 "requires_key": spec.requires_key,
                 "default_on": osint::default_enabled(*s),
+                "what": osint_text::what(*s),
                 "clipboard": matches!(s, Source::ShodanInternetDb | Source::SpamhausDrop | Source::PhishTank),
             })
         })

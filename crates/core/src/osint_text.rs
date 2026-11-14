@@ -63,6 +63,83 @@ pub fn page(source: Source, view: &View, clipboard: &str, now_ms: u64) -> String
     text
 }
 
+/// One line for the Settings list: what has arrived, when, or what is missing.
+pub fn status(source: Source, view: &View, now_ms: u64) -> String {
+    let waiting = |updated: u64, what: String| {
+        if updated == 0 {
+            if view.note.is_empty() {
+                "Waiting for the first download...".to_string()
+            } else {
+                format!("No data yet. Last problem: {}", view.note)
+            }
+        } else {
+            format!("{what}, updated {}", age(updated, now_ms))
+        }
+    };
+    match source {
+        Source::CisaKev | Source::Epss => waiting(
+            view.kev_updated_ms,
+            format!("{} known-exploited vulnerabilities", view.kev.len()),
+        ),
+        Source::TorExit => waiting(
+            view.tor_updated_ms,
+            format!("{} exit nodes", view.tor_count),
+        ),
+        Source::SansIsc => waiting(
+            view.sans_updated_ms,
+            view.sans
+                .as_ref()
+                .map_or("top ports".into(), |r| format!("top ports for {}", r.date)),
+        ),
+        Source::RansomwareLive => waiting(
+            view.ransom_updated_ms,
+            format!(
+                "{} incidents in 30 days",
+                view.ransom.as_ref().map_or(0, |r| r.total)
+            ),
+        ),
+        Source::SpamhausDrop => waiting(
+            view.spamhaus.as_ref().map_or(0, |d| d.updated_ms),
+            view.spamhaus.as_ref().map_or(String::new(), |d| {
+                format!(
+                    "{} IPv4 / {} IPv6 netblocks",
+                    d.v4.entries.len(),
+                    d.v6.entries.len()
+                )
+            }),
+        ),
+        Source::PhishTank => waiting(
+            view.phish_state.fetched_at_ms().unwrap_or(0),
+            format!("{} domains", view.phish.as_ref().map_or(0, |s| s.len())),
+        ),
+        Source::Sslbl => waiting(
+            view.sslbl_updated_ms,
+            format!("{} certificates", view.sslbl_total),
+        ),
+        Source::ShodanInternetDb => match (&view.lookup, view.lookup_pending) {
+            (_, true) => "Looking up...".into(),
+            (Some(l), false) => format!("Last lookup: {} ({})", l.ip, age(l.at_ms, now_ms)),
+            (None, false) => "On demand: copy an IP address and press Look up.".into(),
+        },
+        _ => String::new(),
+    }
+}
+
+/// What the source tells you, in one sentence.
+pub fn what(source: Source) -> &'static str {
+    match source {
+        Source::CisaKev | Source::Epss => "Vulnerabilities that attackers are known to be exploiting, with a score for how likely exploitation is.",
+        Source::TorExit => "Addresses of Tor exit nodes: traffic from them is anonymised, not necessarily malicious.",
+        Source::SansIsc => "The ports that internet honeypots see attacked most today.",
+        Source::RansomwareLive => "How many ransomware incidents were published in the last 30 days: countries, groups and sectors. No victim names.",
+        Source::ShodanInternetDb => "For an IP address you choose: open ports, software and known vulnerabilities Shodan has seen.",
+        Source::SpamhausDrop => "Network ranges Spamhaus advises never to route. Check whether an IP address is inside one.",
+        Source::PhishTank => "A public list of known phishing domains. Check whether a domain or link is on it.",
+        Source::Sslbl => "SSL certificates abuse.ch links to botnet command servers.",
+        _ => "",
+    }
+}
+
 fn kev(view: &View, now: u64) -> String {
     let mut text = format!(
         "CISA Known Exploited Vulnerabilities + FIRST EPSS\nKEV updated: {}\nEPSS updated: {}\n\n",

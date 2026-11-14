@@ -12,6 +12,8 @@ struct OsintSource: Identifiable, Decodable, Equatable {
     let default_on: Bool
     /// True for sources that act on an address or domain the user copied.
     let clipboard: Bool
+    /// One sentence: what this source tells you.
+    let what: String
 }
 
 /// Owns the shared OSINT worker. A source that is switched off makes no request at all; the worker
@@ -22,6 +24,9 @@ final class OsintController: ObservableObject {
 
     @Published private(set) var sources: [OsintSource] = []
     @Published private(set) var enabled: Set<String> = []
+    /// Bumped by a timer so the status lines in Settings stay current.
+    @Published private(set) var tick = 0
+    private var timer: Timer?
     private var handle: UnsafeMutableRawPointer?
 
     private init() {
@@ -55,6 +60,24 @@ final class OsintController: ObservableObject {
             .appendingPathComponent("ThreatAtlasPrivateRadar/osint", isDirectory: true)
         try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         handle = ta_osint_start(base.path, json())
+    }
+
+    func startTicking() {
+        guard timer == nil else { return }
+        timer = Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { [weak self] _ in self?.tick += 1 }
+    }
+
+    func stopTicking() { timer?.invalidate(); timer = nil }
+
+    /// One line: what has arrived and when. Empty text when the source is off.
+    func status(_ source: OsintSource) -> String {
+        guard isOn(source.id) else { return "Off: no requests are made." }
+        guard let handle else { return "Starting..." }
+        let needed = ta_osint_status(handle, source.id, nil, 0)
+        guard needed > 0 else { return "" }
+        var buffer = [UInt8](repeating: 0, count: needed)
+        let written = ta_osint_status(handle, source.id, &buffer, needed)
+        return String(decoding: buffer.prefix(min(written, needed)), as: UTF8.self)
     }
 
     func isOn(_ id: String) -> Bool { enabled.contains(id) }
