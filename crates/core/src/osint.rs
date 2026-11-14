@@ -224,12 +224,12 @@ pub fn source_spec(source: Source) -> SourceSpec {
         },
         Source::PhishTank => SourceSpec {
             id: "phishtank",
-            name: "PhishTank",
-            licence: "Free API terms; confirm non-commercial use and attribution.",
-            attribution: "https://phishtank.org/developer_info.php",
-            min_interval_ms: 60 * 60 * 1000,
-            requires_key: true,
-            non_commercial_only: true,
+            name: "Phishing.Database",
+            licence: "MIT licence (Phishing.Database by Mitchell Krog); free for any use with the licence notice; no key.",
+            attribution: "https://github.com/mitchellkrogza/Phishing.Database",
+            min_interval_ms: 24 * 60 * 60 * 1000,
+            requires_key: false,
+            non_commercial_only: false,
         },
     }
 }
@@ -513,7 +513,6 @@ mod tests {
             Source::ThreatFox,
             Source::Otx,
             Source::AbuseIpdb,
-            Source::PhishTank,
             Source::MaxMind,
         ] {
             assert!(
@@ -523,6 +522,7 @@ mod tests {
         }
         for source in [
             Source::Sslbl,
+            Source::PhishTank, // Phishing.Database, MIT, no key
             Source::ShodanInternetDb,
             Source::RipeRis,
             Source::TeamCymru,

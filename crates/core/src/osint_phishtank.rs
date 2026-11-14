@@ -193,7 +193,7 @@ pub enum FeedStatus {
 }
 
 /// What the host remembers about the list between downloads.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct FeedState {
     fingerprint: Option<String>,
     changed_at_ms: u64,
@@ -228,6 +228,21 @@ impl FeedState {
             Some(_) => FeedStatus::Fresh,
         }
     }
+}
+
+/// Reads one host name from text the user copied: a domain or a URL, also defanged (`hxxp`, `[.]`). Returns
+/// `None` for several words, an IP address or anything that is not a usable host name.
+pub fn host_from_text(text: &str) -> Option<String> {
+    let t = text.trim();
+    if t.is_empty() || t.len() > 300 || t.chars().any(char::is_whitespace) {
+        return None;
+    }
+    let t = t.replace("[.]", ".").replace("(.)", ".");
+    let rest = t.split_once("://").map_or(t.as_str(), |(_, r)| r);
+    let authority = rest.split(['/', '?', '#']).next()?;
+    let host = authority.rsplit('@').next()?;
+    let host = host.split(':').next()?;
+    normalise_host(host)
 }
 
 /// Show a host name so it cannot be clicked or resolved by accident: each dot becomes `[.]`.
@@ -377,5 +392,25 @@ mod tests {
     #[test]
     fn defang_replaces_every_dot() {
         assert_eq!(defang("evil.example.org"), "evil[.]example[.]org");
+    }
+
+    #[test]
+    fn host_is_taken_from_domains_and_urls() {
+        assert_eq!(
+            host_from_text("Example.COM").as_deref(),
+            Some("example.com")
+        );
+        assert_eq!(
+            host_from_text("hxxps://login[.]evil[.]example/path?x=1").as_deref(),
+            Some("login.evil.example")
+        );
+        assert_eq!(
+            host_from_text("http://user:pw@a.example:8080/x").as_deref(),
+            Some("a.example")
+        );
+        assert_eq!(host_from_text("1.2.3.4"), None);
+        assert_eq!(host_from_text("two words.com"), None);
+        assert_eq!(host_from_text("localhost"), None);
+        assert_eq!(host_from_text(""), None);
     }
 }

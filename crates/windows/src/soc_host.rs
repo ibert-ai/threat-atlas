@@ -478,6 +478,59 @@ fn show_spamhaus(window: &Window, view: Option<&OsintView>) {
     info_box(window, TITLE, &text);
 }
 
+/// Checks the domain or URL on the clipboard against the stored Phishing.Database list. No request.
+fn show_phishing(window: &Window, view: Option<&OsintView>) {
+    use threat_atlas_core::osint_phishtank::{self as phish, FeedStatus};
+    const TITLE: &str = "Threat Atlas SOC - Phishing.Database";
+    let Some(view) = view else {
+        info_box(window, TITLE, "OSINT worker is not running in this mode.");
+        return;
+    };
+    let Some(set) = &view.phish else {
+        info_box(window, TITLE, "The phishing domain list has not been downloaded yet. It is fetched once a day after start (about 11 MB).");
+        return;
+    };
+    let now = threat_atlas_core::feed::now_ms();
+    let mut text = format!("Phishing.Database: {} listed domains.\n", set.len());
+    let stale = view.phish_state.status(now) == FeedStatus::Stale;
+    if stale {
+        text.push_str("Warning: the list has not changed for 7 days or more; the feed may have stopped. It is not used for answers.\n");
+    }
+    match clipboard_text(window).as_deref().and_then(phish::host_from_text) {
+        Some(host) if !stale => match set.lookup(&host) {
+            Some(listed) => text.push_str(&format!("\n{} is on the list (matched {}). Do not open it; the list can contain errors and old entries.\n", phish::defang(&host), phish::defang(&listed))),
+            None => text.push_str(&format!("\n{} is not on the list. That does not mean it is safe.\n", phish::defang(&host))),
+        },
+        Some(_) => {}
+        None => text.push_str("\nTo check a domain or link, copy it and choose this item again. Nothing is opened or sent.\n"),
+    }
+    text.push_str("\nSource: Phishing.Database by Mitchell Krog (MIT licence), https://github.com/mitchellkrogza/Phishing.Database . The list is downloaded from raw.githubusercontent.com; the checked name stays on this computer.");
+    info_box(window, TITLE, &text);
+}
+
+fn show_sslbl(window: &Window, view: Option<&OsintView>) {
+    const TITLE: &str = "Threat Atlas SOC - abuse.ch SSLBL";
+    let Some(view) = view.filter(|v| v.sslbl_updated_ms != 0) else {
+        info_box(
+            window,
+            TITLE,
+            "No data yet. The list is fetched shortly after start, then at most every 15 minutes.",
+        );
+        return;
+    };
+    let top = view
+        .sslbl_top
+        .iter()
+        .map(|(k, n)| format!("{k} {n}"))
+        .collect::<Vec<_>>()
+        .join("\n  ");
+    let text = format!(
+        "SSL certificates blacklisted by abuse.ch: {}\nNewest listing: {}\nUpdated: {}\n\nMost common reasons:\n  {}\n\nSource: abuse.ch SSLBL, https://sslbl.abuse.ch/ (CC0). Certificates linked to botnet command servers; context only.",
+        view.sslbl_total, age(view.sslbl_newest_ms), age(view.sslbl_updated_ms), top
+    );
+    info_box(window, TITLE, &text);
+}
+
 fn show_osint_sources(window: &Window) {
     let mut text = String::from("Threat Atlas SOC - OSINT sources\nNon-commercial use only. Provider terms, attribution and minimum intervals are part of the contract.\n\n");
     for source in threat_atlas_core::osint::SOURCES {
@@ -558,6 +611,8 @@ fn menu(
             (41, "Show last InternetDB result", false),
             (42, "Ransomware incidents (ransomware.live)", false),
             (43, "Spamhaus DROP: check IP from clipboard", false),
+            (44, "Phishing.Database: check domain from clipboard", false),
+            (45, "Blacklisted SSL certificates (abuse.ch SSLBL)", false),
         ];
         for (id, text, checked) in options {
             AppendMenuW(
@@ -807,6 +862,8 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                     40 => start_internetdb_lookup(&display.window, osint.as_ref()),
                     42 => { let view = osint.as_ref().map(Osint::view); show_ransomware(&display.window, view.as_ref()); }
                     43 => { let view = osint.as_ref().map(Osint::view); show_spamhaus(&display.window, view.as_ref()); }
+                    44 => { let view = osint.as_ref().map(Osint::view); show_phishing(&display.window, view.as_ref()); }
+                    45 => { let view = osint.as_ref().map(Osint::view); show_sslbl(&display.window, view.as_ref()); }
                     41 => { let view = osint.as_ref().map(Osint::view); show_internetdb(&display.window, view.as_ref()); }
                     14 => { settings = Settings::default(); rebuild = true; }
                     15 => help(&display.window),
