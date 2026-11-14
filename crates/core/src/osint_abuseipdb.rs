@@ -29,6 +29,9 @@ pub const LOCAL_DAILY_BUDGET: u32 = 800;
 /// Largest response body accepted. A real answer is under 1 KB.
 pub const MAX_BODY_BYTES: usize = 64 * 1024;
 
+// The local budget must stay below the plan limit so the user's other tools keep room.
+const _: () = assert!(LOCAL_DAILY_BUDGET < FREE_DAILY_CHECKS);
+
 const MAX_HOSTNAMES: usize = 20;
 const MAX_TEXT: usize = 200;
 const MAX_USAGE_TYPE: usize = 100;
@@ -435,7 +438,6 @@ mod tests {
         );
         assert!(b.take(101 * day, 3), "new UTC day");
         assert_eq!(b.used, 1);
-        assert!(LOCAL_DAILY_BUDGET < FREE_DAILY_CHECKS);
     }
 
     #[test]
