@@ -13,7 +13,7 @@
 //! contact-bearing `User-Agent`; never request `/v2/stats` or other paths the free API does not serve as JSON
 //! (some paths answer with an HTML page and status 200); stop on 429.
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 pub const HOST: &str = "api.ransomware.live";
 pub const RECENT_PATH: &str = "/v2/recentvictims";
@@ -55,7 +55,7 @@ impl Incident {
 }
 
 /// Counts over a time window.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Summary {
     pub total: u32,
     pub window_days: u32,

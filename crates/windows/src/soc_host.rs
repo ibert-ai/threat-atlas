@@ -407,6 +407,39 @@ fn show_internetdb(window: &Window, view: Option<&OsintView>) {
     info_box(window, TITLE, &text);
 }
 
+fn show_ransomware(window: &Window, view: Option<&OsintView>) {
+    const TITLE: &str = "Threat Atlas SOC - ransomware.live";
+    let Some(view) = view else {
+        info_box(window, TITLE, "OSINT worker is not running in this mode.");
+        return;
+    };
+    let Some(sum) = &view.ransom else {
+        info_box(window, TITLE, "No data yet. The first request is made shortly after start, then at most every 15 minutes.");
+        return;
+    };
+    let list = |items: &[(String, u32)]| -> String {
+        if items.is_empty() {
+            "none".to_string()
+        } else {
+            items
+                .iter()
+                .map(|(k, n)| format!("{k} {n}"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        }
+    };
+    let mut text = format!(
+        "Disclosed ransomware incidents, last {} days: {}\nUpdated: {}\n\nCountries: {}\nGroups: {}\nSectors: {}\n",
+        sum.window_days, sum.total, age(view.ransom_updated_ms),
+        list(&sum.by_country), list(&sum.by_group), list(&sum.by_sector)
+    );
+    if !view.note.is_empty() {
+        text.push_str(&format!("Last note: {}\n", view.note));
+    }
+    text.push_str("\nSource: ransomware.live (https://www.ransomware.live/api). Counts of what attackers published on leak sites, not confirmed incidents. No victim names are kept or shown. Personal, non-commercial use only; not for corporate or business use.");
+    info_box(window, TITLE, &text);
+}
+
 fn show_osint_sources(window: &Window) {
     let mut text = String::from("Threat Atlas SOC - OSINT sources\nNon-commercial use only. Provider terms, attribution and minimum intervals are part of the contract.\n\n");
     for source in threat_atlas_core::osint::SOURCES {
@@ -485,6 +518,7 @@ fn menu(
                 false,
             ),
             (41, "Show last InternetDB result", false),
+            (42, "Ransomware incidents (ransomware.live)", false),
         ];
         for (id, text, checked) in options {
             AppendMenuW(
@@ -732,6 +766,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                     38 => show_osint_sources(&display.window),
                     39 => { let view = osint.as_ref().map(Osint::view); show_sans(&display.window, view.as_ref()); }
                     40 => start_internetdb_lookup(&display.window, osint.as_ref()),
+                    42 => { let view = osint.as_ref().map(Osint::view); show_ransomware(&display.window, view.as_ref()); }
                     41 => { let view = osint.as_ref().map(Osint::view); show_internetdb(&display.window, view.as_ref()); }
                     14 => { settings = Settings::default(); rebuild = true; }
                     15 => help(&display.window),

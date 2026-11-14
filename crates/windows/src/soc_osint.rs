@@ -25,6 +25,7 @@ use threat_atlas_core::{
     feed::now_ms,
     osint::{self, EpssScore, KevWithEpss, RateGate, SansReport, Source},
     osint_internetdb::{self, InternetDbHost, Lookup},
+    osint_ransomware::{self, RansomError, Summary as RansomSummary},
 };
 
 const KEV_HOST: &str = "www.cisa.gov";
@@ -41,6 +42,7 @@ const MAX_EPSS_UNPACKED: u64 = 64 * 1024 * 1024;
 const MAX_TOR_BYTES: usize = 2 * 1024 * 1024;
 const MAX_SANS_BYTES: usize = 2 * 1024 * 1024;
 const KEV_LIMIT: usize = 2_000;
+const MAX_RANSOM_BYTES: usize = osint_ransomware::MAX_BODY_BYTES;
 const INTERNETDB_HOST: &str = "internetdb.shodan.io";
 const INTERNETDB_CACHE_MAX: usize = 200;
 
@@ -55,6 +57,9 @@ pub struct View {
     pub sans: Option<SansReport>,
     pub sans_updated_ms: u64,
     pub note: String,
+    /// Ransomware incidents of the last 30 days as counts only (no victim data).
+    pub ransom: Option<RansomSummary>,
+    pub ransom_updated_ms: u64,
     /// Last click-only InternetDB lookup, kept until the next one.
     pub lookup: Option<LookupView>,
     pub lookup_pending: bool,
@@ -83,6 +88,8 @@ struct Cache {
     sans_updated_ms: u64,
     /// IP -> (fetched at, answer). `None` answer means "no information". At most 200 entries.
     internetdb: BTreeMap<String, (u64, Option<InternetDbHost>)>,
+    ransom: Option<RansomSummary>,
+    ransom_updated_ms: u64,
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -169,6 +176,8 @@ fn publish(shared: &Mutex<View>, cache: &Cache, note: &str) {
         sans: cache.sans.clone(),
         sans_updated_ms: cache.sans_updated_ms,
         note: note.to_owned(),
+        ransom: cache.ransom.clone(),
+        ransom_updated_ms: cache.ransom_updated_ms,
         lookup,
         lookup_pending,
     };
@@ -446,6 +455,54 @@ fn worker(directory: PathBuf, shared: Arc<Mutex<View>>, rx: Receiver<Command>) {
                         None => gate(&mut gates, Source::SansIsc)
                             .failure(now, sans_spec.min_interval_ms),
                     }
+                }
+            }
+            dirty = true;
+        }
+
+        let ransom_spec = osint::source_spec(Source::RansomwareLive);
+        if gate(&mut gates, Source::RansomwareLive).due(now) {
+            let headers =
+                "Accept: application/json\r\nUser-Agent: AtlasSOC-OSINT (+https://ibert.se)\r\n";
+            match https_get_public(
+                osint_ransomware::HOST,
+                osint_ransomware::RECENT_PATH,
+                headers,
+                MAX_RANSOM_BYTES,
+            ) {
+                Some(reply) if reply.status == 200 => {
+                    match osint_ransomware::parse_recent(&reply.body, now) {
+                        Ok(incidents) => {
+                            // Only counts are kept; victim names never reach the cache.
+                            cache.ransom =
+                                Some(osint_ransomware::summarize(&incidents, now, 30, 8));
+                            cache.ransom_updated_ms = now;
+                            gate(&mut gates, Source::RansomwareLive)
+                                .success(now, ransom_spec.min_interval_ms);
+                            note.clear();
+                        }
+                        Err(error) => {
+                            note = format!("ransomware.live: {error:?}");
+                            gate(&mut gates, Source::RansomwareLive)
+                                .failure(now, ransom_spec.min_interval_ms);
+                        }
+                    }
+                }
+                Some(reply) => {
+                    let error = osint_ransomware::classify_status(reply.status);
+                    note = format!("ransomware.live: {error:?}");
+                    match (error, reply.retry_after_s) {
+                        (RansomError::RateLimited, Some(seconds)) => {
+                            gate(&mut gates, Source::RansomwareLive).retry_after(now, seconds)
+                        }
+                        _ => gate(&mut gates, Source::RansomwareLive)
+                            .failure(now, ransom_spec.min_interval_ms),
+                    }
+                }
+                None => {
+                    note = "ransomware.live: no connection".into();
+                    gate(&mut gates, Source::RansomwareLive)
+                        .failure(now, ransom_spec.min_interval_ms);
                 }
             }
             dirty = true;
