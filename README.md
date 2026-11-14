@@ -38,6 +38,10 @@ See [known bugs and limitations](docs/KNOWN-BUGS.md) for affected versions,
 workarounds and testing gaps. Report reproducible issues through GitHub Issues;
 follow the security policy for security concerns.
 
+![Threat Atlas SOC macOS preview showing live telemetry, world map, animated routes and observation counters](docs/images/threat-atlas-macos.png)
+
+*Captured macOS preview with live GreyNoise telemetry. Counters represent received records.*
+
 ## Install
 
 **Windows:** the 0.4.2-rc.1 MSI download is temporarily withdrawn while installation-path/integration behavior is investigated. The standalone Windows ZIP remains available for manual evaluation; a SCR executable defect is not established. See [Windows troubleshooting](docs/WINDOWS-INSTALLATION.md). The corrected all-users MSI is available in 0.4.5: use the MSI matching the release you downloaded. The corrected installer asks for administrator approval,
