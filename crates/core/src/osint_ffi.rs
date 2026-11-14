@@ -28,6 +28,12 @@ pub struct OsintHandle {
     osint: Osint,
 }
 
+impl OsintHandle {
+    pub(crate) fn osint(&self) -> &Osint {
+        &self.osint
+    }
+}
+
 unsafe fn text<'a>(ptr: *const c_char) -> Option<&'a str> {
     if ptr.is_null() {
         return None;

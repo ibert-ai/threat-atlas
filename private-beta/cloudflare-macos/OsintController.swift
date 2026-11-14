@@ -80,6 +80,9 @@ final class OsintController: ObservableObject {
         return String(decoding: buffer.prefix(min(written, needed)), as: UTF8.self)
     }
 
+    /// The worker handle for the C interface (nil until `start`).
+    var rawHandle: UnsafeMutableRawPointer? { handle }
+
     func isOn(_ id: String) -> Bool { enabled.contains(id) }
 
     func set(_ id: String, on: Bool) {

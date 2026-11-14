@@ -53,6 +53,7 @@ final class CoreAtlas {
     /// Frame size: 900 high; as wide as the view's shape needs (at least the standard 1440).
     private(set) var size = CGSize(width: 1440, height: 900)
     private let session = ta_soc_new()
+    private var lastIntel = Date.distantPast
     private var handed: Date?            // receipt time of the Radar snapshot last given to the core
     private(set) var accepted = true     // false when the core rejected that snapshot
     private(set) var last: CGImage?
@@ -97,6 +98,11 @@ final class CoreAtlas {
                     ta_soc_set_radar(session, raw.bindMemory(to: UInt8.self).baseAddress, raw.count, ms) == 0
                 }
             } ?? false
+        }
+        // Live OSINT cards in the right-hand column, refreshed about once a second.
+        if Date().timeIntervalSince(lastIntel) >= 1 {
+            lastIntel = Date()
+            ta_soc_set_intel(session, OsintController.shared.rawHandle)
         }
         guard let pixels = ta_soc_frame(session) else { return nil }
         let width = Int(ta_soc_width(session)), height = Int(ta_height())

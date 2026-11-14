@@ -6,7 +6,8 @@ use crate::{
     osint_internetdb,
     osint_phishtank::{self, FeedStatus},
     osint_spamhaus,
-    osint_worker::View,
+    osint_worker::{is_enabled, View},
+    render::soc::{IntelCard, IntelRow},
 };
 
 /// "never", "just now", "12 min ago", "3 h ago", "2 days ago".
@@ -138,6 +139,163 @@ pub fn what(source: Source) -> &'static str {
         Source::Sslbl => "SSL certificates abuse.ch links to botnet command servers.",
         _ => "",
     }
+}
+
+fn up(s: &str) -> String {
+    s.chars()
+        .map(|c| {
+            if c.is_ascii_graphic() || c == ' ' {
+                c.to_ascii_uppercase()
+            } else {
+                '?'
+            }
+        })
+        .collect()
+}
+
+fn bars(items: &[(String, u32)], n: usize) -> Vec<IntelRow> {
+    let max = items.iter().map(|(_, v)| *v).max().unwrap_or(1).max(1) as f32;
+    items
+        .iter()
+        .take(n)
+        .map(|(k, v)| IntelRow {
+            label: up(k),
+            fraction: Some(*v as f32 / max),
+            value: v.to_string(),
+        })
+        .collect()
+}
+
+/// The live cards for the SOC view, one per source that is switched on and has data. Information
+/// only: nothing here uses severity colours. Order is stable so the rotation is calm.
+pub fn cards(view: &View, enabled: &[String], now_ms: u64) -> Vec<IntelCard> {
+    let on = |s: Source| is_enabled(enabled, s);
+    let mut out = Vec::new();
+    if let Some(l) = view
+        .lookup
+        .as_ref()
+        .filter(|l| on(Source::ShodanInternetDb) && now_ms.saturating_sub(l.at_ms) < 10 * 60_000)
+    {
+        if let Ok(Some(h)) = &l.outcome {
+            out.push(IntelCard {
+                title: format!("SHODAN / {}", up(&l.ip)),
+                headline: format!("{} OPEN PORTS", h.ports.len()),
+                caption: if h.vulns.is_empty() {
+                    "NO KNOWN CVES LISTED".into()
+                } else {
+                    format!("{} KNOWN CVES", h.vulns.len())
+                },
+                rows: h
+                    .vulns
+                    .iter()
+                    .take(3)
+                    .map(|v| IntelRow {
+                        label: up(v),
+                        fraction: None,
+                        value: String::new(),
+                    })
+                    .collect(),
+            });
+        }
+    }
+    if let Some(s) = view.ransom.as_ref().filter(|_| on(Source::RansomwareLive)) {
+        out.push(IntelCard {
+            title: format!("RANSOMWARE / LAST {} DAYS", s.window_days),
+            headline: format!("{} INCIDENTS", s.total),
+            caption: format!(
+                "TOP GROUP: {}",
+                s.by_group.first().map_or("N/A".into(), |g| up(&g.0))
+            ),
+            rows: bars(&s.by_country, 3),
+        });
+    }
+    if view.kev_updated_ms != 0 && on(Source::CisaKev) {
+        let mut top: Vec<&crate::osint::KevWithEpss> =
+            view.kev.iter().filter(|k| k.epss.is_some()).collect();
+        top.sort_by(|a, b| {
+            b.epss
+                .as_ref()
+                .map_or(0., |e| e.epss)
+                .total_cmp(&a.epss.as_ref().map_or(0., |e| e.epss))
+        });
+        out.push(IntelCard {
+            title: "KNOWN EXPLOITED / CISA".into(),
+            headline: format!("{} VULNERABILITIES", view.kev.len()),
+            caption: "HIGHEST EXPLOIT LIKELIHOOD (EPSS)".into(),
+            rows: top
+                .iter()
+                .take(3)
+                .map(|k| {
+                    let e = k.epss.as_ref().map_or(0., |e| e.epss) as f32;
+                    IntelRow {
+                        label: up(&k.kev.cve),
+                        fraction: Some(e),
+                        value: format!("{e:.2}"),
+                    }
+                })
+                .collect(),
+        });
+    }
+    if let Some(r) = view.sans.as_ref().filter(|_| on(Source::SansIsc)) {
+        let max = r.ports.iter().map(|p| p.records).max().unwrap_or(1).max(1) as f32;
+        out.push(IntelCard {
+            title: "TOP ATTACKED PORTS / DSHIELD".into(),
+            headline: r
+                .ports
+                .first()
+                .map_or("N/A".into(), |p| format!("PORT {}", p.target_port)),
+            caption: format!("HONEYPOT RECORDS, {}", up(&r.date)),
+            rows: r
+                .ports
+                .iter()
+                .take(3)
+                .map(|p| IntelRow {
+                    label: format!("PORT {}", p.target_port),
+                    fraction: Some(p.records as f32 / max),
+                    value: p.records.to_string(),
+                })
+                .collect(),
+        });
+    }
+    if view.tor_updated_ms != 0 && on(Source::TorExit) {
+        out.push(IntelCard {
+            title: "TOR EXIT NODES".into(),
+            headline: format!("{} NODES", view.tor_count),
+            caption: "ANONYMISED TRAFFIC, NOT NECESSARILY MALICIOUS".into(),
+            rows: Vec::new(),
+        });
+    }
+    let mut lists = Vec::new();
+    if let Some(d) = view.spamhaus.as_ref().filter(|_| on(Source::SpamhausDrop)) {
+        lists.push(IntelRow {
+            label: "SPAMHAUS DROP".into(),
+            fraction: None,
+            value: (d.v4.entries.len() + d.v6.entries.len()).to_string(),
+        });
+    }
+    if let Some(p) = view.phish.as_ref().filter(|_| on(Source::PhishTank)) {
+        lists.push(IntelRow {
+            label: "PHISHING DOMAINS".into(),
+            fraction: None,
+            value: p.len().to_string(),
+        });
+    }
+    if view.sslbl_updated_ms != 0 && on(Source::Sslbl) {
+        lists.push(IntelRow {
+            label: "BAD SSL CERTS".into(),
+            fraction: None,
+            value: view.sslbl_total.to_string(),
+        });
+    }
+    if !lists.is_empty() {
+        out.push(IntelCard {
+            title: "THREAT LISTS".into(),
+            headline: format!("{} LISTS LOADED", lists.len()),
+            caption: "CHECK AN ITEM IN SETTINGS > VIEW".into(),
+            rows: lists,
+        });
+    }
+    out
 }
 
 fn kev(view: &View, now: u64) -> String {
@@ -338,5 +496,35 @@ mod tests {
             let text = page(source, &view, "", 1_000_000);
             assert!(text.contains("Source:"), "{source:?}");
         }
+    }
+
+    #[test]
+    fn cards_follow_the_switches_and_the_data() {
+        let mut view = View::default();
+        let all: Vec<String> = ["tor-exit", "ransomware-live", "sslbl"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        assert!(
+            cards(&view, &all, 1_000_000).is_empty(),
+            "no data, no cards"
+        );
+        view.tor_count = 1259;
+        view.tor_updated_ms = 500_000;
+        view.ransom = Some(crate::osint_ransomware::Summary {
+            total: 100,
+            window_days: 30,
+            by_country: vec![("US".into(), 38), ("CA".into(), 7)],
+            by_group: vec![("akira".into(), 6)],
+            ..Default::default()
+        });
+        let on = cards(&view, &all, 1_000_000);
+        assert_eq!(on.len(), 2);
+        assert_eq!(on[0].headline, "100 INCIDENTS");
+        assert_eq!(on[0].rows[0].fraction, Some(1.0));
+        assert!(on[0].rows[1].fraction.unwrap() < 0.2);
+        let off = cards(&view, &["tor-exit".to_string()], 1_000_000);
+        assert_eq!(off.len(), 1, "a source that is off shows no card");
+        assert!(cards(&view, &[], 1_000_000).is_empty());
     }
 }

@@ -268,7 +268,7 @@ struct TokenSettings: View {
     }
 }
 @main struct PrivateRadarApp: App {
-    init() { ta_soc_set_beta(1) }
+    init() { ta_soc_set_beta("BETA \(radarLicenseTerms.version) B\(radarLicenseTerms.build)") }
     // The licence gate wraps everything: no feed, worker or Keychain access before acceptance.
     var body: some Scene {
         WindowGroup { ConsentGate(terms: radarLicenseTerms) { RadarView().onAppear { OsintController.shared.start() } } }

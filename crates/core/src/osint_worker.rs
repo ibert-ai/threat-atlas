@@ -220,6 +220,11 @@ impl Osint {
         let _ = self.wake.send(Command::Refresh);
     }
 
+    /// Ids of the sources that are switched on.
+    pub fn enabled(&self) -> Vec<String> {
+        self.enabled.lock().unwrap().clone()
+    }
+
     /// Queues one InternetDB lookup. Only the host's click handler calls this, after the user has
     /// confirmed that the address will be sent to Shodan.
     pub fn lookup(&self, ip: IpAddr) {

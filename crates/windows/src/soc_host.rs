@@ -903,8 +903,9 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     let event_loop = EventLoop::new();
     let mut windows = displays(&event_loop, &settings)?;
     // Beta builds carry a BETA stamp next to "SOC DESKTOP" in the heading. Switch off for a stable release.
-    threat_atlas_core::render::soc::set_beta_stamp(true);
+    threat_atlas_core::render::soc::set_beta_stamp(&format!("BETA {VERSION} B{BUILD}"));
     let mut view = SocView::new();
+    let mut intel_ms = 0u64;
     let offline = State::default();
     let mut paused = false;
     let mut rgba = Vec::new();
@@ -1036,6 +1037,12 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                         view.options.radar_layer = settings.radar_layer;
                         let (radar_data, radar_received) = radar.as_ref().map_or((None, 0), Radar::data);
                         view.options.radar_note = radar.as_ref().map(Radar::note);
+                        // Live OSINT cards: refreshed once a second, only for sources that are switched on.
+                        let now = feed::now_ms();
+                        if now.saturating_sub(intel_ms) >= 1000 {
+                            intel_ms = now;
+                            view.intel = osint.as_ref().map_or_else(Vec::new, |o| threat_atlas_core::osint_text::cards(&o.view(), &o.enabled(), now));
+                        }
                         rgba = view.draw(&snapshot, counts, radar_data.as_deref(), radar_received).to_vec();
                     }
                     for window in &mut windows {

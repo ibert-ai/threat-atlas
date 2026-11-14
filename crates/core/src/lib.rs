@@ -264,9 +264,28 @@ impl SocSession {
     }
 }
 /// Marks this host as a beta build: the heading gets a BETA stamp. Call before `ta_soc_new`.
+/// # Safety
+/// `label` must be null or a valid NUL-terminated string. An empty label removes the stamp.
 #[no_mangle]
-pub extern "C" fn ta_soc_set_beta(on: u32) {
-    render::soc::set_beta_stamp(on != 0);
+pub unsafe extern "C" fn ta_soc_set_beta(label: *const std::ffi::c_char) {
+    let text = if label.is_null() {
+        ""
+    } else {
+        std::ffi::CStr::from_ptr(label).to_str().unwrap_or("")
+    };
+    render::soc::set_beta_stamp(text);
+}
+/// Pulls the current OSINT cards from the worker into the view. Call about once a second.
+/// # Safety
+/// `session` and `osint` must be live pointers (or null, then nothing happens).
+#[no_mangle]
+pub unsafe extern "C" fn ta_soc_set_intel(
+    session: *mut SocSession,
+    osint: *mut osint_ffi::OsintHandle,
+) {
+    if let (Some(s), Some(o)) = (session.as_mut(), osint.as_ref()) {
+        s.view.intel = osint_text::cards(&o.osint().view(), &o.osint().enabled(), feed::now_ms());
+    }
 }
 #[no_mangle]
 pub extern "C" fn ta_soc_new() -> *mut SocSession {

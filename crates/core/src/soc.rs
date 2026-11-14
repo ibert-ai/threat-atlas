@@ -11,16 +11,44 @@ use tiny_skia::*;
 pub const RED: [u8; 3] = [235, 87, 87];
 pub const YELLOW: [u8; 3] = [242, 201, 76];
 pub const GREEN: [u8; 3] = [72, 199, 142];
-static BETA_STAMP: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+static BETA_STAMP: std::sync::Mutex<String> = std::sync::Mutex::new(String::new());
 
-/// Hosts of beta builds call this before the first frame so the heading carries a BETA stamp.
-pub fn set_beta_stamp(on: bool) {
-    BETA_STAMP.store(on, std::sync::atomic::Ordering::Relaxed);
+/// Hosts of beta builds call this before the first frame with the text of the stamp, for example
+/// `"BETA 0.8.0-beta.1 B14"`. An empty text means no stamp (a stable build).
+pub fn set_beta_stamp(label: &str) {
+    if let Ok(mut stamp) = BETA_STAMP.lock() {
+        *stamp = label
+            .chars()
+            .filter(|c| c.is_ascii_graphic() || *c == ' ')
+            .map(|c| c.to_ascii_uppercase())
+            .take(28)
+            .collect();
+    }
 }
 
-fn beta_stamp() -> bool {
-    BETA_STAMP.load(std::sync::atomic::Ordering::Relaxed)
+fn beta_stamp() -> String {
+    BETA_STAMP.lock().map(|s| s.clone()).unwrap_or_default()
 }
+
+/// One panel of live intelligence from the OSINT sources, shown in the right-hand column.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct IntelCard {
+    pub title: String,
+    pub headline: String,
+    pub caption: String,
+    pub rows: Vec<IntelRow>,
+}
+
+/// One line of a card: a label, an optional bar (0.0 to 1.0) and a value.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct IntelRow {
+    pub label: String,
+    pub fraction: Option<f32>,
+    pub value: String,
+}
+
+/// How long one card stays before the next one is shown.
+const CARD_MS: u64 = 8_000;
 
 /// Informational layers (Radar aggregates, status) must never read as severity.
 pub const INFO: [u8; 3] = [116, 151, 189];
@@ -221,6 +249,8 @@ pub struct SocView {
     counts: (Vec<(usize, [u64; 3])>, [u64; 3]),
     /// Theme the renderer's static base was painted for; repainted when `options.theme` changes.
     base_theme: Theme,
+    /// Live OSINT cards; empty keeps the original layout exactly.
+    pub intel: Vec<IntelCard>,
 }
 impl Default for SocView {
     fn default() -> Self {
@@ -293,9 +323,12 @@ impl Renderer {
     /// orange BETA stamp while the host says this is a beta build.
     fn desktop_badge(&mut self, x: i32, y: i32, size: u16) {
         self.text(x, y, size, "SOC DESKTOP", [150, 190, 210]);
-        if beta_stamp() {
+        let stamp = beta_stamp();
+        if !stamp.is_empty() {
             let bx = x + (size as i32 * 7) + 18;
-            let (w, h) = (size as f32 * 3.2, size as f32 * 1.35);
+            let text_size = size - 4;
+            let w = stamp.len() as f32 * text_size as f32 * 0.62 + 16.;
+            let h = size as f32 * 1.35;
             self.rect(bx as f32, y as f32 - 3., w, h, [255, 159, 10], 255);
             self.rect(
                 bx as f32 + 2.,
@@ -305,7 +338,7 @@ impl Renderer {
                 [8, 18, 28],
                 255,
             );
-            self.text(bx + 8, y, size - 4, "BETA", [255, 159, 10]);
+            self.text(bx + 8, y, text_size, &stamp, [255, 159, 10]);
         }
     }
     fn dashboard_base(&mut self) {
@@ -392,6 +425,7 @@ impl SocView {
             icons: Vec::new(),
             counts: (Vec::new(), [0; 3]),
             base_theme: Theme::Classic,
+            intel: Vec::new(),
         }
     }
     /// Frame width in pixels (height is always 900).
@@ -720,6 +754,7 @@ impl SocView {
                 counts: &self.counts,
                 radar_data,
                 radar_label,
+                intel: &self.intel,
             };
             panel.draw(r);
             return r.pix.data();
@@ -815,7 +850,12 @@ impl SocView {
         );
         match radar_data {
             Some(data) => {
-                for (i, row) in data.rows.iter().take(8).enumerate() {
+                for (i, row) in data
+                    .rows
+                    .iter()
+                    .take(if self.intel.is_empty() { 8 } else { 3 })
+                    .enumerate()
+                {
                     let y = 590 + i as i32 * 26;
                     let origin: String = row.origin_country_alpha2.trim().chars().take(8).collect();
                     let target: String = row
@@ -860,6 +900,12 @@ impl SocView {
                     .unwrap_or("NO RADAR DATA YET (SEE STATUS IN THE APP)"),
                 MUTED,
             ),
+        }
+
+        // Live intelligence cards below the Radar rows: one at a time, rotating every few seconds.
+        if !self.intel.is_empty() {
+            let index = (now / CARD_MS) as usize % self.intel.len();
+            draw_intel_card(r, &self.intel[index], index, self.intel.len(), 1044., 662);
         }
 
         // Bottom panel: quiet volume bars and a legend.
@@ -971,6 +1017,7 @@ struct Dashboard<'a> {
     counts: &'a (Vec<(usize, [u64; 3])>, [u64; 3]),
     radar_data: Option<&'a Aggregate>,
     radar_label: &'a str,
+    intel: &'a [IntelCard],
 }
 impl Dashboard<'_> {
     fn draw(&self, r: &mut Renderer) {
@@ -1081,7 +1128,12 @@ impl Dashboard<'_> {
         }
         match self.radar_data {
             Some(data) => {
-                for (i, row) in data.rows.iter().take(8).enumerate() {
+                for (i, row) in data
+                    .rows
+                    .iter()
+                    .take(if self.intel.is_empty() { 8 } else { 3 })
+                    .enumerate()
+                {
                     let y = 576 + i as i32 * 26;
                     let origin: String = row.origin_country_alpha2.trim().chars().take(8).collect();
                     let target: String = row
@@ -1121,6 +1173,12 @@ impl Dashboard<'_> {
                 "NO RADAR DATA (PRESS START IN THE APP)",
                 MUTED,
             ),
+        }
+
+        // Live OSINT card under the Radar rows, rotating every few seconds.
+        if !self.intel.is_empty() {
+            let index = (now / CARD_MS) as usize % self.intel.len();
+            draw_intel_card(r, &self.intel[index], index, self.intel.len(), 1037., 650);
         }
 
         // 09: receipt-rate bars across the tile.
@@ -1242,6 +1300,46 @@ impl Dashboard<'_> {
 }
 
 /// Common short form of a formal country name for narrow lists ("Kingdom of Spain" -> "SPAIN").
+/// Draws one card in the lower right panel. `x` is the left edge of the text column and `y0` the top of
+/// the card; the card is about 130 px tall and 350 px wide.
+fn draw_intel_card(
+    r: &mut Renderer,
+    card: &IntelCard,
+    index: usize,
+    total: usize,
+    x: f32,
+    y0: i32,
+) {
+    let cut = |s: &str, n: usize| -> String { s.chars().take(n).collect() };
+    let xi = x as i32;
+    r.rect(x, y0 as f32, 350., 1., INFO, 70);
+    r.text(xi, y0 + 8, 13, &cut(&card.title, 34), INFO);
+    // Page dots: which card of how many.
+    for i in 0..total.min(12) {
+        let dx = x + 350. - (total.min(12) - i) as f32 * 11.;
+        r.rect(
+            dx,
+            y0 as f32 + 12.,
+            6.,
+            6.,
+            INFO,
+            if i == index { 230 } else { 70 },
+        );
+    }
+    r.text(xi, y0 + 28, 22, &cut(&card.headline, 22), TEXT);
+    r.text(xi, y0 + 56, 11, &cut(&card.caption, 54), MUTED);
+    for (i, row) in card.rows.iter().take(3).enumerate() {
+        let y = y0 + 76 + i as i32 * 17;
+        r.text(xi, y, 11, &cut(&row.label, 16), TEXT);
+        if let Some(f) = row.fraction {
+            let w = 150. * f.clamp(0., 1.);
+            r.rect(x + 116., y as f32 + 3., 150., 6., INFO, 40);
+            r.rect(x + 116., y as f32 + 3., w.max(1.), 6., INFO, 170);
+        }
+        r.text(xi + 278, y, 11, &cut(&row.value, 10), INFO);
+    }
+}
+
 fn short_name(name: &str) -> String {
     const PREFIXES: [&str; 12] = [
         "FEDERAL REPUBLIC OF ",
