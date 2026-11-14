@@ -1,0 +1,153 @@
+{
+ "count": 2,
+ "next": "https://otx.alienvault.com/api/v1/pulses/subscribed?limit=50&modified_since=2026-11-14T00%3A00%3A00&page=2",
+ "previous": null,
+ "results": [
+  {
+   "id": "6551a1b2c3d4e5f6a7b8c9d1",
+   "name": "Mozi botnet activity",
+   "description": "Synthetic test pulse 1 (not real data).",
+   "author_name": "example_author",
+   "modified": "2026-11-14T08:12:45.123000",
+   "created": "2026-11-13T21:00:00.000000",
+   "revision": 1,
+   "tlp": "white",
+   "public": 1,
+   "adversary": "",
+   "tags": [
+    "botnet",
+    "test"
+   ],
+   "targeted_countries": [
+    "Sweden",
+    "United States"
+   ],
+   "malware_families": [
+    "Mozi"
+   ],
+   "attack_ids": [
+    {
+     "id": "T1059",
+     "name": "Command and Scripting Interpreter",
+     "display_name": "T1059 - Command and Scripting Interpreter"
+    }
+   ],
+   "industries": [
+    "finance"
+   ],
+   "references": [
+    "https://example.invalid/report"
+   ],
+   "indicators": [
+    {
+     "id": 1,
+     "indicator": "203.0.113.10",
+     "type": "IPv4",
+     "created": "2026-11-13T21:00:00",
+     "title": "",
+     "description": "",
+     "expiration": null,
+     "is_active": 1,
+     "role": null
+    },
+    {
+     "id": 2,
+     "indicator": "bad.example.invalid",
+     "type": "domain",
+     "created": "2026-11-13T21:00:00",
+     "is_active": 1
+    },
+    {
+     "id": 3,
+     "indicator": "http://bad.example.invalid/x",
+     "type": "URL",
+     "created": "2026-11-13T21:00:00",
+     "is_active": 1
+    },
+    {
+     "id": 4,
+     "indicator": "CVE-2021-44228",
+     "type": "CVE",
+     "created": "2026-11-13T21:00:00",
+     "is_active": 1
+    },
+    {
+     "id": 5,
+     "indicator": "2001:db8::7",
+     "type": "IPv6",
+     "created": "2026-11-13T21:00:00",
+     "is_active": 1
+    }
+   ]
+  },
+  {
+   "id": "6551a1b2c3d4e5f6a7b8c9d2",
+   "name": "Second pulse",
+   "description": "Synthetic test pulse 2 (not real data).",
+   "author_name": "example_author",
+   "modified": "2026-11-14T08:12:45.123000",
+   "created": "2026-11-13T21:00:00.000000",
+   "revision": 1,
+   "tlp": "white",
+   "public": 1,
+   "adversary": "",
+   "tags": [],
+   "targeted_countries": [],
+   "malware_families": [],
+   "attack_ids": [
+    {
+     "id": "T1059",
+     "name": "Command and Scripting Interpreter",
+     "display_name": "T1059 - Command and Scripting Interpreter"
+    }
+   ],
+   "industries": [
+    "finance"
+   ],
+   "references": [
+    "https://example.invalid/report"
+   ],
+   "indicators": [
+    {
+     "id": 1,
+     "indicator": "203.0.113.10",
+     "type": "IPv4",
+     "created": "2026-11-13T21:00:00",
+     "title": "",
+     "description": "",
+     "expiration": null,
+     "is_active": 1,
+     "role": null
+    },
+    {
+     "id": 2,
+     "indicator": "bad.example.invalid",
+     "type": "domain",
+     "created": "2026-11-13T21:00:00",
+     "is_active": 1
+    },
+    {
+     "id": 3,
+     "indicator": "http://bad.example.invalid/x",
+     "type": "URL",
+     "created": "2026-11-13T21:00:00",
+     "is_active": 1
+    },
+    {
+     "id": 4,
+     "indicator": "CVE-2021-44228",
+     "type": "CVE",
+     "created": "2026-11-13T21:00:00",
+     "is_active": 1
+    },
+    {
+     "id": 5,
+     "indicator": "2001:db8::7",
+     "type": "IPv6",
+     "created": "2026-11-13T21:00:00",
+     "is_active": 1
+    }
+   ]
+  }
+ ]
+}
