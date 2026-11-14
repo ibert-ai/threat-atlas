@@ -23,7 +23,7 @@ use std::{
 };
 use threat_atlas_core::{
     feed::now_ms,
-    osint::{self, EpssScore, KevWithEpss, RateGate, Source},
+    osint::{self, EpssScore, KevWithEpss, RateGate, SansReport, Source},
 };
 
 const KEV_HOST: &str = "www.cisa.gov";
@@ -32,6 +32,8 @@ const EPSS_HOST: &str = "epss.empiricalsecurity.com";
 const EPSS_PATH: &str = "/epss_scores-current.csv.gz";
 const TOR_HOST: &str = "check.torproject.org";
 const TOR_PATH: &str = "/torbulkexitlist";
+const SANS_HOST: &str = "isc.sans.edu";
+const SANS_PATH: &str = "/api/topports/records/10?json";
 const MAX_KEV_BYTES: usize = 8 * 1024 * 1024;
 const MAX_EPSS_BYTES: usize = 16 * 1024 * 1024;
 const MAX_EPSS_UNPACKED: u64 = 64 * 1024 * 1024;
@@ -46,6 +48,8 @@ pub struct View {
     pub epss_updated_ms: u64,
     pub tor_count: usize,
     pub tor_updated_ms: u64,
+    pub sans: Option<SansReport>,
+    pub sans_updated_ms: u64,
     pub note: String,
 }
 
@@ -57,6 +61,8 @@ struct Cache {
     epss_updated_ms: u64,
     tor: Vec<IpAddr>,
     tor_updated_ms: u64,
+    sans: Option<SansReport>,
+    sans_updated_ms: u64,
 }
 
 #[derive(Default, Serialize, Deserialize)]
@@ -114,6 +120,8 @@ fn publish(shared: &Mutex<View>, cache: &Cache, note: &str) {
         epss_updated_ms: cache.epss_updated_ms,
         tor_count: cache.tor.len(),
         tor_updated_ms: cache.tor_updated_ms,
+        sans: cache.sans.clone(),
+        sans_updated_ms: cache.sans_updated_ms,
         note: note.to_owned(),
     };
 }
@@ -129,7 +137,7 @@ fn get(host: &str, path: &str, max_bytes: usize) -> Result<Vec<u8>, (u16, Option
     let reply = https_get_public(
         host,
         path,
-        "Accept: */*\r\nUser-Agent: AtlasSOC-OSINT\r\n",
+        "Accept: application/json\r\nUser-Agent: AtlasSOC-OSINT (+https://ibert.se)\r\n",
         max_bytes,
     )
     .ok_or((0, None))?;
@@ -243,6 +251,34 @@ fn worker(directory: PathBuf, shared: Arc<Mutex<View>>, rx: Receiver<Command>) {
                         None => {
                             gate(&mut gates, Source::TorExit).failure(now, tor_spec.min_interval_ms)
                         }
+                    }
+                }
+            }
+        }
+
+        let sans_spec = osint::source_spec(Source::SansIsc);
+        if gate(&mut gates, Source::SansIsc).due(now) {
+            match get(SANS_HOST, SANS_PATH, 2 * 1024 * 1024) {
+                Ok(bytes) => match osint::parse_sans_ports(&bytes) {
+                    Ok(report) => {
+                        cache.sans = Some(report);
+                        cache.sans_updated_ms = now;
+                        gate(&mut gates, Source::SansIsc).success(now, sans_spec.min_interval_ms);
+                        changed = true;
+                    }
+                    Err(error) => {
+                        note = format!("SANS ISC: {error}");
+                        gate(&mut gates, Source::SansIsc).failure(now, sans_spec.min_interval_ms);
+                    }
+                },
+                Err((status, retry)) => {
+                    note = format!("SANS ISC: HTTP {status}");
+                    match retry {
+                        Some(seconds) => {
+                            gate(&mut gates, Source::SansIsc).retry_after(now, seconds)
+                        }
+                        None => gate(&mut gates, Source::SansIsc)
+                            .failure(now, sans_spec.min_interval_ms),
                     }
                 }
             }

@@ -108,11 +108,11 @@ pub fn source_spec(source: Source) -> SourceSpec {
         Source::SansIsc => SourceSpec {
             id: "sans-isc",
             name: "SANS ISC / DShield",
-            licence: "SANS ISC public API terms; attribution required.",
+            licence: "CC BY-NC-SA 4.0; attribution, non-commercial, share-alike.",
             attribution: "https://isc.sans.edu/api/",
             min_interval_ms: 60 * 60 * 1000,
             requires_key: false,
-            non_commercial_only: false,
+            non_commercial_only: true,
         },
         Source::MaxMind => SourceSpec {
             id: "maxmind-geolite2",
@@ -384,6 +384,69 @@ pub fn join_kev_epss(kev: Vec<KevEntry>, epss: Vec<EpssScore>, limit: usize) -> 
     joined
 }
 
+/// One SANS ISC/DShield target-port aggregate.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SansPort {
+    pub rank: u32,
+    pub target_port: u32,
+    pub records: u64,
+    pub targets: u64,
+    pub sources: u64,
+}
+
+/// SANS ISC/DShield daily top-ports report.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SansReport {
+    pub date: String,
+    pub ports: Vec<SansPort>,
+}
+
+/// Parse the SANS ISC top-ports JSON object (`/api/topports/records/10?json`).
+pub fn parse_sans_ports(bytes: &[u8]) -> Result<SansReport, String> {
+    use serde_json::Value;
+    let value: Value = serde_json::from_slice(bytes).map_err(|e| format!("SANS ISC JSON: {e}"))?;
+    let object = value
+        .as_object()
+        .ok_or_else(|| "SANS ISC JSON is not an object".to_string())?;
+    let date = object
+        .get("date")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_string();
+    let mut ports = Vec::new();
+    for (key, item) in object {
+        if key == "date" || key == "limit" || key.parse::<u32>().is_err() {
+            continue;
+        }
+        let Some(fields) = item.as_object() else {
+            continue;
+        };
+        let field = |name: &str| fields.get(name).and_then(Value::as_u64);
+        let (Some(rank), Some(target_port), Some(records), Some(targets), Some(sources)) = (
+            field("rank"),
+            field("targetport"),
+            field("records"),
+            field("targets"),
+            field("sources"),
+        ) else {
+            continue;
+        };
+        if rank == 0 || rank > 100 || target_port > u16::MAX as u64 {
+            continue;
+        }
+        ports.push(SansPort {
+            rank: rank as u32,
+            target_port: target_port as u32,
+            records,
+            targets,
+            sources,
+        });
+    }
+    ports.sort_by_key(|p| p.rank);
+    ports.truncate(20);
+    Ok(SansReport { date, ports })
+}
+
 /// Parse the Tor bulk exit list. Duplicate and invalid lines are ignored.
 pub fn parse_tor_exits(bytes: &[u8]) -> Vec<IpAddr> {
     let text = String::from_utf8_lossy(bytes);
@@ -498,6 +561,23 @@ mod tests {
         let joined = join_kev_epss(kev, epss, 10);
         assert_eq!(joined[0].kev.cve, "CVE-2026-0002");
         assert_eq!(joined[1].kev.cve, "CVE-2026-0001");
+    }
+
+    #[test]
+    fn sans_parser_accepts_the_document_object_shape() {
+        let json = br#"{"0":{"rank":1,"targetport":22,"records":195959,"targets":269,"sources":8017},"1":{"rank":2,"targetport":8080,"records":172198,"targets":245,"sources":4484},"date":"2026-11-14","limit":10}"#;
+        let report = parse_sans_ports(json).unwrap();
+        assert_eq!(report.date, "2026-11-14");
+        assert_eq!(report.ports.len(), 2);
+        assert_eq!(report.ports[0].target_port, 22);
+        assert_eq!(report.ports[1].target_port, 8080);
+    }
+
+    #[test]
+    fn sans_parser_skips_bad_rows() {
+        let json = br#"{"0":{"rank":0,"targetport":22,"records":1,"targets":1,"sources":1},"1":{"rank":2,"targetport":70000,"records":1,"targets":1,"sources":1},"2":{"rank":3,"targetport":443},"date":"2026-11-14"}"#;
+        let report = parse_sans_ports(json).unwrap();
+        assert!(report.ports.is_empty());
     }
 
     #[test]

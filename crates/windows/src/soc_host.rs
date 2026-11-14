@@ -132,7 +132,7 @@ fn displays(
 }
 
 fn help(window: &Window) {
-    let text = "Right-click anywhere for settings.\n\nF11: fullscreen/windowed\nSpace: freeze/resume display (the shared feed continues)\nR / C / S: Realtime / Calm / Still animation\nL: Classic / Dashboard layout\n1 / 2 / 3: malicious / suspicious / benign visibility\nM: mirror all detected displays (one shared feed)\nT: always on top\nF1: this help\nEscape: leave fullscreen/mirroring, otherwise close\n\nLeft-click a country to focus; hover shows country details in the title.\nSettings save under LocalAppData/ThreatAtlasSOC. Reset settings never resets licence acceptance.\n\nOSINT: right-click > Known exploited (KEV + EPSS), Tor exit nodes, Refresh OSINT or OSINT sources / licences.
+    let text = "Right-click anywhere for settings.\n\nF11: fullscreen/windowed\nSpace: freeze/resume display (the shared feed continues)\nR / C / S: Realtime / Calm / Still animation\nL: Classic / Dashboard layout\n1 / 2 / 3: malicious / suspicious / benign visibility\nM: mirror all detected displays (one shared feed)\nT: always on top\nF1: this help\nEscape: leave fullscreen/mirroring, otherwise close\n\nLeft-click a country to focus; hover shows country details in the title.\nSettings save under LocalAppData/ThreatAtlasSOC. Reset settings never resets licence acceptance.\n\nOSINT: right-click > Known exploited (KEV + EPSS), Tor exit nodes, SANS ISC top ports, Refresh OSINT or OSINT sources / licences.
 
 Cloudflare Radar (optional): right-click > Set Cloudflare Radar token (collection starts when it is saved); Collect Cloudflare Radar data pauses or resumes it. Past-day aggregate shares, at most one request every 15 minutes; the token stays in Windows Credential Manager. Right-click > How to get a Cloudflare token opens the step-by-step guide.\n\nGreyNoise live receipts, not unique attacks.\nMirroring is implemented; independent display roles/spanning and physical multimonitor acceptance remain pending. No sleep or lock settings are changed.";
     unsafe {
@@ -234,6 +234,55 @@ fn show_tor(window: &Window, view: Option<&OsintView>) {
     };
 }
 
+fn show_sans(window: &Window, view: Option<&OsintView>) {
+    let Some(view) = view else {
+        unsafe {
+            MessageBoxW(
+                window.hwnd() as HWND,
+                wide("OSINT worker is not running in this mode.").as_ptr(),
+                wide("Threat Atlas SOC").as_ptr(),
+                MB_OK | MB_ICONINFORMATION,
+            )
+        };
+        return;
+    };
+    let Some(report) = &view.sans else {
+        let text = format!(
+            "No SANS ISC data yet. Updated: {}.",
+            age(view.sans_updated_ms)
+        );
+        unsafe {
+            MessageBoxW(
+                window.hwnd() as HWND,
+                wide(&text).as_ptr(),
+                wide("Threat Atlas SOC - SANS ISC").as_ptr(),
+                MB_OK | MB_ICONINFORMATION,
+            )
+        };
+        return;
+    };
+    let mut text = format!(
+        "SANS ISC / DShield top target ports\nDate: {}\nUpdated: {}\n\n",
+        report.date,
+        age(view.sans_updated_ms)
+    );
+    for port in &report.ports {
+        text.push_str(&format!(
+            "#{}  port {:>5}  records {}  targets {}  sources {}\n",
+            port.rank, port.target_port, port.records, port.targets, port.sources
+        ));
+    }
+    text.push_str("\nSource: isc.sans.edu API, CC BY-NC-SA 4.0. Honeypot observations, not unique attacks. Non-commercial use with attribution.");
+    unsafe {
+        MessageBoxW(
+            window.hwnd() as HWND,
+            wide(&text).as_ptr(),
+            wide("Threat Atlas SOC - SANS ISC").as_ptr(),
+            MB_OK | MB_ICONINFORMATION,
+        )
+    };
+}
+
 fn show_osint_sources(window: &Window) {
     let mut text = String::from("Threat Atlas SOC - OSINT sources\nNon-commercial use only. Provider terms, attribution and minimum intervals are part of the contract.\n\n");
     for source in threat_atlas_core::osint::SOURCES {
@@ -305,6 +354,7 @@ fn menu(
             (36, "Tor exit nodes", false),
             (37, "Refresh OSINT", false),
             (38, "OSINT sources / licences", false),
+            (39, "SANS ISC top ports", false),
         ];
         for (id, text, checked) in options {
             AppendMenuW(
@@ -550,6 +600,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                     36 => { let view = osint.as_ref().map(Osint::view); show_tor(&display.window, view.as_ref()); }
                     37 => { if let Some(osint) = &osint { osint.refresh(); } }
                     38 => show_osint_sources(&display.window),
+                    39 => { let view = osint.as_ref().map(Osint::view); show_sans(&display.window, view.as_ref()); }
                     14 => { settings = Settings::default(); rebuild = true; }
                     15 => help(&display.window),
                     17 => { if let Some(radar) = &radar { radar.toggle_collecting(); } }
