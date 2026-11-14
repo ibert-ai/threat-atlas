@@ -24,7 +24,9 @@ use std::{
 use threat_atlas_core::{
     feed::now_ms,
     osint::{self, EpssScore, KevWithEpss, RateGate, SansReport, Source},
+    osint_abusech,
     osint_internetdb::{self, InternetDbHost, Lookup},
+    osint_phishtank::{self, DomainSet, FeedState},
     osint_ransomware::{self, RansomError, Summary as RansomSummary},
     osint_spamhaus::{self, AsnList, DropList},
 };
@@ -49,6 +51,7 @@ const SPAMHAUS_FILES: [(&str, &str); 3] = [
     (osint_spamhaus::DROP_V6_PATH, "spamhaus-drop_v6.json"),
     (osint_spamhaus::ASN_DROP_PATH, "spamhaus-asndrop.json"),
 ];
+const PHISH_FILE: &str = "phishingdb-domains.txt";
 const INTERNETDB_HOST: &str = "internetdb.shodan.io";
 const INTERNETDB_CACHE_MAX: usize = 200;
 
@@ -67,6 +70,12 @@ pub struct View {
     pub ransom: Option<RansomSummary>,
     pub ransom_updated_ms: u64,
     pub spamhaus: Option<Arc<SpamhausData>>,
+    pub phish: Option<Arc<DomainSet>>,
+    pub phish_state: FeedState,
+    pub sslbl_total: usize,
+    pub sslbl_top: Vec<(String, u32)>,
+    pub sslbl_newest_ms: u64,
+    pub sslbl_updated_ms: u64,
     /// Last click-only InternetDB lookup, kept until the next one.
     pub lookup: Option<LookupView>,
     pub lookup_pending: bool,
@@ -107,6 +116,12 @@ struct Cache {
     ransom: Option<RansomSummary>,
     ransom_updated_ms: u64,
     spamhaus_updated_ms: u64,
+    phish_state: FeedState,
+    phish_fingerprint: String,
+    sslbl_total: usize,
+    sslbl_top: Vec<(String, u32)>,
+    sslbl_newest_ms: u64,
+    sslbl_updated_ms: u64,
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -183,6 +198,7 @@ fn save<T: Serialize>(path: &Path, value: &T) {
 fn publish(shared: &Mutex<View>, cache: &Cache, note: &str) {
     let mut view = shared.lock().unwrap();
     let spamhaus = view.spamhaus.take();
+    let phish = view.phish.take();
     let lookup = view.lookup.take();
     let lookup_pending = view.lookup_pending;
     *view = View {
@@ -197,6 +213,12 @@ fn publish(shared: &Mutex<View>, cache: &Cache, note: &str) {
         ransom: cache.ransom.clone(),
         ransom_updated_ms: cache.ransom_updated_ms,
         spamhaus,
+        phish,
+        phish_state: cache.phish_state.clone(),
+        sslbl_total: cache.sslbl_total,
+        sslbl_top: cache.sslbl_top.clone(),
+        sslbl_newest_ms: cache.sslbl_newest_ms,
+        sslbl_updated_ms: cache.sslbl_updated_ms,
         lookup,
         lookup_pending,
     };
@@ -350,6 +372,11 @@ fn worker(directory: PathBuf, shared: Arc<Mutex<View>>, rx: Receiver<Command>) {
     let mut note = String::new();
     let mut last_internetdb: Option<u64> = None;
     publish(&shared, &cache, &note);
+    if let Ok(body) = fs::read(directory.join(PHISH_FILE)) {
+        if let Ok(set) = osint_phishtank::parse_list(&body) {
+            shared.lock().unwrap().phish = Some(Arc::new(set));
+        }
+    }
     if cache.spamhaus_updated_ms != 0 {
         let loaded = load_spamhaus(&directory, cache.spamhaus_updated_ms).map(Arc::new);
         shared.lock().unwrap().spamhaus = loaded;
@@ -536,6 +563,102 @@ fn worker(directory: PathBuf, shared: Arc<Mutex<View>>, rx: Receiver<Command>) {
                     note = "ransomware.live: no connection".into();
                     gate(&mut gates, Source::RansomwareLive)
                         .failure(now, ransom_spec.min_interval_ms);
+                }
+            }
+            dirty = true;
+        }
+
+        let phish_spec = osint::source_spec(Source::PhishTank);
+        if gate(&mut gates, Source::PhishTank).due(now) {
+            let saved = validators(&gates, Source::PhishTank);
+            match get(
+                osint_phishtank::HOST,
+                osint_phishtank::LIST_PATH,
+                osint_phishtank::MAX_BODY_BYTES,
+                &saved,
+            ) {
+                Ok(Some(fetched)) => match osint_phishtank::parse_list(&fetched.body) {
+                    Ok(set) => {
+                        let fingerprint = fetched
+                            .etag
+                            .clone()
+                            .unwrap_or_else(|| osint_phishtank::body_fingerprint(&fetched.body));
+                        let _ = write_atomic(&directory.join(PHISH_FILE), &fetched.body);
+                        cache.phish_state.observe(&fingerprint, now);
+                        cache.phish_fingerprint = fingerprint;
+                        shared.lock().unwrap().phish = Some(Arc::new(set));
+                        remember(&mut gates, Source::PhishTank, &fetched);
+                        gate(&mut gates, Source::PhishTank)
+                            .success(now, phish_spec.min_interval_ms);
+                        note.clear();
+                    }
+                    Err(error) => {
+                        note = format!("Phishing.Database: {error:?}");
+                        gate(&mut gates, Source::PhishTank)
+                            .failure(now, phish_spec.min_interval_ms);
+                    }
+                },
+                Ok(None) => {
+                    // Not modified: the content is unchanged, so the change time must not move.
+                    let fingerprint = cache.phish_fingerprint.clone();
+                    cache.phish_state.observe(&fingerprint, now);
+                    gate(&mut gates, Source::PhishTank).success(now, phish_spec.min_interval_ms);
+                }
+                Err((status, retry)) => {
+                    note = format!("Phishing.Database: HTTP {status}");
+                    match retry {
+                        Some(seconds) => {
+                            gate(&mut gates, Source::PhishTank).retry_after(now, seconds)
+                        }
+                        None => gate(&mut gates, Source::PhishTank)
+                            .failure(now, phish_spec.min_interval_ms),
+                    }
+                }
+            }
+            dirty = true;
+        }
+
+        let sslbl_spec = osint::source_spec(Source::Sslbl);
+        if gate(&mut gates, Source::Sslbl).due(now) {
+            match get(
+                osint_abusech::SSLBL_HOST,
+                osint_abusech::SSLBL_CERTS_PATH,
+                osint_abusech::MAX_SSLBL_BYTES,
+                &Validators::default(),
+            ) {
+                Ok(Some(fetched)) => match osint_abusech::parse_sslbl_certs(&fetched.body) {
+                    Ok(certs) => {
+                        cache.sslbl_total = certs.len();
+                        cache.sslbl_newest_ms = certs.first().map_or(0, |c| c.listed_ms);
+                        let mut counts: BTreeMap<&str, u32> = BTreeMap::new();
+                        for cert in &certs {
+                            *counts.entry(cert.reason.as_str()).or_insert(0) += 1;
+                        }
+                        let mut top: Vec<(String, u32)> =
+                            counts.into_iter().map(|(k, n)| (k.to_owned(), n)).collect();
+                        top.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+                        top.truncate(8);
+                        cache.sslbl_top = top;
+                        cache.sslbl_updated_ms = now;
+                        gate(&mut gates, Source::Sslbl).success(now, sslbl_spec.min_interval_ms);
+                        note.clear();
+                    }
+                    Err(error) => {
+                        note = format!("SSLBL: {error}");
+                        gate(&mut gates, Source::Sslbl).failure(now, sslbl_spec.min_interval_ms);
+                    }
+                },
+                Ok(None) => {
+                    gate(&mut gates, Source::Sslbl).success(now, sslbl_spec.min_interval_ms);
+                }
+                Err((status, retry)) => {
+                    note = format!("SSLBL: HTTP {status}");
+                    match retry {
+                        Some(seconds) => gate(&mut gates, Source::Sslbl).retry_after(now, seconds),
+                        None => {
+                            gate(&mut gates, Source::Sslbl).failure(now, sslbl_spec.min_interval_ms)
+                        }
+                    }
                 }
             }
             dirty = true;
