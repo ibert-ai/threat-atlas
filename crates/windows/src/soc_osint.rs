@@ -55,6 +55,7 @@ pub struct View {
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(default)]
 struct Cache {
     kev: Vec<KevWithEpss>,
     kev_updated_ms: u64,
@@ -73,6 +74,7 @@ struct Validators {
 }
 
 #[derive(Default, Serialize, Deserialize)]
+#[serde(default)]
 struct Gates {
     gates: BTreeMap<String, RateGate>,
     validators: BTreeMap<String, Validators>,
