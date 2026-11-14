@@ -883,7 +883,6 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         Some(Feed::shared())
     };
     let radar = (!smoke).then(|| Radar::start(state_dir.clone()));
-    let osint = (!smoke).then(|| Osint::start(state_dir.clone(), settings.enabled_sources.clone()));
     let updater = (!smoke).then(Updater::start);
     let path = state_dir.join("settings.json");
     let (mut settings, warning) = if smoke {
@@ -891,6 +890,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     } else {
         Settings::load(&path)
     };
+    let osint = (!smoke).then(|| Osint::start(state_dir.clone(), settings.enabled_sources.clone()));
     if let Some(warning) = warning {
         show_error(&warning);
     }
