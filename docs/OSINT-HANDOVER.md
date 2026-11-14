@@ -23,16 +23,18 @@ Implemented:
     interval, whether a user key is required, and whether the provider is non-commercial-only.
   - `RateGate` with persisted cooldown, exponential failure backoff and `Retry-After`.
   - CISA KEV JSON parser (skips malformed records), EPSS CSV parser (daily file, not the
-    lookup-only API), KEV+EPSS join and cap, Tor bulk exit list parser.
-  - Six unit tests: registry safety, rate gate/backoff, KEV parse, EPSS parse, join ordering
-    and Tor dedupe. No live network in tests.
+    lookup-only API), KEV+EPSS join and cap, Tor bulk exit list parser, SANS top-ports parser.
+  - Nine unit tests: registry safety, rate gate/backoff, KEV parse, EPSS parse, join ordering,
+    Tor dedupe, SANS parse, conditional-header safety. No live network in tests.
 - `crates/windows/src/soc_osint.rs`
   - Background worker for CISA KEV, FIRST EPSS and Tor exit list.
   - Persisted gates and cache under `%LOCALAPPDATA%\ThreatAtlasSOC\osint-state.json` and
     `osint-cache.json`; a restart cannot bypass the provider floor.
-  - KEV/EPSS at most once per 24 hours; Tor at most once per 30 minutes; `Retry-After` and
-    backoff on failures. EPSS is fetched through the redirect-following public WinHTTP helper
-    and gunzipped with `flate2`.
+  - KEV/EPSS at most once per 24 hours; Tor at most once per 30 minutes; SANS once per hour.
+    `Retry-After` and backoff on failures; gates are saved on failure as well as success.
+    `ETag`/`Last-Modified` are persisted and sent back as `If-None-Match`/`If-Modified-Since`;
+    a `304` extends the gate without re-parsing. EPSS is fetched through the redirect-following
+    public WinHTTP helper and gunzipped with `flate2`.
   - Started only after licence consent; never by the offline smoke test.
 - SANS ISC/DShield top target ports:
   - Parser in `crates/core/src/osint.rs` (document-object JSON shape, fixture tests).
@@ -52,8 +54,7 @@ Implemented:
 Not yet implemented:
 
 - FAS 1: MaxMind GeoLite2 + Team Cymru ASN enrichment; actual Tor map layer (the current UI
-  shows count/age only); persistent UI toggles and dedicated panels; conditional requests/ETag
-  (the worker relies on the rate floor today).
+  shows count/age only); persistent UI toggles and dedicated panels.
 - FAS 2: abuse.ch URLhaus/ThreatFox/SSLBL, AlienVault OTX, ransomware.live, Shodan InternetDB,
   AbuseIPDB. Keys/terms handling and per-source workers are not started.
 - FAS 3: RIPE RIS/BGPStream, CertStream, Spamhaus DROP/EDROP, PhishTank.
@@ -79,33 +80,56 @@ or interval in the host.
 
 ## Verification
 
-- `cargo test -p threat-atlas-core osint::` — 8 passed (2026-11-14).
+- `cargo test -p threat-atlas-core osint::` — 9 passed (2026-11-14).
 - Windows CI run `43576353483` for `ab4b11f`: **PASS** (fmt, clippy `-D warnings`, workspace
   tests, Windows build, smoke test, installer).
 - SANS ISC slice at `de9c14b`: core tests 8 passed; Windows CI run `43577069079` for `de9c14b`:
   **PASS** (fmt, clippy `-D warnings`, workspace tests, Windows build, smoke test, installer).
+- Conditional-request slice at `d74b724`: core tests 9 passed; Windows CI run `43577800499`:
+  **PASS** (fmt, clippy `-D warnings`, workspace tests, Windows build, smoke test, installer).
 - Do not mark the wishlist item done until the Windows CI run for the exact commit is green and
   the UI/dialog has been seen on Windows.
 
-## Parallel work for CL
+## Handover to CL — full remaining backlog
 
-Reference: `MAC-ATLAS-OSINT-CL-20261114-01` (also in the private handover).
+Reference: `MAC-ATLAS-OSINT-CL-HANDOVER-20261114-02` (also in the private handover).
 
-CL can take a **research-only** item in parallel without touching the active code paths:
+As of `d74b724`, MAC stops implementing. **CL owns distribution** of the remaining work: CL
+assigns each item to an available agent, records the owner and exact branch in the private
+handover, and keeps the file map conflict-free. No agent should edit the active branch paths
+until CL has assigned and announced the split.
 
-- **RIPE RIS / BGPStream feasibility (ATLAS-OSINT-010):** confirm data access, sampling/rate
-  limits, licence/attribution, event schema and whether a desktop-sized feed is realistic.
-  Deliverable: `docs/OSINT-BGP-RESEARCH.md` on a separate branch/PR, with sources and a
-  recommended bounded design. Do not edit `crates/core/src/osint.rs`,
-  `crates/windows/src/soc_osint.rs` or `crates/windows/src/soc_host.rs` on
-  `codex/osint-sources`.
-- **PhishTank / Spamhaus DROP terms (ATLAS-OSINT-012/013):** confirm current non-commercial
-  terms, required attribution and API rate limits; produce a short terms/fixture note. No code
-  changes.
+Remaining FAS 1:
 
-If CL wants code instead, use a new branch and coordinate the file map first; the active branch
-owns `osint.rs`, `soc_osint.rs` and `soc_host.rs` until the next handover. Acknowledge the exact
-reference and claim one item in the private handover before starting.
+- **ATLAS-OSINT-002 — Tor map layer.** Choose the geo source (a country-bearing Tor endpoint
+  such as Onionoo, or a user-supplied GeoLite2 database), then add the layer and a persistent
+  toggle. The current UI shows count/age only.
+- **ATLAS-OSINT-003 — SANS panel.** Parser, hourly worker and dialog are done; a dedicated panel
+  and the UI acceptance still remain.
+- **ATLAS-OSINT-001 — KEV/EPSS panel.** Data, ETag and dialog are done; a persistent panel and
+  its layout/test acceptance remain.
+- **ATLAS-OSINT-004 — MaxMind/Team Cymru.** User-supplied GeoLite2 database/key, Team Cymru
+  ASN cache, ASN display/filter and offline fallback.
+
+FAS 2 (optional user keys; non-commercial terms; no key in repo):
+
+- **005 abuse.ch URLhaus/ThreatFox/SSLBL** — Auth-Key, 5-minute dump floor (use 15+ min).
+- **006 AlienVault OTX** — key, conservative 15-minute poll, 429 handling.
+- **007 ransomware.live** — aggregate-only, 1 request/15 min.
+- **008 Shodan InternetDB** — click-only, non-commercial, cache 24 h.
+- **009 AbuseIPDB** — click-only, 1,000/day free tier, cache 24 h.
+
+FAS 3:
+
+- **010 RIPE RIS/BGPStream** — bounded/sampled feed, prefix/ASN model, no unbounded MRT downloads.
+- **011 CertStream** — watch-list filter, one WebSocket, flood cap, reconnect.
+- **012 Spamhaus DROP/EDROP** — daily, non-commercial attribution, CIDR layer.
+- **013 PhishTank** — key, conservative interval, no auto-fetch.
+
+CL should first read `docs/WISHLIST.md` for the per-item technical prerequisites and acceptance,
+then assign the work. The current branch `codex/osint-sources` is stable at `d74b724` (docs may
+be one commit later); it is not merged or released. Acknowledge the exact reference in the
+private `cl.json` before distributing.
 
 ## How to take over
 
@@ -132,7 +156,7 @@ reference and claim one item in the private handover before starting.
 - **KEV panel** is currently a dialog, not a persistent panel. A panel needs a layout decision
   in the classic and dashboard themes.
 - **EPSS** uses the daily CSV; do not switch to bulk API queries.
-- **Conditional requests** are not implemented yet; adding ETag/If-Modified-Since must not
-  weaken the persisted rate floor.
+- **Conditional requests** are implemented for KEV/EPSS/Tor/SANS; keep the persisted rate floor
+  and do not send validators for requests that carry a user token.
 - The app remains an observation tool. KEV/EPSS, Tor exits and community feeds are context,
   not confirmed attacks on the user's assets.
