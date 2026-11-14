@@ -34,9 +34,14 @@ Implemented:
     backoff on failures. EPSS is fetched through the redirect-following public WinHTTP helper
     and gunzipped with `flate2`.
   - Started only after licence consent; never by the offline smoke test.
+- SANS ISC/DShield top target ports:
+  - Parser in `crates/core/src/osint.rs` (document-object JSON shape, fixture tests).
+  - Hourly worker in `crates/windows/src/soc_osint.rs`; CC BY-NC-SA 4.0 attribution,
+    non-commercial flag and a contact-bearing User-Agent. `429`/`Retry-After` is honoured.
+  - **SANS ISC top ports** dialog.
 - `crates/windows/src/soc_host.rs`
   - Right-click items: **Known exploited (KEV + EPSS)**, **Tor exit nodes**,
-    **Refresh OSINT**, **OSINT sources / licences**.
+    **SANS ISC top ports**, **Refresh OSINT**, **OSINT sources / licences**.
   - Dialogs show top KEV entries with EPSS/due date, Tor count and age, worker notes, and the
     full source registry with licence/attribution/minimum interval/key requirement.
 - `crates/windows/src/soc_radar.rs`
@@ -46,9 +51,9 @@ Implemented:
 
 Not yet implemented:
 
-- FAS 1: SANS ISC/DShield panel; MaxMind GeoLite2 + Team Cymru ASN enrichment; actual Tor
-  map layer (the current UI shows count/age only); persistent UI toggles and a dedicated
-  OSINT panel; conditional requests/ETag (the worker relies on the rate floor today).
+- FAS 1: MaxMind GeoLite2 + Team Cymru ASN enrichment; actual Tor map layer (the current UI
+  shows count/age only); persistent UI toggles and dedicated panels; conditional requests/ETag
+  (the worker relies on the rate floor today).
 - FAS 2: abuse.ch URLhaus/ThreatFox/SSLBL, AlienVault OTX, ransomware.live, Shodan InternetDB,
   AbuseIPDB. Keys/terms handling and per-source workers are not started.
 - FAS 3: RIPE RIS/BGPStream, CertStream, Spamhaus DROP/EDROP, PhishTank.
@@ -74,13 +79,33 @@ or interval in the host.
 
 ## Verification
 
-- `cargo test -p threat-atlas-core osint::` — 6 passed (2026-11-14).
-- Windows CI run `43576353483` for `ab4b11f`: **PASS**. The workflow is
-  `.github/workflows/windows-soc.yml`; it ran fmt, clippy with `-D warnings`, workspace tests,
-  the Windows build, smoke test and installer checks. The earlier run at `180ee85` failed
-  clippy for unused `View` fields and an elidable lifetime; both were fixed in `ab4b11f`.
+- `cargo test -p threat-atlas-core osint::` — 8 passed (2026-11-14).
+- Windows CI run `43576353483` for `ab4b11f`: **PASS** (fmt, clippy `-D warnings`, workspace
+  tests, Windows build, smoke test, installer).
+- SANS ISC slice at `de9c14b`: core tests 8 passed; Windows CI run `43577069079` for `de9c14b`:
+  **PASS** (fmt, clippy `-D warnings`, workspace tests, Windows build, smoke test, installer).
 - Do not mark the wishlist item done until the Windows CI run for the exact commit is green and
   the UI/dialog has been seen on Windows.
+
+## Parallel work for CL
+
+Reference: `MAC-ATLAS-OSINT-CL-20261114-01` (also in the private handover).
+
+CL can take a **research-only** item in parallel without touching the active code paths:
+
+- **RIPE RIS / BGPStream feasibility (ATLAS-OSINT-010):** confirm data access, sampling/rate
+  limits, licence/attribution, event schema and whether a desktop-sized feed is realistic.
+  Deliverable: `docs/OSINT-BGP-RESEARCH.md` on a separate branch/PR, with sources and a
+  recommended bounded design. Do not edit `crates/core/src/osint.rs`,
+  `crates/windows/src/soc_osint.rs` or `crates/windows/src/soc_host.rs` on
+  `codex/osint-sources`.
+- **PhishTank / Spamhaus DROP terms (ATLAS-OSINT-012/013):** confirm current non-commercial
+  terms, required attribution and API rate limits; produce a short terms/fixture note. No code
+  changes.
+
+If CL wants code instead, use a new branch and coordinate the file map first; the active branch
+owns `osint.rs`, `soc_osint.rs` and `soc_host.rs` until the next handover. Acknowledge the exact
+reference and claim one item in the private handover before starting.
 
 ## How to take over
 
@@ -99,7 +124,8 @@ or interval in the host.
 
 ## Known risks / open decisions
 
-- **SANS ISC endpoint and terms** need confirmation before implementation; do not guess fields.
+- **SANS ISC** terms are confirmed (CC BY-NC-SA 4.0); keep attribution/non-commercial and the
+  contact-bearing User-Agent. A dedicated panel is still open.
 - **Tor as a map layer** needs a country/geo source. The bulk list is IP-only; MaxMind GeoLite2
   or a country-bearing Tor endpoint must be chosen and licensed first. The current count/age
   dialog is not the promised layer.

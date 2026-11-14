@@ -49,7 +49,7 @@ state, contracts and takeover steps.
 | --- | --- | --- | --- |
 | ATLAS-OSINT-001 | FAS 1 | Partial: registry, parsers, worker, KEV/EPSS dialog | Add a persistent panel; add ETag/If-Modified-Since |
 | ATLAS-OSINT-002 | FAS 1 | Partial: list parser and count dialog; no map layer | Choose/confirm geo source; add layer and toggle |
-| ATLAS-OSINT-003 | FAS 1 | Planned | Confirm SANS ISC endpoint and terms, then parser/panel |
+| ATLAS-OSINT-003 | FAS 1 | Partial: parser, hourly worker, top-ports dialog | Add dedicated panel and ETag; keep CC BY-NC-SA attribution |
 | ATLAS-OSINT-004 | FAS 1 | Planned | Add GeoLite2/ASN enrichment and filter |
 | ATLAS-OSINT-005 | FAS 2 | Planned | Auth-Key flow, URLhaus/ThreatFox/SSLBL parsers |
 | ATLAS-OSINT-006 | FAS 2 | Planned | OTX key, pulse parser, 429 handling |
@@ -103,15 +103,15 @@ Country is resolved from the existing geo data; do not claim that an exit node i
 
 ### ATLAS-OSINT-003 — SANS ISC / DShield attack statistics
 
-**Status:** planned.
+**Status:** partial — parser, hourly worker and top-ports dialog implemented; dedicated panel pending.
 
 Add a compact "Attack surface" panel with current SANS ISC/DShield aggregates: top target ports,
 top source countries/ASNs (if provided), and observation time. Honeypot data is not unique
 attacks; label it accordingly.
 
 - Source: [SANS ISC API](https://isc.sans.edu/api/).
-- Licence: SANS ISC public API terms; attribution in the registry. Confirm the exact endpoint
-  and terms before shipping.
+- Licence: CC BY-NC-SA 4.0; attribution, non-commercial and share-alike. Terms confirmed
+  14 November 2026.
 - Rate: **at most one request per hour** (daily aggregates are enough); conditional request
   where available; persisted last-success.
 - Technical prerequisites: JSON parser with fixtures; tolerate changed fields; no per-request
