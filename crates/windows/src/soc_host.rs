@@ -440,6 +440,44 @@ fn show_ransomware(window: &Window, view: Option<&OsintView>) {
     info_box(window, TITLE, &text);
 }
 
+/// Checks the address on the clipboard against the stored Spamhaus DROP lists. No request is made.
+fn show_spamhaus(window: &Window, view: Option<&OsintView>) {
+    const TITLE: &str = "Threat Atlas SOC - Spamhaus DROP";
+    let Some(data) = view.and_then(|v| v.spamhaus.as_ref()) else {
+        info_box(window, TITLE, "The Spamhaus DROP lists have not been downloaded yet. They are fetched once a day after start.");
+        return;
+    };
+    let now_s = threat_atlas_core::feed::now_ms() / 1000;
+    let mut text = format!(
+        "Spamhaus DROP: {} IPv4 and {} IPv6 netblocks, {} listed AS numbers.\nDownloaded: {}\n",
+        data.v4.entries.len(),
+        data.v6.entries.len(),
+        data.asn.entries.len(),
+        age(data.updated_ms)
+    );
+    for meta in [data.v4.meta.as_ref(), data.v6.meta.as_ref()]
+        .into_iter()
+        .flatten()
+    {
+        if threat_atlas_core::osint_spamhaus::is_stale(meta, now_s) {
+            text.push_str("Warning: a list is more than 7 days old; do not rely on it.\n");
+            break;
+        }
+    }
+    match clipboard_text(window).as_deref().and_then(osint_internetdb::parse_ip_text) {
+        Some(ip) if osint_internetdb::is_lookup_allowed(ip) => {
+            match threat_atlas_core::osint_spamhaus::lookup(&[&data.v4, &data.v6], ip) {
+                Some(entry) => text.push_str(&format!("\n{ip} is inside a netblock listed by Spamhaus DROP: {}/{} (record {}, registry {}).\nA listing is advice not to route that space, not proof that this machine is malicious.\n", entry.cidr.network, entry.cidr.len, entry.sbl, entry.rir)),
+                None => text.push_str(&format!("\n{ip} is not inside any listed DROP netblock. That does not mean it is safe.\n")),
+            }
+        }
+        Some(_) => text.push_str("\nThe copied address is not a public address; it was not checked.\n"),
+        None => text.push_str("\nTo check an address, copy it and choose this item again.\n"),
+    }
+    text.push_str("\nSource: Spamhaus DROP, https://www.spamhaus.org/drop/ . Free under the DROP Terms of Use; the data is stored locally and the checked address is not sent anywhere.");
+    info_box(window, TITLE, &text);
+}
+
 fn show_osint_sources(window: &Window) {
     let mut text = String::from("Threat Atlas SOC - OSINT sources\nNon-commercial use only. Provider terms, attribution and minimum intervals are part of the contract.\n\n");
     for source in threat_atlas_core::osint::SOURCES {
@@ -519,6 +557,7 @@ fn menu(
             ),
             (41, "Show last InternetDB result", false),
             (42, "Ransomware incidents (ransomware.live)", false),
+            (43, "Spamhaus DROP: check IP from clipboard", false),
         ];
         for (id, text, checked) in options {
             AppendMenuW(
@@ -767,6 +806,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                     39 => { let view = osint.as_ref().map(Osint::view); show_sans(&display.window, view.as_ref()); }
                     40 => start_internetdb_lookup(&display.window, osint.as_ref()),
                     42 => { let view = osint.as_ref().map(Osint::view); show_ransomware(&display.window, view.as_ref()); }
+                    43 => { let view = osint.as_ref().map(Osint::view); show_spamhaus(&display.window, view.as_ref()); }
                     41 => { let view = osint.as_ref().map(Osint::view); show_internetdb(&display.window, view.as_ref()); }
                     14 => { settings = Settings::default(); rebuild = true; }
                     15 => help(&display.window),
