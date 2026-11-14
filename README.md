@@ -32,6 +32,20 @@ screenshot thumbnails. Automatic updates remain unavailable without trusted sign
 Manual platform acceptance remains incomplete; see docs/QUALITY.md.
 See [release/version handling](docs/RELEASING.md) and [change history](CHANGELOG.md).
 
+## AtlasSOC Desktop 0.8.0 beta (draft, not released)
+
+The next standalone beta adds optional OSINT sources to AtlasSOC Desktop: known-exploited vulnerabilities
+(CISA KEV + FIRST EPSS), Tor exits, SANS ISC top ports, Team Cymru ASN, abuse.ch SSLBL/ThreatFox/URLhaus,
+AlienVault OTX, ransomware.live aggregates, Shodan InternetDB and AbuseIPDB click lookups, SSLMate Cert Spotter
+watch-lists, Spamhaus DROP netblocks and the Phishing.Database list. Every source is optional and
+non-commercial; keyed sources use the user's own key and click lookups only send the public address the user
+clicks. See the draft [OSINT source guide](docs/OSINT-SOURCES.md), [privacy policy](PRIVACY.md) and
+[release draft](docs/RELEASE-0.8.0-beta.1.md).
+
+**No 0.8.0 package or download exists yet.** The integration and the release gates are in progress; this is not
+a claim that the beta is available or tested. Windows will be unsigned in the beta and disclosed as such.
+RIPE RIS/BGPStream research, GeoLite2 file reading and Windows code signing are not in the beta scope.
+
 ## Known bugs
 
 See [known bugs and limitations](docs/KNOWN-BUGS.md) for affected versions,
