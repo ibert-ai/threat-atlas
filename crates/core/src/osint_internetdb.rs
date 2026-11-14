@@ -192,6 +192,41 @@ pub fn parse_internetdb(bytes: &[u8]) -> Result<Lookup, String> {
     }))
 }
 
+/// Reads one IP address from text the user copied (for example from a log). Surrounding space and
+/// brackets are ignored and a defanged `[.]` is accepted. Anything else, including several addresses or
+/// a port, returns `None`.
+pub fn parse_ip_text(text: &str) -> Option<IpAddr> {
+    let t = text.trim();
+    if t.is_empty() || t.len() > 64 || t.chars().any(char::is_whitespace) {
+        return None;
+    }
+    let t = t.replace("[.]", ".");
+    let t = t
+        .strip_prefix('[')
+        .and_then(|x| x.strip_suffix(']'))
+        .unwrap_or(&t);
+    t.parse().ok()
+}
+
+/// Plain-text summary of one answer for the host dialog.
+pub fn describe(host: &InternetDbHost) -> String {
+    fn line(label: &str, items: &[String]) -> String {
+        if items.is_empty() {
+            format!("{label}: none listed\n")
+        } else {
+            format!("{label}: {}\n", items.join(", "))
+        }
+    }
+    let ports: Vec<String> = host.ports.iter().map(u16::to_string).collect();
+    let mut out = format!("{}\n", host.ip);
+    out.push_str(&line("Open ports seen", &ports));
+    out.push_str(&line("Hostnames", &host.hostnames));
+    out.push_str(&line("Software (CPE)", &host.cpes));
+    out.push_str(&line("Tags", &host.tags));
+    out.push_str(&line("Known CVEs", &host.vulns));
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -314,5 +349,41 @@ mod tests {
             gap_elapsed(Some(10_000), 9_000),
             "clock went backwards: allow, do not stall"
         );
+    }
+
+    #[test]
+    fn clipboard_text_gives_one_address_or_nothing() {
+        assert_eq!(
+            parse_ip_text(" 1.1.1.1\r\n"),
+            Some("1.1.1.1".parse().unwrap())
+        );
+        assert_eq!(
+            parse_ip_text("8[.]8[.]8[.]8"),
+            Some("8.8.8.8".parse().unwrap())
+        );
+        assert_eq!(
+            parse_ip_text("[2606:4700::1111]"),
+            Some("2606:4700::1111".parse().unwrap())
+        );
+        assert_eq!(parse_ip_text("1.1.1.1 8.8.8.8"), None);
+        assert_eq!(parse_ip_text("1.1.1.1:443"), None);
+        assert_eq!(parse_ip_text("example.com"), None);
+        assert_eq!(parse_ip_text(""), None);
+        assert_eq!(parse_ip_text(&"1".repeat(500)), None);
+    }
+
+    #[test]
+    fn description_lists_every_field_and_marks_empty_ones() {
+        let host = InternetDbHost {
+            ip: "1.1.1.1".into(),
+            ports: vec![53, 443],
+            vulns: vec!["CVE-2021-44228".into()],
+            ..Default::default()
+        };
+        let text = describe(&host);
+        assert!(text.starts_with("1.1.1.1\n"));
+        assert!(text.contains("Open ports seen: 53, 443"));
+        assert!(text.contains("Hostnames: none listed"));
+        assert!(text.contains("Known CVEs: CVE-2021-44228"));
     }
 }
