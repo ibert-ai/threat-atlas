@@ -153,11 +153,11 @@ pub fn source_spec(source: Source) -> SourceSpec {
         Source::Sslbl => SourceSpec {
             id: "sslbl",
             name: "abuse.ch SSLBL",
-            licence: "abuse.ch community API fair use; commercial use may require a paid licence.",
+            licence: "CC0 per abuse.ch Terms of Use 3.4; free for commercial and non-commercial use; no key.",
             attribution: "https://sslbl.abuse.ch/",
             min_interval_ms: 15 * 60 * 1000,
-            requires_key: true,
-            non_commercial_only: true,
+            requires_key: false,
+            non_commercial_only: false,
         },
         Source::Otx => SourceSpec {
             id: "alienvault-otx",
@@ -189,7 +189,7 @@ pub fn source_spec(source: Source) -> SourceSpec {
         Source::AbuseIpdb => SourceSpec {
             id: "abuseipdb",
             name: "AbuseIPDB",
-            licence: "Free API tier; confirm non-commercial terms before shipping.",
+            licence: "Free Individual plan: non-commercial personal use, one account per person, own key only.",
             attribution: "https://www.abuseipdb.com/api",
             min_interval_ms: 24 * 60 * 60 * 1000,
             requires_key: true,
@@ -197,9 +197,9 @@ pub fn source_spec(source: Source) -> SourceSpec {
         },
         Source::RipeRis => SourceSpec {
             id: "ripe-ris",
-            name: "RIPE RIS / BGPStream",
-            licence: "Free BGP data with attribution; see RIPE RIS terms.",
-            attribution: "https://ris.ripe.net/",
+            name: "RIPE RIS Live (BGP)",
+            licence: "RIPE NCC permission by default; accept RIPE NCC terms, show RIPE NCC and RIS attribution (link and boilerplate).",
+            attribution: "https://www.ripe.net/ris",
             min_interval_ms: 5 * 60 * 1000,
             requires_key: false,
             non_commercial_only: false,
@@ -207,7 +207,7 @@ pub fn source_spec(source: Source) -> SourceSpec {
         Source::CertStream => SourceSpec {
             id: "certstream",
             name: "Certificate Transparency / CertStream",
-            licence: "Public CT logs; hosted endpoint terms must be checked.",
+            licence: "Public CT logs. The hosted CertStream stream is not operating (14 Nov 2026); a crt.sh watch-list is proposed instead.",
             attribution: "https://github.com/CaliDog/certstream-server",
             min_interval_ms: 60 * 1000,
             requires_key: false,
@@ -503,6 +503,46 @@ mod tests {
             assert!(spec.attribution.starts_with("https://"));
             assert!(spec.min_interval_ms >= 60_000, "{:?}", source);
         }
+    }
+
+    #[test]
+    fn registry_matches_the_terms_notes() {
+        // Keys: only the user's own key, and only where the provider requires one (docs/OSINT-TERMS-*.md).
+        for source in [
+            Source::Urlhaus,
+            Source::ThreatFox,
+            Source::Otx,
+            Source::AbuseIpdb,
+            Source::PhishTank,
+            Source::MaxMind,
+        ] {
+            assert!(
+                source_spec(source).requires_key,
+                "{source:?} needs the user's own key"
+            );
+        }
+        for source in [
+            Source::Sslbl,
+            Source::ShodanInternetDb,
+            Source::RipeRis,
+            Source::TeamCymru,
+            Source::CisaKev,
+            Source::Epss,
+            Source::TorExit,
+            Source::SansIsc,
+            Source::SpamhausDrop,
+            Source::RansomwareLive,
+            Source::CertStream,
+        ] {
+            assert!(!source_spec(source).requires_key, "{source:?} needs no key");
+        }
+        // SSLBL is CC0 (abuse.ch Terms of Use 3.4), so it is not restricted to non-commercial use.
+        assert!(!source_spec(Source::Sslbl).non_commercial_only);
+        assert!(source_spec(Source::AbuseIpdb).non_commercial_only);
+        assert_eq!(
+            source_spec(Source::RipeRis).attribution,
+            "https://www.ripe.net/ris"
+        );
     }
 
     #[test]
