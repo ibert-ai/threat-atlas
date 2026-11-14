@@ -100,12 +100,16 @@ descriptions.
 
 ### Shodan InternetDB
 
-InternetDB returns open ports, hostnames, CPEs, tags and known CVE ids for a public IP. The app looks up an
-address **only when you click it**, never on hover, never in bulk.
+InternetDB returns open ports, hostnames, CPEs, tags and known CVE ids for a public IP. The app reads one
+address from the clipboard only when you choose **Look up IP from clipboard (Shodan InternetDB)…**, refuses
+non-public addresses, and shows a confirmation that names Shodan as the recipient before it sends anything. It
+never looks up on hover and never in bulk.
 
 - **Does not mean** that the host is vulnerable; the data is updated weekly and is a snapshot.
-- Free for non-commercial use. One request per second at most, one in flight, 24-hour local cache. Private,
-  loopback, link-local, multicast, documentation and other non-public addresses are never sent.
+- Free for non-commercial use. One request per second at most, one in flight, no retry. A 404 means "no
+  information", not an error. Answers are cached for 24 hours (at most 200 entries) on your computer.
+- Shodan receives the pasted public IP and your public IP address. Private, loopback, link-local, multicast,
+  documentation and other non-public addresses are never sent.
 
 ### AbuseIPDB
 

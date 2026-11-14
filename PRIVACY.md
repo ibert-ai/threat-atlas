@@ -46,8 +46,10 @@ The full user guide is [docs/OSINT-SOURCES.md](docs/OSINT-SOURCES.md).
   receives the user's public IP address and normal HTTPS request metadata when the app fetches the feed. No
   account, token, screen content or address from the user's own network is sent with those fetches.
 - **Click-only lookups:** Shodan InternetDB and AbuseIPDB receive one **public** IP address, and only when the user
-  clicks it. Private, loopback, link-local, multicast, documentation and other non-public addresses are never
-  sent. Results are cached locally for 24 hours and are not uploaded.
+  explicitly asks for it. For InternetDB the address is read from the clipboard after a confirmation that names
+  Shodan as the recipient; Shodan also sees the user's public IP. Private, loopback, link-local, multicast,
+  documentation and other non-public addresses are never sent. Results are cached locally for 24 hours (at most
+  200 InternetDB entries) and are not uploaded.
 - **Keyed sources:** abuse.ch ThreatFox/URLhaus, AlienVault OTX, AbuseIPDB and SSLMate Cert Spotter use the user's
   own key, stored in Windows Credential Manager or macOS Keychain. The key is sent only to that provider, together
   with the normal request metadata (and, for Cert Spotter, the domains the user chose to watch; for AbuseIPDB,
