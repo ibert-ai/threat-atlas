@@ -143,6 +143,8 @@ pub(crate) struct Reply {
     pub(crate) status: u16,
     pub(crate) retry_after_s: Option<u64>,
     quota_reset_s: Option<u64>,
+    pub(crate) etag: Option<String>,
+    pub(crate) last_modified: Option<String>,
     pub(crate) body: Vec<u8>,
 }
 
@@ -304,6 +306,12 @@ fn https_get_policy(
             retry_after_s: header(&request, "Retry-After").and_then(|v| v.trim().parse().ok()),
             quota_reset_s: header(&request, "Ratelimit")
                 .and_then(|v| radar_poll::quota_reset_s(&v)),
+            etag: header(&request, "ETag")
+                .map(|v| v.trim().to_owned())
+                .filter(|v| !v.is_empty()),
+            last_modified: header(&request, "Last-Modified")
+                .map(|v| v.trim().to_owned())
+                .filter(|v| !v.is_empty()),
             body,
         })
     }

@@ -271,6 +271,26 @@ impl RateGate {
     }
 }
 
+/// Build conditional request headers from a stored ETag/Last-Modified pair.
+/// Values containing CR/LF are rejected so a provider cannot inject a header.
+pub fn conditional_headers(etag: Option<&str>, last_modified: Option<&str>) -> String {
+    let mut headers = String::new();
+    for (name, value) in [
+        ("If-None-Match", etag),
+        ("If-Modified-Since", last_modified),
+    ] {
+        if let Some(value) = value {
+            if !value.is_empty() && !value.contains(['\r', '\n']) {
+                headers.push_str(name);
+                headers.push_str(": ");
+                headers.push_str(value);
+                headers.push_str("\r\n");
+            }
+        }
+    }
+    headers
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub struct KevEntry {
     #[serde(rename = "cveID")]
@@ -501,6 +521,16 @@ mod tests {
         assert_eq!(gate.next_allowed_ms, 305_000);
         gate.success(305_000, 60_000);
         assert_eq!(gate.backoff_ms, 0);
+    }
+
+    #[test]
+    fn conditional_headers_are_safe() {
+        assert_eq!(
+            conditional_headers(Some("\"abc\""), Some("Wed, 12 Nov 2026 10:00:00 GMT")),
+            "If-None-Match: \"abc\"\r\nIf-Modified-Since: Wed, 12 Nov 2026 10:00:00 GMT\r\n"
+        );
+        assert!(conditional_headers(Some("x\r\nInjected: 1"), None).is_empty());
+        assert!(conditional_headers(None, Some("x\ny")).is_empty());
     }
 
     #[test]
