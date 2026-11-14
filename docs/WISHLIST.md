@@ -38,6 +38,29 @@ Every OSINT source must satisfy these before it ships:
 - **Documentation stays English.** Update `docs/ATLAS-SOC-BETA.md` and the source registry when a
   source ships. No release is implied by an implemented wishlist item.
 
+## Work packages and handover
+
+The items are deliberately **unassigned**. Any authorised agent can take one, but must claim it
+in the private handover (`project-status-dashboard/handovers/mac.json`) first and record the
+exact branch/commit. See [OSINT-HANDOVER.md](OSINT-HANDOVER.md) for the current implementation
+state, contracts and takeover steps.
+
+| ID | Phase | Current state | Suggested next step |
+| --- | --- | --- | --- |
+| ATLAS-OSINT-001 | FAS 1 | Partial: registry, parsers, worker, KEV/EPSS dialog | Add a persistent panel; add ETag/If-Modified-Since |
+| ATLAS-OSINT-002 | FAS 1 | Partial: list parser and count dialog; no map layer | Choose/confirm geo source; add layer and toggle |
+| ATLAS-OSINT-003 | FAS 1 | Planned | Confirm SANS ISC endpoint and terms, then parser/panel |
+| ATLAS-OSINT-004 | FAS 1 | Planned | Add GeoLite2/ASN enrichment and filter |
+| ATLAS-OSINT-005 | FAS 2 | Planned | Auth-Key flow, URLhaus/ThreatFox/SSLBL parsers |
+| ATLAS-OSINT-006 | FAS 2 | Planned | OTX key, pulse parser, 429 handling |
+| ATLAS-OSINT-007 | FAS 2 | Planned | Aggregate parser, 1 request/15 min |
+| ATLAS-OSINT-008 | FAS 2 | Planned | Click-only InternetDB cache |
+| ATLAS-OSINT-009 | FAS 2 | Planned | AbuseIPDB key and click cache |
+| ATLAS-OSINT-010 | FAS 3 | Planned | RIS/BGPStream feasibility and sampling cap |
+| ATLAS-OSINT-011 | FAS 3 | Planned | Watch-list and CT stream consumer |
+| ATLAS-OSINT-012 | FAS 3 | Planned | DROP/EDROP parser and daily gate |
+| ATLAS-OSINT-013 | FAS 3 | Planned | PhishTank key and conservative interval |
+
 ## FAS 1 — foundation, no new secrets
 
 ### ATLAS-OSINT-001 — CISA KEV + EPSS context panel
