@@ -340,4 +340,41 @@ mod tests {
         assert!(get_once("example.com", "/a b", "", 10, far).is_none());
         assert!(get_once("example.com", "/", "X: 1\r\n\r\nGET /evil", 10, far).is_none());
     }
+
+    /// Deterministic fuzzing: random and mutated input must never panic and never exceed the body limit.
+    #[test]
+    fn parsers_survive_random_and_mutated_input() {
+        let mut x: u64 = 0x2545_f491_4f6c_dd1d;
+        let mut next = || {
+            x ^= x << 13;
+            x ^= x >> 7;
+            x ^= x << 17;
+            x
+        };
+        let seeds: [&[u8]; 3] = [
+            b"5\r\nhello\r\n6;x=1\r\n world\r\n0\r\n\r\n",
+            b"HTTP/1.1 200 OK\r\nContent-Length: 12\r\nETag: \"a\"\r\nTransfer-Encoding: chunked",
+            b"ffffffff\r\n",
+        ];
+        for round in 0..20_000 {
+            let mut data: Vec<u8> = if round % 2 == 0 {
+                (0..(next() % 200)).map(|_| next() as u8).collect()
+            } else {
+                seeds[(next() % 3) as usize].to_vec()
+            };
+            for _ in 0..(next() % 4) {
+                if !data.is_empty() {
+                    let i = (next() as usize) % data.len();
+                    data[i] = next() as u8;
+                }
+            }
+            if let Some(body) = dechunk(&data, 64) {
+                assert!(body.len() <= 64);
+            }
+            if let Ok(text) = std::str::from_utf8(&data) {
+                let _ = parse_head(text);
+                let _ = redirect_target(text, "a.example", "/d/x");
+            }
+        }
+    }
 }
