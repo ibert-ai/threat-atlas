@@ -1,4 +1,4 @@
-> **AtlasSOC standalone beta:** Windows x64 and universal macOS14+ packages are documented in [docs/ATLAS-SOC-BETA.md](docs/ATLAS-SOC-BETA.md). This is separate from the screensaver below; Windows is portable and both platforms have signing/hardware limits.
+> **AtlasSOC Desktop 0.7.0 stable (build 13):** separate standalone packages for Windows x64 and macOS 14+; Windows includes an installer and portable ZIP, and macOS is Developer ID signed and notarized. See [installation and limits](docs/ATLAS-SOC-BETA.md). A separate [Linux x86_64 preview](docs/ATLAS-SOC-LINUX.md) is available without Cloudflare Radar.
 
 # Threat Atlas SOC
 
@@ -23,9 +23,11 @@ claim that every hardware/manual check passed; see the release notes for test li
 and macOS 14+; see [docs/ATLAS-SOC-BETA.md](docs/ATLAS-SOC-BETA.md) and its
 [release downloads](https://github.com/ibert-ai/threat-atlas/releases/tag/atlassoc-v0.7.0).
 
+A separate **AtlasSOC Desktop Linux x86_64 preview**, build **13**, was published on 12 November 2026 from newer source. It has no Radar, saved settings or update check; physical Linux and live-feed acceptance remain unverified. See [preview details](docs/ATLAS-SOC-LINUX.md) and [downloads](https://github.com/ibert-ai/threat-atlas/releases/tag/atlassoc-v0.7.0-linux).
+
 The earlier **0.4.5 stable release**, build **13**, promoted the approved 0.4.4-rc.1 implementation for Windows x64 (all-users MSI and portable ZIP) and Linux x86_64 (windowed X11/XWayland preview).
 [Release downloads](https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.5).
-No macOS package is included: Gatekeeper trust remains unresolved. Stable is the maintainer's release decision, not trusted signing or a claim that every hardware/manual check passed. Lock-on-resume and browser-downloaded MSI installation remain UNTESTED; see release notes. Existing releases are preserved.
+That older 0.4.5 release has no macOS package; this historical restriction does not apply to the signed 0.4.8 macOS download. Stable is the maintainer's release decision, not trusted signing or a claim that every hardware/manual check passed. Lock-on-resume and browser-downloaded MSI installation remain UNTESTED; see release notes. Existing releases are preserved.
 
 The official **0.4.0**, build **8**, release ships without trusted code signing.
 Windows SCR/MSI files are unsigned; macOS bundles are ad-hoc signed and unnotarized.
@@ -57,7 +59,7 @@ for your user account. Quit and reopen System Settings, then open Wallpaper →
 Screen Saver → Custom → Other → Show All and select **Threat Atlas SOC**. The ZIP
 also contains **Threat Atlas SOC.app**, a windowed preview. The universal bundle
 supports Intel and Apple Silicon. Keep bundles zipped when syncing through cloud
-storage: Finder metadata on unpacked bundles can invalidate ad-hoc signatures.
+storage: changing bundle contents or metadata can invalidate signatures.
 If an upgrade shows a blank **Threat Atlas** preview, check that you selected
 **Threat Atlas SOC**, rather than the old 0.2 bundle. Older copies named
 `ThreatAtlas.saver` may remain in both `~/Library/Screen Savers` and
@@ -66,13 +68,16 @@ uses a distinct class/identifier and includes screenshot thumbnails. Reopen
 System Settings after installing. Automatic updating requires a trusted signed
 release; it is unavailable in unsigned/ad-hoc builds, including official 0.4.0.
 
-This release is unsigned on Windows and ad-hoc signed on macOS. Future trusted
-signing is described in [signing instructions](docs/SIGNING.md). Do not disable
+Current Windows packages are unsigned; the 0.4.8 macOS package is Developer ID
+signed, notarized and stapled. Historical ad-hoc packages remain unchanged.
+The signing process is described in [signing instructions](docs/SIGNING.md). Do not disable
 OS security protections to run an untrusted download.
 
-## Automatic updates (next signed release)
+## Automatic updates
 
-After a one-time install of a trusted signed build, enable automatic updates:
+The updater design requires a trusted signed build and separately signed update
+metadata. Code signing/notarization alone does not establish a working signed
+update channel. Where those release requirements are met:
 
 - **Windows:** not available from the all-users MSI; the per-user updater needs a
   redesign first.
@@ -151,4 +156,4 @@ Third-party Rust crates retain their own licenses. Provider content is not MIT.
 
 ## Country map and Linux development
 
-This branch adds [country borders and observation shading](docs/COUNTRY-MAP.md) and a [Linux application preview](docs/LINUX.md). These changes are pending cross-platform review and approval. Linux is a windowed application, not a native idle/lock-screen integration. Existing release installers are unchanged.
+[Country borders and observation shading](docs/COUNTRY-MAP.md) and the [screensaver-family Linux windowed preview](docs/LINUX.md) are included in the published source. Linux remains a windowed application, not native idle/lock-screen integration. The separate [AtlasSOC Desktop Linux preview](docs/ATLAS-SOC-LINUX.md) has its own release and limitations.
