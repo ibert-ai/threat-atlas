@@ -1,0 +1,6 @@
+# id,dateadded,url,url_status,last_online,threat,tags,urlhaus_link,reporter
+"x","2026-11-14 08:00:00","http://a.example.invalid/","online","","t","","https://urlhaus.abuse.ch/url/1/","r"
+"2","bad","javascript:alert(1)","online","","t","","https://urlhaus.abuse.ch/url/2/","r"
+"3","2026-11-14 08:00:00","http://ok.example.invalid/p","weird","","t","a,b","https://evil.example.invalid/steal","r"
+"4","2026-11-14 08:00:00","http://ctrl.example.invalid/","online","","t","","https://urlhaus.abuse.ch/url/4/","r"
+truncated,line
