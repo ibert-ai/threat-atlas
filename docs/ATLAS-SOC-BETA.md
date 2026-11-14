@@ -37,7 +37,7 @@ Shodan refreshes the dataset weekly. Treat results as context because they may
 be stale, and an empty result only means Shodan has no information for that IP.
 AtlasSOC accepts public addresses only and reuses answers for up to 24 hours
 from its local cache of up to 200 entries. The free lookup is for non-commercial
-use and requires no Shodan account or API key. See the [privacy policy](../PRIVACY.md#shodan-internetdb-windows-desktop-beta).
+use and requires no Shodan account or API key. See the [privacy policy](../PRIVACY.md).
 
 ## Known limits
 
