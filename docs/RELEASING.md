@@ -6,6 +6,10 @@ The current manifest is the stable 0.4.8 release, build 16, for Windows x64, the
 Linux preview and macOS. It is published only after exact-source automated checks
 and package validation, and replaces 0.4.5 as latest stable. Historical assets remain unchanged.
 
+Feature-by-version history, the current planned release and the two public-release gates are in
+[VERSION-FEATURES.md](VERSION-FEATURES.md). Those gates apply to every public release, not only the first
+OSINT release.
+
 The maintainer authorized unsigned publication on 29 October 2026. For 0.4.0,
 the signing and manual acceptance gates below remain incomplete and must be
 disclosed in release notes. All six automated checks must pass for the exact
@@ -30,9 +34,24 @@ public MSIs with different payloads under the same numeric version: changing onl
 numeric version as well when publishing another installer payload. The first
 signed 1.0.0 installer will use a newer numeric version than these previews.
 
+## Public-release gates (14 November 2026)
+
+A public release is not published until both gates in [VERSION-FEATURES.md](VERSION-FEATURES.md) are met for the
+exact code being released:
+
+1. **Optimisation and hardening round, then new tests.** Baseline numbers, evidence-based optimisation, safety and
+   best-practice checks, new tests after the optimisation (fuzz and property tests for every parser, soak where
+   applicable), CI green on the exact commit and independent review.
+2. **Documentation complete for every new feature.** User-facing description, source/licence/attribution/rate
+   limits, `PRIVACY.md`, `THIRD-PARTY-NOTICES.txt`, known limits and unverified points, the version map,
+   `CHANGELOG.md`, release notes, README and wishlist/bug statuses.
+
+This gate applies to **all public releases**, not only the first OSINT release. Preparing or merging a version
+does not authorize publication.
+
 ## Publish checklist
 
-1. Update manifest, sync metadata, changelog and release notes on a PR.
+1. Update manifest, sync metadata, changelog and release notes on a PR; confirm `VERSION-FEATURES.md` is current and both public-release gates are met.
 2. Pass all required CI checks and perform platform acceptance, including the
    actual Mac Settings preview, idle/lock behavior and signed upgrade tests.
 3. Build from the exact reviewed commit; sign and verify final artifacts as
