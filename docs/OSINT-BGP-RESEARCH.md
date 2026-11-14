@@ -23,7 +23,7 @@ needs a check before it is relied on.
 | Client id | A `client` query parameter appears in all RIPE examples. Use `threat-atlas-<version>`. Whether it is mandatory is not stated. | RIPE examples |
 | Subscribe | `{"type":"ris_subscribe","data":{...}}` | RIS Live home page |
 | Filters | `host` (one RRC), `type` (BGP/RIS message type), `require` (key must be present), `peer`, `path` (ASN or pattern on AS_PATH), `prefix`, `moreSpecific` (default true), `lessSpecific` (default false) | published JSON schema `ris_subscribe.schema.json` |
-| Socket options | `includeRaw` (hex of the raw BGP message, default false), `acknowledge` (`ris_subscribe_ok`, default false) | same schema |
+| Socket options | `includeRaw` (Base64-encoded raw BGP message, default false), `acknowledge` (`ris_subscribe_ok`, default false) | same schema |
 | Sampling | None offered. The only reduction is server-side filtering; sampling must be done on the client. | schema |
 | Full stream | A non-interactive "firehose" exists "for researchers". Not for an application. | RIS Live home page, RIPE Labs |
 | Rate limit | **None published** in anything readable. The manual URL linked from RIPE's pages currently shows RIPE's "not found" page. Ask `rislive@ripe.net`. | — |
@@ -85,7 +85,9 @@ provide them **(unverified)**.
   (b) acknowledge RIPE NCC and RIS by including the **RIPE NCC logo**, a link to https://www.ripe.net/ris and a
   fixed boilerplate paragraph. The page applies those conditions to "paid services, products, reports, or any
   other derivative" and to commercial packaging.
-- No non-commercial-only restriction is stated. That fits the project rule "non-commercial sources only".
+- The commercial-use page does not establish the applicable permission for our free desktop app.
+  Eligibility under the project's source policy remains **unverified** until the applicable terms and
+  attribution requirements are confirmed; this research note does not authorize enabling the feed.
 - **Open question:** whether a free open source desktop app counts as a "product" under that page. The raw-data
   terms page that might settle it could not be read (not found or rate-limited on 14 Nov 2026).
 - **Recommended:** show the attribution link and the boilerplate in the OSINT sources dialog regardless. The
