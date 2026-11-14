@@ -118,7 +118,7 @@ fn publish(shared: &Mutex<View>, cache: &Cache, note: &str) {
     };
 }
 
-fn gate<'a>(gates: &'a mut Gates, source: Source) -> &'a mut RateGate {
+fn gate(gates: &mut Gates, source: Source) -> &mut RateGate {
     gates
         .gates
         .entry(osint::source_spec(source).id.to_owned())

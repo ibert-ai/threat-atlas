@@ -172,9 +172,14 @@ fn show_kev(window: &Window, view: Option<&OsintView>) {
         return;
     };
     let mut text = format!(
-        "CISA Known Exploited Vulnerabilities + FIRST EPSS\nUpdated: {}\n\n",
-        age(view.kev_updated_ms)
+        "CISA Known Exploited Vulnerabilities + FIRST EPSS\nKEV updated: {}\nEPSS updated: {}\n",
+        age(view.kev_updated_ms),
+        age(view.epss_updated_ms)
     );
+    if !view.note.is_empty() {
+        text.push_str(&format!("Last note: {}\n", view.note));
+    }
+    text.push('\n');
     if view.kev.is_empty() {
         text.push_str("No data yet. The first refresh is scheduled within 24 hours.\n");
     }
@@ -211,11 +216,14 @@ fn show_tor(window: &Window, view: Option<&OsintView>) {
         };
         return;
     };
-    let text = format!(
+    let mut text = format!(
         "Tor exit nodes: {}\nUpdated: {}\n\nSource: Tor Project bulk exit list. Exit nodes are public Tor infrastructure, not malicious hosts. Non-commercial use with attribution.",
         view.tor_count,
         age(view.tor_updated_ms)
     );
+    if !view.note.is_empty() {
+        text.push_str(&format!("\nLast note: {}", view.note));
+    }
     unsafe {
         MessageBoxW(
             window.hwnd() as HWND,
