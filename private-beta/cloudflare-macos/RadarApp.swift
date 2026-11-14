@@ -268,12 +268,13 @@ struct TokenSettings: View {
 @main struct PrivateRadarApp: App {
     // The licence gate wraps everything: no feed, worker or Keychain access before acceptance.
     var body: some Scene {
-        WindowGroup { ConsentGate(terms: radarLicenseTerms) { RadarView() } }
+        WindowGroup { ConsentGate(terms: radarLicenseTerms) { RadarView().onAppear { OsintController.shared.start() } } }
             .commands {
                 CommandGroup(after: .appSettings) {
                     Button("Cloudflare Token…") { NotificationCenter.default.post(name: .showTokenSettings, object: nil) }
-                        .keyboardShortcut(",", modifiers: [.command])
                 }
             }
+        // One Settings window (⌘,): data sources on/off, key guide, updates, Radar token.
+        Settings { OsintSettingsView() }
     }
 }

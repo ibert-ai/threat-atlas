@@ -99,7 +99,11 @@ pub(crate) fn dechunk(raw: &[u8], max: usize) -> Option<Vec<u8>> {
 }
 
 /// Splits a redirect target into (host, path). Only `https://` and absolute paths are followed.
-pub(crate) fn redirect_target(location: &str, current_host: &str) -> Option<(String, String)> {
+pub(crate) fn redirect_target(
+    location: &str,
+    current_host: &str,
+    current_path: &str,
+) -> Option<(String, String)> {
     if let Some(rest) = location.strip_prefix("https://") {
         let (host, path) = rest
             .split_once('/')
@@ -107,6 +111,14 @@ pub(crate) fn redirect_target(location: &str, current_host: &str) -> Option<(Str
         (!host.is_empty() && !host.contains(['@', ':'])).then(|| (host.to_ascii_lowercase(), path))
     } else if location.starts_with('/') && !location.starts_with("//") {
         Some((current_host.to_owned(), location.to_owned()))
+    } else if !location.is_empty()
+        && !location.contains([':', '\\', ' ', '\r', '\n'])
+        && !location.starts_with(['/', '.', '?', '#'])
+    {
+        // A relative file name: same directory as the current path.
+        let dir = current_path.split(['?', '#']).next().unwrap_or("/");
+        let dir = &dir[..dir.rfind('/').map_or(0, |i| i + 1)];
+        Some((current_host.to_owned(), format!("{dir}{location}")))
     } else {
         None
     }
@@ -224,7 +236,7 @@ pub fn https_get(host: &str, path: &str, headers: &str, max_bytes: usize) -> Opt
     for _ in 0..=MAX_REDIRECTS {
         let (head, body) = get_once(&host, &path, headers, max_bytes, deadline)?;
         if (301..=308).contains(&head.status) && head.status != 304 {
-            let (next_host, next_path) = redirect_target(head.location.as_deref()?, &host)?;
+            let (next_host, next_path) = redirect_target(head.location.as_deref()?, &host, &path)?;
             host = next_host;
             path = next_path;
             continue;
@@ -281,21 +293,41 @@ mod tests {
     #[test]
     fn redirects_stay_on_https() {
         assert_eq!(
-            redirect_target("https://B.example/x?y=1", "a.example"),
+            redirect_target("https://B.example/x?y=1", "a.example", "/"),
             Some(("b.example".into(), "/x?y=1".into()))
         );
         assert_eq!(
-            redirect_target("/new", "a.example"),
+            redirect_target("/new", "a.example", "/"),
             Some(("a.example".into(), "/new".into()))
         );
-        assert_eq!(redirect_target("http://evil.example/", "a.example"), None);
-        assert_eq!(redirect_target("//evil.example/", "a.example"), None);
         assert_eq!(
-            redirect_target("https://user@evil.example/", "a.example"),
+            redirect_target("http://evil.example/", "a.example", "/"),
+            None
+        );
+        assert_eq!(redirect_target("//evil.example/", "a.example", "/"), None);
+        assert_eq!(
+            redirect_target("https://user@evil.example/", "a.example", "/"),
             None
         );
         assert_eq!(
-            redirect_target("https://127.0.0.1:8443/", "a.example"),
+            redirect_target("https://127.0.0.1:8443/", "a.example", "/"),
+            None
+        );
+    }
+
+    #[test]
+    fn relative_redirects_stay_in_the_directory() {
+        assert_eq!(
+            redirect_target("f.gz", "a.example", "/d/x.gz"),
+            Some(("a.example".into(), "/d/f.gz".into()))
+        );
+        assert_eq!(
+            redirect_target("f.gz", "a.example", "/x.gz?y=1"),
+            Some(("a.example".into(), "/f.gz".into()))
+        );
+        assert_eq!(redirect_target("../up", "a.example", "/d/x"), None);
+        assert_eq!(
+            redirect_target("javascript:alert(1)", "a.example", "/"),
             None
         );
     }

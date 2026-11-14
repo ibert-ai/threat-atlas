@@ -184,7 +184,9 @@ pub struct Osint {
 /// Whether a source may make requests, given the ids the user turned on.
 pub fn is_enabled(enabled: &[String], source: Source) -> bool {
     let id = osint::source_spec(source).id;
-    enabled.iter().any(|e| e == id)
+    // EPSS scores exist to enrich the KEV list, so the KEV switch covers them.
+    let kev = source == Source::Epss && enabled.iter().any(|e| e == "cisa-kev");
+    kev || enabled.iter().any(|e| e == id)
 }
 
 impl Osint {
@@ -796,5 +798,26 @@ fn worker(
             Err(RecvTimeoutError::Timeout) => {}
             Err(RecvTimeoutError::Disconnected) => break,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_source_that_is_not_listed_is_off() {
+        let on = vec!["tor-exit".to_string()];
+        assert!(is_enabled(&on, Source::TorExit));
+        assert!(!is_enabled(&on, Source::ShodanInternetDb));
+        assert!(!is_enabled(&[], Source::TorExit));
+        assert!(!is_enabled(&on, Source::Epss));
+    }
+
+    #[test]
+    fn the_kev_switch_also_covers_epss() {
+        let on = vec!["cisa-kev".to_string()];
+        assert!(is_enabled(&on, Source::Epss));
+        assert!(!is_enabled(&["first-epss".to_string()], Source::CisaKev));
     }
 }
