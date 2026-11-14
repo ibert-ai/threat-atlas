@@ -215,12 +215,12 @@ pub fn source_spec(source: Source) -> SourceSpec {
         },
         Source::SpamhausDrop => SourceSpec {
             id: "spamhaus-drop",
-            name: "Spamhaus DROP/EDROP",
-            licence: "Free for non-commercial use with attribution; commercial licence required.",
+            name: "Spamhaus DROP",
+            licence: "Free of charge under the Spamhaus DROP Terms of Use; the Spamhaus name must not be used in marketing or other commercial materials.",
             attribution: "https://www.spamhaus.org/drop/",
             min_interval_ms: 24 * 60 * 60 * 1000,
             requires_key: false,
-            non_commercial_only: true,
+            non_commercial_only: false,
         },
         Source::PhishTank => SourceSpec {
             id: "phishtank",

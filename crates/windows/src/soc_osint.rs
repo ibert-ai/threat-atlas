@@ -25,6 +25,8 @@ use threat_atlas_core::{
     feed::now_ms,
     osint::{self, EpssScore, KevWithEpss, RateGate, SansReport, Source},
     osint_internetdb::{self, InternetDbHost, Lookup},
+    osint_ransomware::{self, RansomError, Summary as RansomSummary},
+    osint_spamhaus::{self, AsnList, DropList},
 };
 
 const KEV_HOST: &str = "www.cisa.gov";
@@ -41,6 +43,12 @@ const MAX_EPSS_UNPACKED: u64 = 64 * 1024 * 1024;
 const MAX_TOR_BYTES: usize = 2 * 1024 * 1024;
 const MAX_SANS_BYTES: usize = 2 * 1024 * 1024;
 const KEV_LIMIT: usize = 2_000;
+const MAX_RANSOM_BYTES: usize = osint_ransomware::MAX_BODY_BYTES;
+const SPAMHAUS_FILES: [(&str, &str); 3] = [
+    (osint_spamhaus::DROP_V4_PATH, "spamhaus-drop_v4.json"),
+    (osint_spamhaus::DROP_V6_PATH, "spamhaus-drop_v6.json"),
+    (osint_spamhaus::ASN_DROP_PATH, "spamhaus-asndrop.json"),
+];
 const INTERNETDB_HOST: &str = "internetdb.shodan.io";
 const INTERNETDB_CACHE_MAX: usize = 200;
 
@@ -55,9 +63,22 @@ pub struct View {
     pub sans: Option<SansReport>,
     pub sans_updated_ms: u64,
     pub note: String,
+    /// Ransomware incidents of the last 30 days as counts only (no victim data).
+    pub ransom: Option<RansomSummary>,
+    pub ransom_updated_ms: u64,
+    pub spamhaus: Option<Arc<SpamhausData>>,
     /// Last click-only InternetDB lookup, kept until the next one.
     pub lookup: Option<LookupView>,
     pub lookup_pending: bool,
+}
+
+/// Spamhaus DROP netblocks and ASN-DROP, parsed from the last good downloads.
+#[derive(Clone, Debug, Default)]
+pub struct SpamhausData {
+    pub v4: DropList,
+    pub v6: DropList,
+    pub asn: AsnList,
+    pub updated_ms: u64,
 }
 
 /// Result of one InternetDB lookup the user asked for.
@@ -83,6 +104,9 @@ struct Cache {
     sans_updated_ms: u64,
     /// IP -> (fetched at, answer). `None` answer means "no information". At most 200 entries.
     internetdb: BTreeMap<String, (u64, Option<InternetDbHost>)>,
+    ransom: Option<RansomSummary>,
+    ransom_updated_ms: u64,
+    spamhaus_updated_ms: u64,
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -158,6 +182,7 @@ fn save<T: Serialize>(path: &Path, value: &T) {
 
 fn publish(shared: &Mutex<View>, cache: &Cache, note: &str) {
     let mut view = shared.lock().unwrap();
+    let spamhaus = view.spamhaus.take();
     let lookup = view.lookup.take();
     let lookup_pending = view.lookup_pending;
     *view = View {
@@ -169,9 +194,22 @@ fn publish(shared: &Mutex<View>, cache: &Cache, note: &str) {
         sans: cache.sans.clone(),
         sans_updated_ms: cache.sans_updated_ms,
         note: note.to_owned(),
+        ransom: cache.ransom.clone(),
+        ransom_updated_ms: cache.ransom_updated_ms,
+        spamhaus,
         lookup,
         lookup_pending,
     };
+}
+
+fn load_spamhaus(directory: &Path, updated_ms: u64) -> Option<SpamhausData> {
+    let read = |name: &str| fs::read(directory.join(name)).ok();
+    Some(SpamhausData {
+        v4: osint_spamhaus::parse_drop(&read(SPAMHAUS_FILES[0].1)?, false).ok()?,
+        v6: osint_spamhaus::parse_drop(&read(SPAMHAUS_FILES[1].1)?, true).ok()?,
+        asn: osint_spamhaus::parse_asndrop(&read(SPAMHAUS_FILES[2].1)?).ok()?,
+        updated_ms,
+    })
 }
 
 fn lookup_internetdb(ip: IpAddr, cache: &mut Cache, last_request: &mut Option<u64>) -> LookupView {
@@ -312,6 +350,10 @@ fn worker(directory: PathBuf, shared: Arc<Mutex<View>>, rx: Receiver<Command>) {
     let mut note = String::new();
     let mut last_internetdb: Option<u64> = None;
     publish(&shared, &cache, &note);
+    if cache.spamhaus_updated_ms != 0 {
+        let loaded = load_spamhaus(&directory, cache.spamhaus_updated_ms).map(Arc::new);
+        shared.lock().unwrap().spamhaus = loaded;
+    }
 
     loop {
         let now = now_ms();
@@ -446,6 +488,107 @@ fn worker(directory: PathBuf, shared: Arc<Mutex<View>>, rx: Receiver<Command>) {
                         None => gate(&mut gates, Source::SansIsc)
                             .failure(now, sans_spec.min_interval_ms),
                     }
+                }
+            }
+            dirty = true;
+        }
+
+        let ransom_spec = osint::source_spec(Source::RansomwareLive);
+        if gate(&mut gates, Source::RansomwareLive).due(now) {
+            let headers =
+                "Accept: application/json\r\nUser-Agent: AtlasSOC-OSINT (+https://ibert.se)\r\n";
+            match https_get_public(
+                osint_ransomware::HOST,
+                osint_ransomware::RECENT_PATH,
+                headers,
+                MAX_RANSOM_BYTES,
+            ) {
+                Some(reply) if reply.status == 200 => {
+                    match osint_ransomware::parse_recent(&reply.body, now) {
+                        Ok(incidents) => {
+                            // Only counts are kept; victim names never reach the cache.
+                            cache.ransom =
+                                Some(osint_ransomware::summarize(&incidents, now, 30, 8));
+                            cache.ransom_updated_ms = now;
+                            gate(&mut gates, Source::RansomwareLive)
+                                .success(now, ransom_spec.min_interval_ms);
+                            note.clear();
+                        }
+                        Err(error) => {
+                            note = format!("ransomware.live: {error:?}");
+                            gate(&mut gates, Source::RansomwareLive)
+                                .failure(now, ransom_spec.min_interval_ms);
+                        }
+                    }
+                }
+                Some(reply) => {
+                    let error = osint_ransomware::classify_status(reply.status);
+                    note = format!("ransomware.live: {error:?}");
+                    match (error, reply.retry_after_s) {
+                        (RansomError::RateLimited, Some(seconds)) => {
+                            gate(&mut gates, Source::RansomwareLive).retry_after(now, seconds)
+                        }
+                        _ => gate(&mut gates, Source::RansomwareLive)
+                            .failure(now, ransom_spec.min_interval_ms),
+                    }
+                }
+                None => {
+                    note = "ransomware.live: no connection".into();
+                    gate(&mut gates, Source::RansomwareLive)
+                        .failure(now, ransom_spec.min_interval_ms);
+                }
+            }
+            dirty = true;
+        }
+
+        let drop_spec = osint::source_spec(Source::SpamhausDrop);
+        if gate(&mut gates, Source::SpamhausDrop).due(now) {
+            // One attempt covers all three files; any failure backs off for the full interval.
+            let mut bodies = Vec::new();
+            let mut failure = None;
+            for (path, _) in SPAMHAUS_FILES {
+                match get(
+                    osint_spamhaus::HOST,
+                    path,
+                    osint_spamhaus::MAX_BODY_BYTES,
+                    &Validators::default(),
+                ) {
+                    Ok(Some(fetched)) => bodies.push(fetched.body),
+                    Ok(None) => failure = Some("unexpected 304".to_string()),
+                    Err((status, _)) => failure = Some(format!("HTTP {status}")),
+                }
+                if failure.is_some() {
+                    break;
+                }
+            }
+            let parsed = failure.map_or_else(
+                || {
+                    Ok((
+                        osint_spamhaus::parse_drop(&bodies[0], false)?,
+                        osint_spamhaus::parse_drop(&bodies[1], true)?,
+                        osint_spamhaus::parse_asndrop(&bodies[2])?,
+                    ))
+                },
+                Err,
+            );
+            match parsed {
+                Ok((v4, v6, asn)) => {
+                    for (body, (_, name)) in bodies.iter().zip(SPAMHAUS_FILES) {
+                        let _ = write_atomic(&directory.join(name), body);
+                    }
+                    cache.spamhaus_updated_ms = now;
+                    shared.lock().unwrap().spamhaus = Some(Arc::new(SpamhausData {
+                        v4,
+                        v6,
+                        asn,
+                        updated_ms: now,
+                    }));
+                    gate(&mut gates, Source::SpamhausDrop).success(now, drop_spec.min_interval_ms);
+                    note.clear();
+                }
+                Err(error) => {
+                    note = format!("Spamhaus DROP: {error}");
+                    gate(&mut gates, Source::SpamhausDrop).failure(now, drop_spec.min_interval_ms);
                 }
             }
             dirty = true;
