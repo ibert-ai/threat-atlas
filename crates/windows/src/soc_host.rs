@@ -1,4 +1,5 @@
 use crate::soc_config::{self, Motion, Settings, Terms, Theme, BUILD, VERSION};
+use crate::soc_osint::{Osint, View as OsintView};
 use crate::soc_radar::Radar;
 use crate::soc_update::{self, Status as UpdateStatus, Updater};
 use std::{
@@ -131,7 +132,9 @@ fn displays(
 }
 
 fn help(window: &Window) {
-    let text = "Right-click anywhere for settings.\n\nF11: fullscreen/windowed\nSpace: freeze/resume display (the shared feed continues)\nR / C / S: Realtime / Calm / Still animation\nL: Classic / Dashboard layout\n1 / 2 / 3: malicious / suspicious / benign visibility\nM: mirror all detected displays (one shared feed)\nT: always on top\nF1: this help\nEscape: leave fullscreen/mirroring, otherwise close\n\nLeft-click a country to focus; hover shows country details in the title.\nSettings save under LocalAppData/ThreatAtlasSOC. Reset settings never resets licence acceptance.\n\nCloudflare Radar (optional): right-click > Set Cloudflare Radar token (collection starts when it is saved); Collect Cloudflare Radar data pauses or resumes it. Past-day aggregate shares, at most one request every 15 minutes; the token stays in Windows Credential Manager. Right-click > How to get a Cloudflare token opens the step-by-step guide.\n\nGreyNoise live receipts, not unique attacks.\nMirroring is implemented; independent display roles/spanning and physical multimonitor acceptance remain pending. No sleep or lock settings are changed.";
+    let text = "Right-click anywhere for settings.\n\nF11: fullscreen/windowed\nSpace: freeze/resume display (the shared feed continues)\nR / C / S: Realtime / Calm / Still animation\nL: Classic / Dashboard layout\n1 / 2 / 3: malicious / suspicious / benign visibility\nM: mirror all detected displays (one shared feed)\nT: always on top\nF1: this help\nEscape: leave fullscreen/mirroring, otherwise close\n\nLeft-click a country to focus; hover shows country details in the title.\nSettings save under LocalAppData/ThreatAtlasSOC. Reset settings never resets licence acceptance.\n\nOSINT: right-click > Known exploited (KEV + EPSS), Tor exit nodes, Refresh OSINT or OSINT sources / licences.
+
+Cloudflare Radar (optional): right-click > Set Cloudflare Radar token (collection starts when it is saved); Collect Cloudflare Radar data pauses or resumes it. Past-day aggregate shares, at most one request every 15 minutes; the token stays in Windows Credential Manager. Right-click > How to get a Cloudflare token opens the step-by-step guide.\n\nGreyNoise live receipts, not unique attacks.\nMirroring is implemented; independent display roles/spanning and physical multimonitor acceptance remain pending. No sleep or lock settings are changed.";
     unsafe {
         MessageBoxW(
             window.hwnd() as HWND,
@@ -142,12 +145,117 @@ fn help(window: &Window) {
     }
 }
 
+fn age(ms: u64) -> String {
+    if ms == 0 {
+        return "never".into();
+    }
+    let secs = feed::now_ms().saturating_sub(ms) / 1000;
+    if secs < 120 {
+        format!("{secs}s ago")
+    } else if secs < 7200 {
+        format!("{} min ago", secs / 60)
+    } else {
+        format!("{} h ago", secs / 3600)
+    }
+}
+
+fn show_kev(window: &Window, view: Option<&OsintView>) {
+    let Some(view) = view else {
+        unsafe {
+            MessageBoxW(
+                window.hwnd() as HWND,
+                wide("OSINT worker is not running in this mode.").as_ptr(),
+                wide("Threat Atlas SOC").as_ptr(),
+                MB_OK | MB_ICONINFORMATION,
+            )
+        };
+        return;
+    };
+    let mut text = format!(
+        "CISA Known Exploited Vulnerabilities + FIRST EPSS\nUpdated: {}\n\n",
+        age(view.kev_updated_ms)
+    );
+    if view.kev.is_empty() {
+        text.push_str("No data yet. The first refresh is scheduled within 24 hours.\n");
+    }
+    for item in view.kev.iter().take(12) {
+        let epss = item
+            .epss
+            .as_ref()
+            .map_or_else(|| "n/a".to_string(), |s| format!("{:.2}", s.epss));
+        text.push_str(&format!(
+            "{}  EPSS {}  due {}\n  {} — {}: {}\n",
+            item.kev.cve, epss, item.kev.due_date, item.kev.vendor, item.kev.product, item.kev.name
+        ));
+    }
+    text.push_str("\nSource: CISA KEV + FIRST EPSS. Context only; not confirmation that your assets are affected. Non-commercial use with attribution.");
+    unsafe {
+        MessageBoxW(
+            window.hwnd() as HWND,
+            wide(&text).as_ptr(),
+            wide("Threat Atlas SOC - known exploited").as_ptr(),
+            MB_OK | MB_ICONINFORMATION,
+        )
+    };
+}
+
+fn show_tor(window: &Window, view: Option<&OsintView>) {
+    let Some(view) = view else {
+        unsafe {
+            MessageBoxW(
+                window.hwnd() as HWND,
+                wide("OSINT worker is not running in this mode.").as_ptr(),
+                wide("Threat Atlas SOC").as_ptr(),
+                MB_OK | MB_ICONINFORMATION,
+            )
+        };
+        return;
+    };
+    let text = format!(
+        "Tor exit nodes: {}\nUpdated: {}\n\nSource: Tor Project bulk exit list. Exit nodes are public Tor infrastructure, not malicious hosts. Non-commercial use with attribution.",
+        view.tor_count,
+        age(view.tor_updated_ms)
+    );
+    unsafe {
+        MessageBoxW(
+            window.hwnd() as HWND,
+            wide(&text).as_ptr(),
+            wide("Threat Atlas SOC - Tor exits").as_ptr(),
+            MB_OK | MB_ICONINFORMATION,
+        )
+    };
+}
+
+fn show_osint_sources(window: &Window) {
+    let mut text = String::from("Threat Atlas SOC - OSINT sources\nNon-commercial use only. Provider terms, attribution and minimum intervals are part of the contract.\n\n");
+    for source in threat_atlas_core::osint::SOURCES {
+        let spec = threat_atlas_core::osint::source_spec(*source);
+        text.push_str(&format!(
+            "{}\n  Licence: {}\n  Attribution: {}\n  Minimum interval: {} min\n  Key required: {}\n\n",
+            spec.name,
+            spec.licence,
+            spec.attribution,
+            spec.min_interval_ms / 60_000,
+            if spec.requires_key { "yes" } else { "no" }
+        ));
+    }
+    unsafe {
+        MessageBoxW(
+            window.hwnd() as HWND,
+            wide(&text).as_ptr(),
+            wide("Threat Atlas SOC - OSINT sources").as_ptr(),
+            MB_OK | MB_ICONINFORMATION,
+        )
+    };
+}
+
 fn menu(
     window: &Window,
     settings: &Settings,
     paused: bool,
     radar: Option<&Radar>,
     update: Option<&UpdateStatus>,
+    _osint: Option<&OsintView>,
 ) -> u32 {
     unsafe {
         let menu = CreatePopupMenu();
@@ -185,6 +293,10 @@ fn menu(
             (27, "How to get a Cloudflare token...", false),
             (14, "Reset display settings", false),
             (15, "Controls and limitations (F1)", false),
+            (35, "Known exploited (KEV + EPSS)", false),
+            (36, "Tor exit nodes", false),
+            (37, "Refresh OSINT", false),
+            (38, "OSINT sources / licences", false),
         ];
         for (id, text, checked) in options {
             AppendMenuW(
@@ -350,6 +462,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         Some(Feed::shared())
     };
     let radar = (!smoke).then(|| Radar::start(state_dir.clone()));
+    let osint = (!smoke).then(|| Osint::start(state_dir.clone()));
     let updater = (!smoke).then(Updater::start);
     let path = state_dir.join("settings.json");
     let (mut settings, warning) = if smoke {
@@ -388,7 +501,10 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                         let detail = frame_point(&display.window, position, view.width()).and_then(|(x, y)| view.inspect(x, y, hover_radar.as_deref())).and_then(|json| soc_config::inspection_label(&json));
                         display.window.set_title(&format!("AtlasSOC {VERSION}/{BUILD} by Ibert Consulting · {} · {}", if smoke { "OFFLINE TEST - NO NETWORK" } else if paused { "DISPLAY FROZEN - FEED CONTINUES" } else { "right-click or F1: controls" }, detail.unwrap_or_default()));
                     }
-                    WindowEvent::MouseInput { state: ElementState::Released, button: MouseButton::Right, .. } => action = menu(&display.window, &settings, paused, radar.as_ref(), updater.as_ref().map(Updater::status).as_ref()),
+                    WindowEvent::MouseInput { state: ElementState::Released, button: MouseButton::Right, .. } => {
+                        let osint_view = osint.as_ref().map(Osint::view);
+                        action = menu(&display.window, &settings, paused, radar.as_ref(), updater.as_ref().map(Updater::status).as_ref(), osint_view.as_ref());
+                    }
                     WindowEvent::MouseInput { state: ElementState::Released, button: MouseButton::Left, .. } => {
                         if let Some((x, y)) = frame_point(&display.window, cursor, view.width()) {
                             let hit = view.country_at(x, y);
@@ -422,6 +538,10 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                     11 => settings.fps = 5, 12 => settings.fps = 10, 13 => settings.fps = 20,
                     25 => settings.theme = Theme::Classic, 26 => settings.theme = Theme::Dashboard,
                     27 => open_token_guide(&display.window),
+                    35 => { let view = osint.as_ref().map(Osint::view); show_kev(&display.window, view.as_ref()); }
+                    36 => { let view = osint.as_ref().map(Osint::view); show_tor(&display.window, view.as_ref()); }
+                    37 => { if let Some(osint) = &osint { osint.refresh(); } }
+                    38 => show_osint_sources(&display.window),
                     14 => { settings = Settings::default(); rebuild = true; }
                     15 => help(&display.window),
                     17 => { if let Some(radar) = &radar { radar.toggle_collecting(); } }

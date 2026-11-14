@@ -141,7 +141,7 @@ impl Drop for Handle {
 
 pub(crate) struct Reply {
     pub(crate) status: u16,
-    retry_after_s: Option<u64>,
+    pub(crate) retry_after_s: Option<u64>,
     quota_reset_s: Option<u64>,
     pub(crate) body: Vec<u8>,
 }
@@ -175,8 +175,28 @@ fn fetch(token: &str) -> Option<Reply> {
     )
 }
 
-/// HTTPS GET with redirects and cookies off. A failed option stops before anything is sent.
+/// HTTPS GET without redirects, for requests that may carry a token.
 pub(crate) fn https_get(host: &str, path: &str, headers: &str, max_bytes: usize) -> Option<Reply> {
+    https_get_policy(host, path, headers, max_bytes, false)
+}
+
+/// HTTPS GET for public, keyless data. Redirects are followed; cookies stay disabled.
+pub(crate) fn https_get_public(
+    host: &str,
+    path: &str,
+    headers: &str,
+    max_bytes: usize,
+) -> Option<Reply> {
+    https_get_policy(host, path, headers, max_bytes, true)
+}
+
+fn https_get_policy(
+    host: &str,
+    path: &str,
+    headers: &str,
+    max_bytes: usize,
+    follow: bool,
+) -> Option<Reply> {
     let agent = wide("AtlasSOC/Windows");
     let host = wide(host);
     let path = wide(path);
@@ -211,13 +231,17 @@ pub(crate) fn https_get(host: &str, path: &str, headers: &str, max_bytes: usize)
         if request.0.is_null() {
             return None;
         }
-        let never: u32 = WINHTTP_OPTION_REDIRECT_POLICY_NEVER;
+        let policy: u32 = if follow {
+            WINHTTP_OPTION_REDIRECT_POLICY_ALWAYS
+        } else {
+            WINHTTP_OPTION_REDIRECT_POLICY_NEVER
+        };
         let no_cookies: u32 = WINHTTP_DISABLE_COOKIES;
-        // A token must never follow a redirect or sit in a cookie store, so a failed option stops here.
+        // Token-bearing requests never follow a redirect or sit in a cookie store.
         if WinHttpSetOption(
             request.0,
             WINHTTP_OPTION_REDIRECT_POLICY,
-            (&never as *const u32).cast(),
+            (&policy as *const u32).cast(),
             4,
         ) == 0
             || WinHttpSetOption(
