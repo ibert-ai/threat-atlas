@@ -2,13 +2,13 @@ import SwiftUI
 import AppKit
 
 /// Guide for adding the user's own API keys; lives on GitHub to keep the app small.
-let osintKeyGuideURL = URL(string: "https://github.com/ibert-ai/threat-atlas/blob/main/docs/OSINT-API-KEYS.md")!
+let osintKeyGuideURL = URL(string: "https://github.com/ibert-ai/threat-atlas/blob/atlassoc-v0.8.0-rc.1/docs/OSINT-API-KEYS.md")!
 /// Copy-and-paste prompt for any AI assistant, with a plain list of what it does and does not do.
-let osintAIGuideURL = URL(string: "https://github.com/ibert-ai/threat-atlas/blob/main/docs/OSINT-API-KEYS.md#ai-guide")!
+let osintAIGuideURL = URL(string: "https://github.com/ibert-ai/threat-atlas/blob/atlassoc-v0.8.0-rc.1/docs/OSINT-API-KEYS.md#ai-guide")!
 let releasesURL = URL(string: "https://github.com/ibert-ai/threat-atlas/releases")!
 /// Voluntary tip page. Tips are optional, give nothing extra and never unlock features.
 let supportURL = URL(string: "https://ko-fi.com/threatatlas")!
-let supportInfoURL = URL(string: "https://github.com/ibert-ai/threat-atlas/blob/main/docs/SUPPORT.md")!
+let supportInfoURL = URL(string: "https://github.com/ibert-ai/threat-atlas/blob/atlassoc-v0.8.0-rc.1/docs/SUPPORT.md")!
 
 struct OsintPage: Identifiable { let id = UUID(); let title: String; let text: String }
 
