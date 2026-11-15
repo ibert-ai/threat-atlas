@@ -11,7 +11,7 @@ provider it belongs to.
 | abuse.ch ThreatFox + URLhaus | abuse.ch Auth-Key | https://auth.abuse.ch/ | fair use; commercial use may need abuse.ch's paid API |
 | AlienVault OTX | OTX API key | https://otx.alienvault.com/ (account settings) | free; non-commercial |
 | AbuseIPDB | API key | https://www.abuseipdb.com/register | free Individual plan, 1,000 checks/day; non-commercial personal |
-| SSLMate Cert Spotter | API key | https://sslmate.com/certspotter/ | free: 100 single-host / 10 full-domain queries per hour |
+| SSLMate Cert Spotter (CT Search API) | API key | https://sslmate.com/signup?for=ct_search_api | free tier of the CT Search API (the paid Cert Spotter monitoring plans are not needed); limits on https://sslmate.com/pricing |
 | Cloudflare Radar (optional, existing) | Radar Read token | [Cloudflare token guide](CLOUDFLARE-RADAR-TOKEN-GUIDE.md) | CC BY-NC 4.0, non-commercial |
 
 No key is used by CISA KEV, FIRST EPSS, Tor Project, SANS ISC, Team Cymru, abuse.ch SSLBL, ransomware.live,
@@ -98,12 +98,13 @@ at the provider if you think it leaked. Each key only unlocks the free tier of i
 
 <a id="sslmated-cert-spotter"></a>
 
-1. Create an SSLMate account and API key; see https://sslmate.com/help/reference/ct_search_api_v1 and the
-   Cert Spotter product page.
+1. Create a free SSLMate account for the CT Search API at https://sslmate.com/signup?for=ct_search_api and an API
+   key with the usage **Certificate Transparency Search** (steps in the provider table above). API reference:
+   https://sslmate.com/help/reference/ct_search_api_v1 .
 2. Add the key as described in [How to add a key](#add-a-key), then enter **only domains you are authorised to
    watch** (up to 10). The app polls each domain at most hourly, at most 8 full-domain queries per hour.
 3. The watched domain and key go to `api.certspotter.com`; no other data is sent. The provider may change the API
-   without notice. The free tier is 100 single-host / 10 full-domain queries per hour.
+   without notice. Free-tier limits are shown on https://sslmate.com/pricing and in your SSLMate account.
 
 ## Cloudflare Radar (existing optional source)
 
