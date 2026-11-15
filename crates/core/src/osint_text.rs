@@ -54,8 +54,8 @@ pub fn page(source: Source, view: &View, clipboard: &str, now_ms: u64) -> String
         Source::ShodanInternetDb => internetdb(view, now_ms),
         _ => "This source is not available in this build yet.".into(),
     };
-    if !view.note.is_empty() {
-        text.push_str(&format!("\n\nLast note: {}", view.note));
+    if let Some(note) = note_for(view, source) {
+        text.push_str(&format!("\n\nLast problem: {note}"));
     }
     text.push_str(&format!(
         "\n\nSource: {} ({}). {}",
@@ -64,14 +64,29 @@ pub fn page(source: Source, view: &View, clipboard: &str, now_ms: u64) -> String
     text
 }
 
+/// The last problem recorded for one source, if any.
+fn note_for(view: &View, source: Source) -> Option<&str> {
+    let key = match source {
+        Source::CisaKev => "KEV",
+        Source::Epss => "EPSS",
+        Source::TorExit => "Tor",
+        Source::SansIsc => "SANS ISC",
+        Source::RansomwareLive => "ransomware.live",
+        Source::PhishTank => "Phishing.Database",
+        Source::Sslbl => "SSLBL",
+        Source::SpamhausDrop => "Spamhaus DROP",
+        _ => return None,
+    };
+    view.notes.get(key).map(String::as_str)
+}
+
 /// One line for the Settings list: what has arrived, when, or what is missing.
 pub fn status(source: Source, view: &View, now_ms: u64) -> String {
     let waiting = |updated: u64, what: String| {
         if updated == 0 {
-            if view.note.is_empty() {
-                "Waiting for the first download...".to_string()
-            } else {
-                format!("No data yet. Last problem: {}", view.note)
+            match note_for(view, source) {
+                None => "Waiting for the first download...".to_string(),
+                Some(note) => format!("No data yet. Last problem: {note}"),
             }
         } else {
             format!("{what}, updated {}", age(updated, now_ms))
