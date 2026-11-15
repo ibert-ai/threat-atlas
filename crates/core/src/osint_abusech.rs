@@ -22,6 +22,8 @@ use serde::{Deserialize, Serialize};
 pub const THREATFOX_HOST: &str = "threatfox-api.abuse.ch";
 pub const URLHAUS_HOST: &str = "urlhaus-api.abuse.ch";
 pub const SSLBL_HOST: &str = "sslbl.abuse.ch";
+/// Path of the ThreatFox API (POST, key in the `Auth-Key` header).
+pub const THREATFOX_PATH: &str = "/api/v1/";
 /// Public, keyless SSL certificate blacklist (SHA1 fingerprints).
 pub const SSLBL_CERTS_PATH: &str = "/blacklist/sslblacklist.csv";
 /// The providers regenerate their dumps every 5 minutes and ask not to be polled more often.
@@ -131,6 +133,30 @@ pub fn parse_urlhaus_recent(bytes: &[u8]) -> Result<UrlhausSummary, String> {
 /// Send it as `POST /api/v1/` with the header `Auth-Key: <key>`.
 pub fn threatfox_recent_body(days: u8) -> String {
     format!(r#"{{"query":"get_iocs","days":{}}}"#, days.clamp(1, 7))
+}
+
+/// What is kept from one ThreatFox poll: counts only. No indicator is stored or shown.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ThreatFoxSummary {
+    pub total: u32,
+    pub malware: Vec<(String, u32)>,
+    pub threat_types: Vec<(String, u32)>,
+}
+
+pub fn summarize_threatfox(iocs: &[ThreatFoxIoc]) -> ThreatFoxSummary {
+    let mut kinds: std::collections::BTreeMap<&str, u32> = Default::default();
+    for ioc in iocs {
+        *kinds.entry(ioc.threat_type.as_str()).or_insert(0) += 1;
+    }
+    let mut threat_types: Vec<(String, u32)> =
+        kinds.into_iter().map(|(k, n)| (k.to_owned(), n)).collect();
+    threat_types.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+    threat_types.truncate(4);
+    ThreatFoxSummary {
+        total: iocs.len() as u32,
+        malware: top_malware(iocs, 8),
+        threat_types,
+    }
 }
 
 /// Replace every occurrence of the key in a message with `***`, so errors and logs cannot leak it.

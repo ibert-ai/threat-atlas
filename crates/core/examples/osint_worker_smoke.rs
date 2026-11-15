@@ -10,6 +10,7 @@ fn main() {
         .iter()
         .map(|s| osint::source_spec(*s).id.to_owned())
         .collect();
+    threat_atlas_core::osint_worker::set_post(osint_net::https_post);
     let worker = Osint::start(dir.clone(), enabled, osint_net::https_get);
     // Keyed sources: read each key from the macOS Keychain through `security` (service ThreatAtlas.OSINT)
     // and hand it to the worker. The key is never printed.

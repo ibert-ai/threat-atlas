@@ -8,7 +8,7 @@ use crate::osint_net::{Fetch, Reply};
 use crate::{
     feed::now_ms,
     osint::{self, EpssScore, KevWithEpss, RateGate, SansReport, Source},
-    osint_abusech::{self, UrlhausSummary},
+    osint_abusech::{self, ThreatFoxSummary, UrlhausSummary},
     osint_internetdb::{self, InternetDbHost, Lookup},
     osint_otx::{self, OtxError},
     osint_phishtank::{self, DomainSet, FeedState},
@@ -34,6 +34,24 @@ use std::{
 static FETCH: std::sync::OnceLock<Fetch> = std::sync::OnceLock::new();
 
 /// Fetches with the function the host supplied at start. No answer when none was set.
+/// POST hook, set by the host next to the GET hook. Without it a source that needs POST says so.
+pub type Post = fn(&str, &str, &str, &[u8], usize) -> Option<Reply>;
+static POST: std::sync::OnceLock<Post> = std::sync::OnceLock::new();
+
+pub fn set_post(post: Post) {
+    let _ = POST.set(post);
+}
+
+fn post_public(
+    host: &str,
+    path: &str,
+    headers: &str,
+    body: &[u8],
+    max_bytes: usize,
+) -> Option<Reply> {
+    (POST.get()?)(host, path, headers, body, max_bytes)
+}
+
 fn fetch_public(host: &str, path: &str, headers: &str, max_bytes: usize) -> Option<Reply> {
     (FETCH.get()?)(host, path, headers, max_bytes)
 }
@@ -103,6 +121,8 @@ pub struct View {
     pub otx_updated_ms: u64,
     pub urlhaus: Option<UrlhausSummary>,
     pub urlhaus_updated_ms: u64,
+    pub threatfox: Option<ThreatFoxSummary>,
+    pub threatfox_updated_ms: u64,
     pub spamhaus: Option<Arc<SpamhausData>>,
     pub phish: Option<Arc<DomainSet>>,
     pub phish_state: FeedState,
@@ -167,6 +187,8 @@ struct Cache {
     otx_updated_ms: u64,
     urlhaus: Option<UrlhausSummary>,
     urlhaus_updated_ms: u64,
+    threatfox: Option<ThreatFoxSummary>,
+    threatfox_updated_ms: u64,
     spamhaus_updated_ms: u64,
     phish_state: FeedState,
     phish_fingerprint: String,
@@ -322,6 +344,8 @@ fn publish(
         otx_updated_ms: cache.otx_updated_ms,
         urlhaus: cache.urlhaus.clone(),
         urlhaus_updated_ms: cache.urlhaus_updated_ms,
+        threatfox: cache.threatfox.clone(),
+        threatfox_updated_ms: cache.threatfox_updated_ms,
         spamhaus,
         phish,
         phish_state: cache.phish_state.clone(),
@@ -1019,6 +1043,83 @@ fn worker(
                     dirty = true;
                 }
             }
+        }
+
+        let threatfox_spec = osint::source_spec(Source::ThreatFox);
+        if on(Source::ThreatFox) && gate(&mut gates, Source::ThreatFox).due(now) {
+            let key = keys.lock().unwrap().get(threatfox_spec.id).cloned();
+            match key {
+                None => {
+                    notes.insert(
+                        "ThreatFox".to_string(),
+                        "ThreatFox: no abuse.ch Auth-Key yet. Add it in Settings.".to_string(),
+                    );
+                }
+                Some(key) if !osint_abusech::looks_like_auth_key(&key) => {
+                    notes.insert(
+                        "ThreatFox".to_string(),
+                        "ThreatFox: the key does not look like an abuse.ch Auth-Key".to_string(),
+                    );
+                }
+                Some(key) => {
+                    let headers = format!(
+                        "Accept: application/json\r\nContent-Type: application/json\r\nAuth-Key: {key}\r\nUser-Agent: AtlasSOC-OSINT (+https://ibert.se)\r\n"
+                    );
+                    let body = osint_abusech::threatfox_recent_body(1);
+                    match post_public(
+                        osint_abusech::THREATFOX_HOST,
+                        osint_abusech::THREATFOX_PATH,
+                        &headers,
+                        body.as_bytes(),
+                        osint_abusech::MAX_THREATFOX_BYTES,
+                    ) {
+                        Some(reply) if reply.status == 200 => {
+                            match osint_abusech::parse_threatfox(&reply.body) {
+                                Ok(iocs) => {
+                                    cache.threatfox =
+                                        Some(osint_abusech::summarize_threatfox(&iocs));
+                                    cache.threatfox_updated_ms = now;
+                                    gate(&mut gates, Source::ThreatFox)
+                                        .success(now, threatfox_spec.min_interval_ms);
+                                    notes.remove("ThreatFox");
+                                }
+                                Err(error) => {
+                                    notes.insert("ThreatFox".to_string(), error);
+                                    gate(&mut gates, Source::ThreatFox)
+                                        .failure(now, threatfox_spec.min_interval_ms);
+                                }
+                            }
+                        }
+                        Some(reply) => {
+                            let text = match reply.status {
+                                401 | 403 => {
+                                    "ThreatFox: the abuse.ch Auth-Key was refused".to_string()
+                                }
+                                429 => "ThreatFox: throttled, waiting".to_string(),
+                                status => format!("ThreatFox: HTTP {status}"),
+                            };
+                            notes.insert("ThreatFox".to_string(), text);
+                            match (reply.status, reply.retry_after_s) {
+                                (429, Some(seconds)) => {
+                                    gate(&mut gates, Source::ThreatFox).retry_after(now, seconds)
+                                }
+                                _ => gate(&mut gates, Source::ThreatFox)
+                                    .failure(now, threatfox_spec.min_interval_ms),
+                            }
+                        }
+                        None => {
+                            notes.insert(
+                                "ThreatFox".to_string(),
+                                "ThreatFox: no connection (or this host has no POST support)"
+                                    .to_string(),
+                            );
+                            gate(&mut gates, Source::ThreatFox)
+                                .failure(now, threatfox_spec.min_interval_ms);
+                        }
+                    }
+                }
+            }
+            dirty = true;
         }
 
         if dirty {

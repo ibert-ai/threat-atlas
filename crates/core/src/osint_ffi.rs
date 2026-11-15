@@ -13,7 +13,7 @@ use std::{
 };
 
 /// Sources with a working integration in this build, in menu order.
-pub const LIVE_SOURCES: [Source; 10] = [
+pub const LIVE_SOURCES: [Source; 11] = [
     Source::CisaKev,
     Source::TorExit,
     Source::SansIsc,
@@ -24,6 +24,7 @@ pub const LIVE_SOURCES: [Source; 10] = [
     Source::Sslbl,
     Source::Otx,
     Source::Urlhaus,
+    Source::ThreatFox,
 ];
 
 pub struct OsintHandle {
@@ -92,7 +93,10 @@ pub unsafe extern "C" fn ta_osint_start(
     };
     std::panic::catch_unwind(|| {
         Box::into_raw(Box::new(OsintHandle {
-            osint: Osint::start(PathBuf::from(dir), ids(json), osint_net::https_get),
+            osint: {
+                crate::osint_worker::set_post(osint_net::https_post);
+                Osint::start(PathBuf::from(dir), ids(json), osint_net::https_get)
+            },
         }))
     })
     .unwrap_or(std::ptr::null_mut())
@@ -247,7 +251,7 @@ mod tests {
         assert!(LIVE_SOURCES
             .iter()
             .filter(|s| osint::source_spec(**s).requires_key)
-            .all(|s| matches!(*s, Source::Otx | Source::Urlhaus)));
+            .all(|s| matches!(*s, Source::Otx | Source::Urlhaus | Source::ThreatFox)));
     }
 
     #[test]

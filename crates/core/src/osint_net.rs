@@ -163,6 +163,7 @@ fn get_once(
     headers: &str,
     max_bytes: usize,
     deadline: Instant,
+    post_body: Option<&[u8]>,
 ) -> Option<(Head, Vec<u8>)> {
     if host.is_empty()
         || host.parse::<IpAddr>().is_ok()
@@ -177,8 +178,15 @@ fn get_once(
     let name = rustls::pki_types::ServerName::try_from(host.to_owned()).ok()?;
     let conn = rustls::ClientConnection::new(tls_config(), name).ok()?;
     let mut tls = rustls::StreamOwned::new(conn, connect(host)?);
-    let request = format!("GET {path} HTTP/1.1\r\nHost: {host}\r\nAccept-Encoding: identity\r\nConnection: close\r\n{headers}\r\n");
+    let (method, length) = match post_body {
+        Some(body) => ("POST", format!("Content-Length: {}\r\n", body.len())),
+        None => ("GET", String::new()),
+    };
+    let request = format!("{method} {path} HTTP/1.1\r\nHost: {host}\r\nAccept-Encoding: identity\r\nConnection: close\r\n{length}{headers}\r\n");
     tls.write_all(request.as_bytes()).ok()?;
+    if let Some(body) = post_body {
+        tls.write_all(body).ok()?;
+    }
     let mut raw = Vec::new();
     let mut buf = [0u8; 16 * 1024];
     let mut head: Option<(Head, usize)> = None;
@@ -229,12 +237,42 @@ fn get_once(
     Some((head, body))
 }
 
+/// HTTPS POST of a small body (for example JSON), no redirects, bounded answer and time limit. A redirect
+/// answer is returned as it is and never followed, so a body is never re-sent to another place.
+pub fn https_post(
+    host: &str,
+    path: &str,
+    headers: &str,
+    body: &[u8],
+    max_bytes: usize,
+) -> Option<Reply> {
+    if body.len() > 64 * 1024 {
+        return None;
+    }
+    let deadline = Instant::now() + OVERALL;
+    let (head, answer) = get_once(
+        &host.to_ascii_lowercase(),
+        path,
+        headers,
+        max_bytes,
+        deadline,
+        Some(body),
+    )?;
+    Some(Reply {
+        status: head.status,
+        retry_after_s: head.retry_after_s,
+        etag: head.etag,
+        last_modified: head.last_modified,
+        body: answer,
+    })
+}
+
 /// HTTPS GET with redirects (https only, at most three), bounded body and an overall time limit.
 pub fn https_get(host: &str, path: &str, headers: &str, max_bytes: usize) -> Option<Reply> {
     let deadline = Instant::now() + OVERALL;
     let (mut host, mut path) = (host.to_ascii_lowercase(), path.to_owned());
     for _ in 0..=MAX_REDIRECTS {
-        let (head, body) = get_once(&host, &path, headers, max_bytes, deadline)?;
+        let (head, body) = get_once(&host, &path, headers, max_bytes, deadline, None)?;
         if (301..=308).contains(&head.status) && head.status != 304 {
             let (next_host, next_path) = redirect_target(head.location.as_deref()?, &host, &path)?;
             host = next_host;
@@ -335,10 +373,10 @@ mod tests {
     #[test]
     fn requests_to_ip_literals_and_bad_paths_are_refused() {
         let far = Instant::now() + Duration::from_secs(1);
-        assert!(get_once("127.0.0.1", "/", "", 10, far).is_none());
-        assert!(get_once("example.com", "no-slash", "", 10, far).is_none());
-        assert!(get_once("example.com", "/a b", "", 10, far).is_none());
-        assert!(get_once("example.com", "/", "X: 1\r\n\r\nGET /evil", 10, far).is_none());
+        assert!(get_once("127.0.0.1", "/", "", 10, far, None).is_none());
+        assert!(get_once("example.com", "no-slash", "", 10, far, None).is_none());
+        assert!(get_once("example.com", "/a b", "", 10, far, None).is_none());
+        assert!(get_once("example.com", "/", "X: 1\r\n\r\nGET /evil", 10, far, None).is_none());
     }
 
     /// Deterministic fuzzing: random and mutated input must never panic and never exceed the body limit.
