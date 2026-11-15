@@ -1369,16 +1369,19 @@ fn draw_port_block(r: &mut Renderer, card: &IntelCard, area: (f32, f32, f32, f32
             &row.label.chars().take(12).collect::<String>(),
             TEXT,
         );
+        // The bar sits BEHIND the value: it runs the whole row width, is drawn first and dimmer,
+        // and the number is drawn on top in the bright text colour, so even the top port (a full
+        // length bar) never hides its own count, however narrow the column is.
         if let Some(f) = row.fraction {
-            let bar = (w - 38.) * 0.45;
-            r.rect(left as f32 + 78., yy as f32 + 3., bar, 6., INFO, 40);
+            let bar = (w - 38.) - 78.;
+            r.rect(left as f32 + 78., yy as f32 - 1., bar, 12., INFO, 22);
             r.rect(
                 left as f32 + 78.,
-                yy as f32 + 3.,
+                yy as f32 - 1.,
                 (bar * f.clamp(0., 1.)).max(1.),
-                6.,
+                12.,
                 INFO,
-                170,
+                95,
             );
         }
         let v: String = row.value.chars().take(10).collect();
@@ -1387,7 +1390,7 @@ fn draw_port_block(r: &mut Renderer, card: &IntelCard, area: (f32, f32, f32, f32
             yy,
             11,
             &v,
-            INFO,
+            TEXT,
         );
     }
 }
