@@ -1,4 +1,4 @@
-> **AtlasSOC standalone beta:** Windows x64 and universal macOS14+ packages are documented in [docs/ATLAS-SOC-BETA.md](docs/ATLAS-SOC-BETA.md). This is separate from the screensaver below; Windows is portable and both platforms have signing/hardware limits.
+> **AtlasSOC Desktop:** Windows x64 and universal macOS 14+ packages are documented in [docs/ATLAS-SOC-BETA.md](docs/ATLAS-SOC-BETA.md); the 0.8.0 release candidate is described below. This is separate from the screensaver; Windows is unsigned and both platforms have hardware limits.
 
 # Threat Atlas SOC
 
@@ -32,19 +32,20 @@ screenshot thumbnails. Automatic updates remain unavailable without trusted sign
 Manual platform acceptance remains incomplete; see docs/QUALITY.md.
 See [release/version handling](docs/RELEASING.md) and [change history](CHANGELOG.md).
 
-## AtlasSOC Desktop 0.8.0 beta (draft, not released)
+## AtlasSOC Desktop 0.8.0 release candidate 1
 
-The next standalone beta adds optional OSINT sources to AtlasSOC Desktop: known-exploited vulnerabilities
-(CISA KEV + FIRST EPSS), Tor exits, SANS ISC top ports, Team Cymru ASN, abuse.ch SSLBL/ThreatFox/URLhaus,
-AlienVault OTX, ransomware.live aggregates, Shodan InternetDB and AbuseIPDB click lookups, SSLMate Cert Spotter
-watch-lists, Spamhaus DROP netblocks and the Phishing.Database list. Every source is optional and
-non-commercial; keyed sources use the user's own key and click lookups only send the public address the user
-clicks. See the draft [OSINT source guide](docs/OSINT-SOURCES.md), [privacy policy](PRIVACY.md) and
-[release draft](docs/RELEASE-0.8.0-beta.1.md).
+**AtlasSOC Desktop 0.8.0-rc.1** (build 15) is a pre-release for Windows x64 (unsigned) and macOS 14+. It adds 13
+optional OSINT sources next to the live map: known-exploited vulnerabilities (CISA KEV + FIRST EPSS), Tor exits,
+SANS ISC / DShield most attacked ports, ransomware.live, Spamhaus DROP, abuse.ch SSLBL, Phishing.Database and Shodan
+InternetDB (click-only) without an account; AlienVault OTX, abuse.ch URLhaus and ThreatFox, AbuseIPDB (click-only) and
+SSLMate certificate watch with your own free key. Every source has a switch (off = no request); keys stay in the
+macOS Keychain or Windows Credential Manager. All sources are non-commercial; click lookups send only the public
+address you click.
 
-**No 0.8.0 package or download exists yet.** The integration and the release gates are in progress; this is not
-a claim that the beta is available or tested. Windows will be unsigned in the beta and disclosed as such.
-RIPE RIS/BGPStream research, GeoLite2 file reading and Windows code signing are not in the beta scope.
+[Release notes](docs/RELEASE-0.8.0-rc.1.md), [downloads](https://github.com/ibert-ai/threat-atlas/releases/tag/atlassoc-v0.8.0-rc.1),
+[source guide](docs/OSINT-SOURCES.md), [privacy policy](PRIVACY.md) and [what is still limited](docs/KNOWN-BUGS.md).
+It is not the latest stable: AtlasSOC Desktop 0.7.0 remains stable. Team Cymru ASN, MaxMind GeoLite2, RIPE RIS and
+Windows code signing are not in this release.
 
 ## Known bugs
 

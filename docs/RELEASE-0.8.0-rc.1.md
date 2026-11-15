@@ -77,11 +77,12 @@ The full list is in [KNOWN-BUGS.md](KNOWN-BUGS.md). The main ones:
 - Screen size handling follows the older fixed layout. On small or scaled laptop screens (for example 125 %) the
   bottom of the window can be cropped; the 1920x1080 base scaling in [SOC-RESOLUTIONS.md](SOC-RESOLUTIONS.md) is
   designed but not built yet. A multi-screen option is also planned, not built.
-- Keyed sources were checked live on macOS with the maintainer's own keys. On Windows the key entry is new and has
-  had little hardware testing.
+- Keyed sources were checked live on macOS with the maintainer's own keys. On Windows, OTX and abuse.ch key entry
+  (saved in Credential Manager, kept after a restart, removable) was checked on one physical PC; AbuseIPDB and
+  SSLMate key entry on Windows was not.
 - ransomware.live depends on the provider; on 14 November 2026 its certificate was expired for a day.
 - Team Cymru ASN, MaxMind GeoLite2 and RIPE RIS are not in this release.
-- Long-run soak on real hardware was limited; see the evidence in QUALITY.md for what was measured.
+- Soak: one hour of continuous running on one Windows PC with stable memory and CPU; there was no multi-hour soak. See QUALITY.md.
 
 ## Support
 

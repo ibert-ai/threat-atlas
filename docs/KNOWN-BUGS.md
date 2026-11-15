@@ -11,7 +11,7 @@ Release candidate. These are the known limits of this build, not a claim that no
 | Windows signing | Windows packages are unsigned and may trigger SmartScreen or organisational policy. Do not disable protections. | Expected; code signing is a later version. |
 | Small and scaled screens | The layout is the older fixed 1440x900 design that only grows in width. On small or scaled laptop screens (for example 1920x1080 at 125 %) the bottom of the window can be cropped. | Known. The 1920x1080 base scaling is designed in SOC-RESOLUTIONS.md and not built yet. Workaround: use fullscreen (F11) or a larger window. |
 | Multiple screens | There is no option yet to span or mirror the SOC view over several screens. | Planned. |
-| Windows testing | Install, upgrade and the menus were checked on two physical PCs; keyed sources on Windows (Credential Manager entry) have had little hardware testing. Long soak is limited. | See QUALITY.md. |
+| Windows testing | Install, upgrade, the menus, OTX and abuse.ch key entry in Credential Manager (save, restart, remove) and a 74-minute soak were checked on physical PCs. AbuseIPDB and SSLMate key entry on Windows, other Windows versions and long soaks were not. | See QUALITY.md. |
 | macOS | Keyed sources were checked live on macOS with the maintainer's own keys. First use of a key asks once for Keychain access ("Always Allow"). | Checked. |
 | ransomware.live | Depends on the provider. Its certificate was expired on 14 November 2026, which showed as "no data" on Windows until the provider fixed it. | Provider-side. |
 | Phishing.Database | The public list may be stalled; the app marks it stale after 7 days and stops using it. | Known feed risk. |

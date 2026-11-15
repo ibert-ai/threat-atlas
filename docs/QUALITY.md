@@ -116,11 +116,24 @@ URLs; ThreatFox 1,496 indicators in 24 hours; AbuseIPDB score 0 for the maintain
 reports, data centre) for a VPN address; certificate watch for one domain with 0 new certificates after the
 baseline. Windows: ransomware.live shows 100 incidents again after the provider fixed its certificate.
 
+**Live checks on Windows hardware (15 November 2026, partner PC, RC1 build 15 from commit 6a1dbfb).** The user's own
+OTX key entered through the Credential Manager box: 4 pulses and 444 indicators. The abuse.ch key (one entry for
+ThreatFox and URLhaus): ThreatFox 1,674 new indicators in 24 hours; the key was still in Credential Manager
+after a restart of the app. Key removal works (zero AtlasSOC entries remained afterwards) and the sources were
+switched off again. AbuseIPDB and SSLMate key entry were not repeated on Windows. The ports heading now shortens
+to fit the narrow column (seen as "TOP PORTS / DSHIELD").
+
 **CI.** All checks green on each merged pull request, including Windows x64 build, installer upgrade and
 uninstall test, macOS build, Linux build, updater tests and quality (format, Clippy with warnings as errors, tests,
 audit).
 
-**Soak.** SOAK_PLACEHOLDER
+**Soak.** One partner Windows 11 PC (RTX 3050, 1920x1080), default sources, all other user programs closed, the 0.8.0
+build 14 candidate (the RC1 build 15 differs only by the release identity, the heading stamp, in-app links and
+the ports-heading fix), 74 minutes continuous (15 November 2026, 16:55:12 to 18:09:27 local, one process, no
+restart): working set 140 MB after 5 minutes and 137 MB after 74 minutes, private memory 88 to 89 MB, handles 344
+to 348, threads 12 to 9, CPU time 586 s in total (about 13 % of one core on average). No crash, hang or dialog.
+The owner set the soak length to one hour for RC1; this is not a multi-hour soak. A second PC was assigned a
+30-minute soak; it is not part of this record unless its report is added to the release record.
 
 ## Still requiring acceptance testing
 
