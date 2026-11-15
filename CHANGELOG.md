@@ -1,3 +1,14 @@
+## AtlasSOC Desktop 0.8.0-beta.1 — draft, not released
+
+- Adds optional, non-commercial OSINT sources: CISA KEV + FIRST EPSS, Tor exits, SANS ISC top ports, Team Cymru
+  ASN, abuse.ch SSLBL/ThreatFox/URLhaus, AlienVault OTX, ransomware.live aggregates, Shodan InternetDB and
+  AbuseIPDB click lookups, SSLMate Cert Spotter watch-lists, Spamhaus DROP and Phishing.Database.
+- Adds the privacy/attribution documentation, per-source user guide, known-limits section and draft release notes.
+- Windows x64 is the first target and stays unsigned; macOS and Linux follow only after their own checks.
+- Not in scope: RIPE RIS/BGPStream (research only), GeoLite2 file reading and Windows code signing.
+- No package, tag or publication exists for this draft. The optimisation/hardening and documentation gates in
+  docs/VERSION-FEATURES.md must pass before a beta is published.
+
 ## AtlasSOC Desktop 0.7.0 — Linux x86_64 preview, 11 November 2026
 
 - First AtlasSOC Desktop build for Linux: the shared SOC view in a resizable X11/XWayland window, with keyboard controls, country focus by click and the wide layout. See docs/ATLAS-SOC-LINUX.md.
