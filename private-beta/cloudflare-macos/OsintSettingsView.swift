@@ -3,7 +3,12 @@ import AppKit
 
 /// Guide for adding the user's own API keys; lives on GitHub to keep the app small.
 let osintKeyGuideURL = URL(string: "https://github.com/ibert-ai/threat-atlas/blob/main/docs/OSINT-API-KEYS.md")!
+/// Copy-and-paste prompt for any AI assistant, with a plain list of what it does and does not do.
+let osintAIGuideURL = URL(string: "https://github.com/ibert-ai/threat-atlas/blob/main/docs/OSINT-API-KEYS.md#ai-guide")!
 let releasesURL = URL(string: "https://github.com/ibert-ai/threat-atlas/releases")!
+/// Voluntary tip page. Tips are optional, give nothing extra and never unlock features.
+let supportURL = URL(string: "https://ko-fi.com/threatatlas")!
+let supportInfoURL = URL(string: "https://github.com/ibert-ai/threat-atlas/blob/main/docs/SUPPORT.md")!
 
 struct OsintPage: Identifiable { let id = UUID(); let title: String; let text: String }
 
@@ -74,10 +79,17 @@ struct OsintSettingsView: View {
                 Text("Keys are stored in your Keychain, held in memory by the data worker and sent only to their own provider. A keyed source stays quiet until its key is added. Step-by-step instructions for every provider are kept on GitHub.")
                     .font(.callout).foregroundStyle(.secondary)
                 Button("How to add API keys (opens GitHub)…") { NSWorkspace.shared.open(osintKeyGuideURL) }
+                Button("AI help prompt: what it does and does not do (opens GitHub)…") { NSWorkspace.shared.open(osintAIGuideURL) }
             }
             Section("Cloudflare Radar") {
                 Button("Cloudflare token…") { NotificationCenter.default.post(name: .showTokenSettings, object: nil) }
                 Button("How to get a Cloudflare token…") { openTokenGuide() }
+            }
+            Section("Support the project") {
+                Text("Threat Atlas is free and runs without profit. If you want to help cover code-signing certificates and licences, you can leave a voluntary tip. Tips give no extra features, support or rights, and are not required. All money goes back into the project.")
+                    .font(.callout).foregroundStyle(.secondary)
+                Button("Support the project (opens Ko-fi)…") { NSWorkspace.shared.open(supportURL) }
+                Button("Where the money goes (opens GitHub)…") { NSWorkspace.shared.open(supportInfoURL) }
             }
             Section("Updates") {
                 Text("Installed: AtlasSOC \(version). This beta is not Developer ID signed yet, so macOS may ask for approval the first time you open a new version.")

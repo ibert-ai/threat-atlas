@@ -139,7 +139,9 @@ fn displays(
 fn help(window: &Window) {
     let text = "Right-click anywhere for settings.\n\nF11: fullscreen/windowed\nSpace: freeze/resume display (the shared feed continues)\nR / C / S: Realtime / Calm / Still animation\nL: Classic / Dashboard layout\n1 / 2 / 3: malicious / suspicious / benign visibility\nM: mirror all detected displays (one shared feed)\nT: always on top\nF1: this help\nEscape: leave fullscreen/mirroring, otherwise close\n\nLeft-click a country to focus; hover shows country details in the title.\nSettings save under LocalAppData/ThreatAtlasSOC. Reset settings never resets licence acceptance.\n\nOSINT: right-click > Known exploited (KEV + EPSS), Tor exit nodes, SANS ISC top ports, Refresh OSINT, OSINT sources / licences, or Look up IP from clipboard (Shodan InternetDB; click-only, asks first).
 
-Cloudflare Radar (optional): right-click > Set Cloudflare Radar token (collection starts when it is saved); Collect Cloudflare Radar data pauses or resumes it. Past-day aggregate shares, at most one request every 15 minutes; the token stays in Windows Credential Manager. Right-click > How to get a Cloudflare token opens the step-by-step guide.\n\nGreyNoise live receipts, not unique attacks.\nMirroring is implemented; independent display roles/spanning and physical multimonitor acceptance remain pending. No sleep or lock settings are changed.";
+Cloudflare Radar (optional): right-click > Set Cloudflare Radar token (collection starts when it is saved); Collect Cloudflare Radar data pauses or resumes it. Past-day aggregate shares, at most one request every 15 minutes; the token stays in Windows Credential Manager. Right-click > How to get a Cloudflare token opens the step-by-step guide.\n\nGreyNoise live receipts, not unique attacks.\nMirroring is implemented; independent display roles/spanning and physical multimonitor acceptance remain pending. No sleep or lock settings are changed.
+
+Support: Threat Atlas is free. Right-click > Support the project opens a voluntary tip page (Ko-fi). Tips give no extra features, support or rights, and are not required. All money goes back into the project (details: docs/SUPPORT.md on GitHub).";
     unsafe {
         MessageBoxW(
             window.hwnd() as HWND,
@@ -658,7 +660,35 @@ fn require_source(
 
 /// Opens the key and setup guide in the browser; the guide lives on GitHub to keep the install small.
 fn open_key_guide(window: &Window) {
-    let url = wide("https://github.com/ibert-ai/threat-atlas/blob/main/docs/OSINT-API-KEYS.md");
+    open_url(
+        window,
+        "https://github.com/ibert-ai/threat-atlas/blob/main/docs/OSINT-API-KEYS.md",
+    );
+}
+
+/// Voluntary tip page. Tips are optional, give nothing extra and never unlock features.
+const SUPPORT_URL: &str = "https://ko-fi.com/threatatlas";
+
+fn open_ai_guide(window: &Window) {
+    open_url(
+        window,
+        "https://github.com/ibert-ai/threat-atlas/blob/main/docs/OSINT-API-KEYS.md#ai-guide",
+    );
+}
+
+fn open_support_page(window: &Window) {
+    open_url(window, SUPPORT_URL);
+}
+
+fn open_support_info(window: &Window) {
+    open_url(
+        window,
+        "https://github.com/ibert-ai/threat-atlas/blob/main/docs/SUPPORT.md",
+    );
+}
+
+fn open_url(window: &Window, link: &str) {
+    let url = wide(link);
     unsafe {
         ShellExecuteW(
             window.hwnd() as HWND,
@@ -738,6 +768,8 @@ fn menu(
             (27, "How to get a Cloudflare token...", false),
             (14, "Reset display settings", false),
             (15, "Controls and limitations (F1)", false),
+            (57, "Support the project (voluntary tip on Ko-fi)...", false),
+            (58, "Where the money goes (opens GitHub)...", false),
         ];
         for (id, text, checked) in options {
             AppendMenuW(
@@ -857,6 +889,18 @@ fn menu(
                 MF_STRING,
                 46,
                 wide("API keys: how to add them (opens GitHub)...").as_ptr(),
+            );
+            AppendMenuW(
+                settings_menu,
+                MF_STRING,
+                59,
+                wide("API keys: AI help prompt and what it does (opens GitHub)...").as_ptr(),
+            );
+            AppendMenuW(
+                settings_menu,
+                MF_STRING,
+                57,
+                wide("Support the project (voluntary tip on Ko-fi)...").as_ptr(),
             );
             if let Some(update) = update {
                 let enabled = matches!(update, UpdateStatus::Available(_));
@@ -1117,6 +1161,9 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                         if let Some(osint) = &osint { osint.set_enabled(settings.enabled_sources.clone()); }
                     }
                     46 => open_key_guide(&display.window),
+                    57 => open_support_page(&display.window),
+                    58 => open_support_info(&display.window),
+                    59 => open_ai_guide(&display.window),
                     n if (KEY_BASE_ID..KEY_BASE_ID + 2 * KEY_PROVIDERS.len() as u32).contains(&n) => {
                         let (label, account, _) = KEY_PROVIDERS[((n - KEY_BASE_ID) / 2) as usize];
                         if (n - KEY_BASE_ID) % 2 == 1 {

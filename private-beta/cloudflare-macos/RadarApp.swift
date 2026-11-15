@@ -276,6 +276,11 @@ struct TokenSettings: View {
                 CommandGroup(after: .appSettings) {
                     Button("Cloudflare Token…") { NotificationCenter.default.post(name: .showTokenSettings, object: nil) }
                 }
+                // Help menu: voluntary tip page (optional, gives nothing extra).
+                CommandGroup(after: .help) {
+                    Divider()
+                    Button("Support the project (opens Ko-fi)…") { NSWorkspace.shared.open(supportURL) }
+                }
             }
         // One Settings window (⌘,): data sources on/off, key guide, updates, Radar token.
         Settings { OsintSettingsView() }
