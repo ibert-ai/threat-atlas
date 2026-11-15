@@ -57,7 +57,7 @@ struct RadarView: View {
             if !fullScreen { attribution }
         }
         .padding(fullScreen ? 0 : 24)
-        .navigationTitle("AtlasSOC Desktop BETA")
+        .navigationTitle("AtlasSOC Desktop \(radarReleaseStamp.isEmpty ? "" : String(radarReleaseStamp.prefix(while: { $0 != " " })))")
         .frame(minWidth: 1000, minHeight: 760)
         .background(fullScreen ? Color.black : Color.clear)
         .ignoresSafeArea(edges: fullScreen ? .all : [])
