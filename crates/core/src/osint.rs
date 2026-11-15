@@ -223,12 +223,12 @@ pub fn source_spec(source: Source) -> SourceSpec {
             non_commercial_only: false,
         },
         Source::CertStream => SourceSpec {
-            id: "certstream",
-            name: "Certificate Transparency / CertStream",
-            licence: "Public CT logs. The hosted CertStream stream is not operating (14 Nov 2026); a crt.sh watch-list is proposed instead.",
-            attribution: "https://github.com/CaliDog/certstream-server",
-            min_interval_ms: 60 * 1000,
-            requires_key: false,
+            id: "cert-watch",
+            name: "Certificate watch (SSLMate CT Search)",
+            licence: "SSLMate CT Search API, free tier with your own key. Only watch domains you are authorised to watch (up to 10).",
+            attribution: "https://sslmate.com/help/reference/ct_search_api_v1",
+            min_interval_ms: 60 * 60 * 1000,
+            requires_key: true,
             non_commercial_only: false,
         },
         Source::SpamhausDrop => SourceSpec {
@@ -532,6 +532,7 @@ mod tests {
             Source::Otx,
             Source::AbuseIpdb,
             Source::MaxMind,
+            Source::CertStream, // SSLMate CT Search: the user's own key
         ] {
             assert!(
                 source_spec(source).requires_key,
@@ -550,7 +551,6 @@ mod tests {
             Source::SansIsc,
             Source::SpamhausDrop,
             Source::RansomwareLive,
-            Source::CertStream,
         ] {
             assert!(!source_spec(source).requires_key, "{source:?} needs no key");
         }

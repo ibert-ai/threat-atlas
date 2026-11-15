@@ -51,6 +51,11 @@ pub fn page(source: Source, view: &View, clipboard: &str, now_ms: u64) -> String
         Source::SpamhausDrop => spamhaus(view, clipboard, now_ms),
         Source::PhishTank => phishing(view, clipboard, now_ms),
         Source::Sslbl => sslbl(view, now_ms),
+        Source::Otx => otx(view, now_ms),
+        Source::Urlhaus => urlhaus(view, now_ms),
+        Source::ThreatFox => threatfox(view, now_ms),
+        Source::AbuseIpdb => abuseipdb(view, now_ms),
+        Source::CertStream => certwatch(view, now_ms),
         Source::ShodanInternetDb => internetdb(view, now_ms),
         _ => "This source is not available in this build yet.".into(),
     };
@@ -75,6 +80,11 @@ fn note_for(view: &View, source: Source) -> Option<&str> {
         Source::PhishTank => "Phishing.Database",
         Source::Sslbl => "SSLBL",
         Source::SpamhausDrop => "Spamhaus DROP",
+        Source::Otx => "OTX",
+        Source::Urlhaus => "URLhaus",
+        Source::ThreatFox => "ThreatFox",
+        Source::AbuseIpdb => "AbuseIPDB",
+        Source::CertStream => "Cert watch",
         _ => return None,
     };
     view.notes.get(key).map(String::as_str)
@@ -128,6 +138,46 @@ pub fn status(source: Source, view: &View, now_ms: u64) -> String {
             view.phish_state.fetched_at_ms().unwrap_or(0),
             format!("{} domains", view.phish.as_ref().map_or(0, |s| s.len())),
         ),
+        Source::CertStream => {
+            if view.ct.is_empty() {
+                match note_for(view, source) {
+                    Some(n) => n.to_string(),
+                    None => "Waiting for the first poll (one request per domain and hour).".into(),
+                }
+            } else {
+                format!(
+                    "{} domains watched, {} new certificates since the baseline",
+                    view.ct.len(),
+                    view.ct.iter().map(|d| d.new_total).sum::<u32>()
+                )
+            }
+        }
+        Source::AbuseIpdb => match (&view.abuse, view.abuse_pending) {
+            (_, true) => "Checking the address...".into(),
+            (Some(a), _) => match &a.outcome {
+                Ok(r) => format!("{}: score {} of 100, checked {}", a.ip, r.confidence_score, age(a.at_ms, now_ms)),
+                Err(e) => e.clone(),
+            },
+            (None, _) => "Click-only: copy an IP address and press the button. Nothing is requested by itself.".into(),
+        },
+        Source::ThreatFox => waiting(
+            view.threatfox_updated_ms,
+            format!(
+                "{} indicators in 24 h",
+                view.threatfox.as_ref().map_or(0, |t| t.total)
+            ),
+        ),
+        Source::Urlhaus => waiting(
+            view.urlhaus_updated_ms,
+            format!(
+                "{} recent URLs",
+                view.urlhaus.as_ref().map_or(0, |u| u.total)
+            ),
+        ),
+        Source::Otx => waiting(
+            view.otx_updated_ms,
+            format!("{} pulses", view.otx.as_ref().map_or(0, |o| o.pulses)),
+        ),
         Source::Sslbl => waiting(
             view.sslbl_updated_ms,
             format!("{} certificates", view.sslbl_total),
@@ -152,6 +202,11 @@ pub fn what(source: Source) -> &'static str {
         Source::SpamhausDrop => "Network ranges Spamhaus advises never to route. Check whether an IP address is inside one.",
         Source::PhishTank => "A public list of known phishing domains. Check whether a domain or link is on it.",
         Source::Sslbl => "SSL certificates abuse.ch links to botnet command servers.",
+        Source::CertStream => "Tells you when a new certificate is issued for one of your own domains (up to 10), from the public certificate logs. Needs your own free SSLMate key.",
+        Source::AbuseIpdb => "For an IP address you choose: how often the community reported it as abusive, with a 0 to 100 confidence score. Needs your own free AbuseIPDB key.",
+        Source::ThreatFox => "How many new indicators abuse.ch ThreatFox received in the last day and which malware families they belong to. No indicators are shown. Needs your own free abuse.ch Auth-Key.",
+        Source::Urlhaus => "How many malware-download links abuse.ch URLhaus lists as recent, how many are online, and the most common malware tags. No links are shown. Needs your own free abuse.ch Auth-Key.",
+        Source::Otx => "Recent public threat reports from the AlienVault OTX community: malware families and targeted countries. Needs your own free API key.",
         _ => "",
     }
 }
@@ -268,6 +323,85 @@ pub fn cards(view: &View, enabled: &[String], now_ms: u64) -> Vec<IntelCard> {
                     label: format!("PORT {}", p.target_port),
                     fraction: Some(p.records as f32 / max),
                     value: p.records.to_string(),
+                })
+                .collect(),
+        });
+    }
+    if let Some(o) = view.otx.as_ref().filter(|_| on(Source::Otx)) {
+        let max = o.families.iter().map(|f| f.1).max().unwrap_or(1).max(1) as f32;
+        out.push(IntelCard {
+            title: "OTX COMMUNITY PULSES / 24 H".into(),
+            headline: format!("{} PULSES", o.pulses),
+            caption: format!("{} INDICATORS, COMMUNITY REPORTS", o.indicators),
+            rows: o
+                .families
+                .iter()
+                .take(5)
+                .map(|(name, count)| IntelRow {
+                    label: up(name).chars().take(16).collect(),
+                    fraction: Some(*count as f32 / max),
+                    value: count.to_string(),
+                })
+                .collect(),
+        });
+    }
+    if let Some(u) = view.urlhaus.as_ref().filter(|_| on(Source::Urlhaus)) {
+        let max = u.tags.iter().map(|t| t.1).max().unwrap_or(1).max(1) as f32;
+        out.push(IntelCard {
+            title: "URLHAUS MALWARE LINKS / RECENT".into(),
+            headline: format!("{} LINKS", u.total),
+            caption: format!("{} ONLINE NOW, COUNTS ONLY", u.online),
+            rows: u
+                .tags
+                .iter()
+                .take(5)
+                .map(|(name, count)| IntelRow {
+                    label: up(name).chars().take(16).collect(),
+                    fraction: Some(*count as f32 / max),
+                    value: count.to_string(),
+                })
+                .collect(),
+        });
+    }
+    if let Some(t) = view.threatfox.as_ref().filter(|_| on(Source::ThreatFox)) {
+        let max = t.malware.iter().map(|m| m.1).max().unwrap_or(1).max(1) as f32;
+        out.push(IntelCard {
+            title: "THREATFOX INDICATORS / 24 H".into(),
+            headline: format!("{} NEW", t.total),
+            caption: "ABUSE.CH, COUNTS ONLY".into(),
+            rows: t
+                .malware
+                .iter()
+                .take(5)
+                .map(|(name, count)| IntelRow {
+                    label: up(name).chars().take(16).collect(),
+                    fraction: Some(*count as f32 / max),
+                    value: count.to_string(),
+                })
+                .collect(),
+        });
+    }
+    if !view.ct.is_empty() && on(Source::CertStream) {
+        let max = view
+            .ct
+            .iter()
+            .map(|d| d.new_total)
+            .max()
+            .unwrap_or(1)
+            .max(1) as f32;
+        let new: u32 = view.ct.iter().map(|d| d.new_total).sum();
+        out.push(IntelCard {
+            title: "CERTIFICATE WATCH / YOUR DOMAINS".into(),
+            headline: format!("{new} NEW"),
+            caption: format!("{} DOMAINS, PUBLIC CT LOGS", view.ct.len()),
+            rows: view
+                .ct
+                .iter()
+                .take(5)
+                .map(|d| IntelRow {
+                    label: up(&d.domain).chars().take(16).collect(),
+                    fraction: Some(d.new_total as f32 / max),
+                    value: d.new_total.to_string(),
                 })
                 .collect(),
         });
@@ -431,6 +565,140 @@ fn phishing(view: &View, clipboard: &str, now: u64) -> String {
         None => text.push_str("\nTo check a domain or link, copy it and open this page again. Nothing is opened or sent."),
     }
     text
+}
+
+fn certwatch(view: &View, now: u64) -> String {
+    if view.ct.is_empty() {
+        return "No domains polled yet. Add up to 10 of your own domains and your SSLMate key in Settings. Each domain is asked about once an hour.".into();
+    }
+    let mut text = String::from("Certificates seen in the public logs for your domains:\n\n");
+    for d in &view.ct {
+        text.push_str(&format!(
+            "{}\n  known: {}{}   new since baseline: {}   checked {}\n",
+            d.domain,
+            d.known,
+            if d.catching_up {
+                "+ (still reading older history)"
+            } else {
+                ""
+            },
+            d.new_total,
+            age(d.last_poll_ms, now),
+        ));
+        if let Some(issuer) = &d.newest_issuer {
+            text.push_str(&format!("  latest issuer: {issuer}\n"));
+        }
+        if !d.newest_names.is_empty() {
+            text.push_str(&format!("  latest names: {}\n", d.newest_names.join(", ")));
+        }
+    }
+    text.push_str("\nOnly domains you are authorised to watch. A new certificate you did not order may mean someone else issued one for your name.");
+    text
+}
+
+fn abuseipdb(view: &View, now: u64) -> String {
+    if view.abuse_pending {
+        return "Checking the address... Close this window and open it again in a few seconds."
+            .into();
+    }
+    let Some(a) = &view.abuse else {
+        return "Nothing checked yet. Copy one public IP address, then press \"Check copied IP...\". The address is sent to AbuseIPDB only after you confirm. Free plan: 1,000 checks a day; AtlasSOC stops at 800.".into();
+    };
+    match &a.outcome {
+        Err(e) => format!("{}\n\n{e}", a.ip),
+        Ok(r) => format!(
+            "{}\nAbuse confidence score: {} of 100\nReports: {} from {} users\nLast reported: {}\nCountry: {}\nOwner: {}\nUsage: {}\nTor exit: {}\n\nChecked {}{}.\nCommunity reports, not proof. Free Individual plan, non-commercial.",
+            a.ip,
+            r.confidence_score,
+            r.total_reports.map_or("?".into(), |n| n.to_string()),
+            r.distinct_users.map_or("?".into(), |n| n.to_string()),
+            r.last_reported_at.as_deref().unwrap_or("never"),
+            r.country_code.as_deref().unwrap_or("?"),
+            r.isp.as_deref().unwrap_or("?"),
+            r.usage_type.as_deref().unwrap_or("?"),
+            if r.is_tor { "yes" } else { "no" },
+            age(a.at_ms, now),
+            if a.from_cache { " (kept answer, under 24 h old)" } else { "" },
+        ),
+    }
+}
+
+fn threatfox(view: &View, now: u64) -> String {
+    let Some(t) = &view.threatfox else {
+        return "No data yet. Add your free abuse.ch Auth-Key in Settings; the first poll follows."
+            .into();
+    };
+    let list = |items: &[(String, u32)]| {
+        if items.is_empty() {
+            "none".to_string()
+        } else {
+            items
+                .iter()
+                .map(|(n, c)| format!("{n} ({c})"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        }
+    };
+    format!(
+        "New ThreatFox indicators, last 24 hours: {}\nUpdated: {}\n\nMalware families: {}\nIndicator purposes: {}\n\nCounts only: no indicator is stored, shown or opened. Community fair-use API, non-commercial.",
+        t.total,
+        age(view.threatfox_updated_ms, now),
+        list(&t.malware),
+        list(&t.threat_types),
+    )
+}
+
+fn urlhaus(view: &View, now: u64) -> String {
+    let Some(u) = &view.urlhaus else {
+        return "No data yet. Add your free abuse.ch Auth-Key in Settings; the first poll follows."
+            .into();
+    };
+    let list = |items: &[(String, u32)]| {
+        if items.is_empty() {
+            "none".to_string()
+        } else {
+            items
+                .iter()
+                .map(|(n, c)| format!("{n} ({c})"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        }
+    };
+    format!(
+        "Recent malware-download links listed by abuse.ch URLhaus: {}\nOnline now: {}\nUpdated: {}\n\nThreat types: {}\nCommon tags: {}\n\nCounts only: no link or address is stored, shown or opened. Community fair-use API, non-commercial.",
+        u.total,
+        u.online,
+        age(view.urlhaus_updated_ms, now),
+        list(&u.threats),
+        list(&u.tags),
+    )
+}
+
+fn otx(view: &View, now: u64) -> String {
+    let Some(o) = &view.otx else {
+        return "No data yet. Add your free OTX API key in Settings; the first poll follows."
+            .into();
+    };
+    let list = |items: &[(String, u32)]| {
+        if items.is_empty() {
+            "none".to_string()
+        } else {
+            items
+                .iter()
+                .map(|(n, c)| format!("{n} ({c})"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        }
+    };
+    format!(
+        "Public OTX pulses, last 24 hours: {}\nIndicators in them: {}\nUpdated: {}\n\nMalware families: {}\nTargeted countries: {}\n\nNewest pulses:\n  {}\n\nCommunity reports; quality varies. Indicators are not shown or fetched. Non-commercial use only.",
+        o.pulses,
+        o.indicators,
+        age(view.otx_updated_ms, now),
+        list(&o.families),
+        list(&o.countries),
+        if o.newest.is_empty() { "none".to_string() } else { o.newest.join("\n  ") },
+    )
 }
 
 fn sslbl(view: &View, now: u64) -> String {

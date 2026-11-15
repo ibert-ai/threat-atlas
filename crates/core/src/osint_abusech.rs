@@ -16,12 +16,14 @@
 //! be logged or shown (`redact_key`). Never fetch or open a URL taken from the data: show it defanged
 //! (`defang`) and link only to the abuse.ch page for the entry.
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// Hosts.
 pub const THREATFOX_HOST: &str = "threatfox-api.abuse.ch";
 pub const URLHAUS_HOST: &str = "urlhaus-api.abuse.ch";
 pub const SSLBL_HOST: &str = "sslbl.abuse.ch";
+/// Path of the ThreatFox API (POST, key in the `Auth-Key` header).
+pub const THREATFOX_PATH: &str = "/api/v1/";
 /// Public, keyless SSL certificate blacklist (SHA1 fingerprints).
 pub const SSLBL_CERTS_PATH: &str = "/blacklist/sslblacklist.csv";
 /// The providers regenerate their dumps every 5 minutes and ask not to be polled more often.
@@ -56,10 +58,105 @@ pub fn urlhaus_recent_path(key: &str) -> Option<String> {
     looks_like_auth_key(key).then(|| format!("/v2/files/exports/{key}/recent.csv"))
 }
 
+/// Path of the authenticated URLhaus "recent URLs" API (GET, key in the `Auth-Key` header). The old CSV
+/// exports return 410 Gone since 2025.
+pub const URLHAUS_RECENT_PATH: &str = "/v1/urls/recent/";
+
+/// What is kept from one URLhaus poll: counts only. No URL, host or payload is stored or shown.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct UrlhausSummary {
+    pub total: u32,
+    pub online: u32,
+    pub threats: Vec<(String, u32)>,
+    pub tags: Vec<(String, u32)>,
+}
+
+/// Summarises the answer of `/v1/urls/recent/`. Bounded: reads at most `MAX_URLHAUS_BYTES`.
+pub fn parse_urlhaus_recent(bytes: &[u8]) -> Result<UrlhausSummary, String> {
+    if bytes.len() > MAX_URLHAUS_BYTES {
+        return Err("URLhaus answer is too large".into());
+    }
+    let value: serde_json::Value =
+        serde_json::from_slice(bytes).map_err(|_| "URLhaus answer is not JSON".to_string())?;
+    match value.get("query_status").and_then(|v| v.as_str()) {
+        Some("ok") => {}
+        Some("unknown_auth_key") | Some("auth_required") => {
+            return Err("the abuse.ch Auth-Key was refused".into())
+        }
+        Some(other) => {
+            return Err(format!(
+                "URLhaus said: {}",
+                other.chars().take(40).collect::<String>()
+            ))
+        }
+        None => return Err("URLhaus answer has no status".into()),
+    }
+    let urls = value
+        .get("urls")
+        .and_then(|v| v.as_array())
+        .ok_or_else(|| "URLhaus answer has no list".to_string())?;
+    let mut threats: std::collections::BTreeMap<String, u32> = Default::default();
+    let mut tags: std::collections::BTreeMap<String, u32> = Default::default();
+    let mut online = 0;
+    for entry in urls.iter().take(5_000) {
+        if entry.get("url_status").and_then(|v| v.as_str()) == Some("online") {
+            online += 1;
+        }
+        if let Some(t) = entry.get("threat").and_then(|v| v.as_str()) {
+            *threats
+                .entry(t.chars().take(MAX_TAG_LEN).collect())
+                .or_insert(0) += 1;
+        }
+        if let Some(list) = entry.get("tags").and_then(|v| v.as_array()) {
+            for tag in list.iter().filter_map(|t| t.as_str()).take(MAX_TAGS) {
+                *tags
+                    .entry(tag.chars().take(MAX_TAG_LEN).collect())
+                    .or_insert(0) += 1;
+            }
+        }
+    }
+    let rank = |m: std::collections::BTreeMap<String, u32>, n: usize| {
+        let mut v: Vec<(String, u32)> = m.into_iter().collect();
+        v.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+        v.truncate(n);
+        v
+    };
+    Ok(UrlhausSummary {
+        total: urls.len().min(5_000) as u32,
+        online,
+        threats: rank(threats, 4),
+        tags: rank(tags, 8),
+    })
+}
+
 /// JSON body for the ThreatFox "recent IOCs" query. `days` is clamped to the documented 1 to 7.
 /// Send it as `POST /api/v1/` with the header `Auth-Key: <key>`.
 pub fn threatfox_recent_body(days: u8) -> String {
     format!(r#"{{"query":"get_iocs","days":{}}}"#, days.clamp(1, 7))
+}
+
+/// What is kept from one ThreatFox poll: counts only. No indicator is stored or shown.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ThreatFoxSummary {
+    pub total: u32,
+    pub malware: Vec<(String, u32)>,
+    pub threat_types: Vec<(String, u32)>,
+}
+
+pub fn summarize_threatfox(iocs: &[ThreatFoxIoc]) -> ThreatFoxSummary {
+    let mut kinds: std::collections::BTreeMap<&str, u32> = Default::default();
+    for ioc in iocs {
+        *kinds.entry(ioc.threat_type.as_str()).or_insert(0) += 1;
+    }
+    let mut threat_types: Vec<(String, u32)> =
+        kinds.into_iter().map(|(k, n)| (k.to_owned(), n)).collect();
+    threat_types.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+    threat_types.truncate(4);
+    ThreatFoxSummary {
+        total: iocs.len() as u32,
+        malware: top_malware(iocs, 8),
+        threat_types,
+    }
 }
 
 /// Replace every occurrence of the key in a message with `***`, so errors and logs cannot leak it.
@@ -397,6 +494,26 @@ pub fn parse_urlhaus_csv(bytes: &[u8]) -> Result<Vec<UrlhausEntry>, String> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn urlhaus_recent_is_summarised_without_urls() {
+        let body = br#"{"query_status":"ok","urls":[
+            {"url":"http://bad.example/x","url_status":"online","threat":"malware_download","tags":["elf","Mozi"]},
+            {"url":"http://bad2.example/y","url_status":"offline","threat":"malware_download","tags":["Mozi"]},
+            {"url":"http://bad3.example/z","url_status":"online","threat":"other","tags":null}]}"#;
+        let s = parse_urlhaus_recent(body).unwrap();
+        assert_eq!((s.total, s.online), (3, 2));
+        assert_eq!(s.threats[0], ("malware_download".to_string(), 2));
+        assert_eq!(s.tags[0], ("Mozi".to_string(), 2));
+        assert!(!format!("{s:?}").contains("bad.example"));
+        assert!(
+            parse_urlhaus_recent(br#"{"query_status":"unknown_auth_key"}"#)
+                .unwrap_err()
+                .contains("refused")
+        );
+        assert!(parse_urlhaus_recent(b"not json").is_err());
+        assert!(parse_urlhaus_recent(br#"{"query_status":"ok"}"#).is_err());
+    }
+
     use super::*;
 
     const TF_OK: &str = include_str!("../tests/fixtures/osint/abusech/threatfox-ok.json");

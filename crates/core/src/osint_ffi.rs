@@ -13,7 +13,7 @@ use std::{
 };
 
 /// Sources with a working integration in this build, in menu order.
-pub const LIVE_SOURCES: [Source; 8] = [
+pub const LIVE_SOURCES: [Source; 13] = [
     Source::CisaKev,
     Source::TorExit,
     Source::SansIsc,
@@ -22,6 +22,11 @@ pub const LIVE_SOURCES: [Source; 8] = [
     Source::SpamhausDrop,
     Source::PhishTank,
     Source::Sslbl,
+    Source::Otx,
+    Source::Urlhaus,
+    Source::ThreatFox,
+    Source::AbuseIpdb,
+    Source::CertStream,
 ];
 
 pub struct OsintHandle {
@@ -54,6 +59,29 @@ unsafe fn copy_out(s: &str, out: *mut u8, cap: usize) -> usize {
     s.len()
 }
 
+/// Gives one source its API key (memory only), or removes it when `key` is null or empty. The host
+/// reads the key from the system credential store; it is never logged, stored or shown by the core.
+/// # Safety
+/// `handle` must come from `ta_osint_start`; `id` and `key` must be valid NUL-terminated strings or null.
+#[no_mangle]
+pub unsafe extern "C" fn ta_osint_set_key(
+    handle: *mut OsintHandle,
+    id: *const c_char,
+    key: *const c_char,
+) -> i32 {
+    let (Some(h), Some(id)) = (handle.as_ref(), text(id)) else {
+        return 0;
+    };
+    let Some(source) = LIVE_SOURCES
+        .iter()
+        .find(|s| osint::source_spec(**s).id == id && osint::source_spec(**s).requires_key)
+    else {
+        return 0;
+    };
+    h.osint.set_key(*source, text(key).map(str::to_owned));
+    1
+}
+
 /// Starts the worker. `enabled_json` is a JSON array of source ids; only those make requests.
 /// # Safety
 /// `directory` and `enabled_json` must be valid NUL-terminated strings.
@@ -67,7 +95,10 @@ pub unsafe extern "C" fn ta_osint_start(
     };
     std::panic::catch_unwind(|| {
         Box::into_raw(Box::new(OsintHandle {
-            osint: Osint::start(PathBuf::from(dir), ids(json), osint_net::https_get),
+            osint: {
+                crate::osint_worker::set_post(osint_net::https_post);
+                Osint::start(PathBuf::from(dir), ids(json), osint_net::https_get)
+            },
         }))
     })
     .unwrap_or(std::ptr::null_mut())
@@ -106,6 +137,36 @@ pub unsafe extern "C" fn ta_osint_lookup(handle: *mut OsintHandle, ip: *const c_
     match crate::osint_internetdb::parse_ip_text(ip) {
         Some(ip) if crate::osint_internetdb::is_lookup_allowed(ip) => {
             h.osint.lookup(ip);
+            0
+        }
+        _ => -1,
+    }
+}
+
+/// Replaces the certificate watch list from a JSON array of domains (at most 10 are kept). Returns how many
+/// were accepted.
+/// # Safety
+/// `handle` must be a live pointer; `json` a valid NUL-terminated string.
+#[no_mangle]
+pub unsafe extern "C" fn ta_osint_set_watch(handle: *mut OsintHandle, json: *const c_char) -> i32 {
+    let (Some(h), Some(json)) = (handle.as_ref(), text(json)) else {
+        return -1;
+    };
+    h.osint.set_watch(ids(json)) as i32
+}
+
+/// Queues one AbuseIPDB check for the address in `ip`. Returns 0 when queued, -1 when refused (not a
+/// public address, source off). The host asks the user to confirm first.
+/// # Safety
+/// `handle` must be a live pointer; `ip` a valid NUL-terminated string.
+#[no_mangle]
+pub unsafe extern "C" fn ta_osint_lookup_abuse(handle: *mut OsintHandle, ip: *const c_char) -> i32 {
+    let (Some(h), Some(ip)) = (handle.as_ref(), text(ip)) else {
+        return -1;
+    };
+    match crate::osint_internetdb::parse_ip_text(ip) {
+        Some(ip) if crate::osint_abuseipdb::is_lookup_allowed(ip) => {
+            h.osint.lookup_abuse(ip);
             0
         }
         _ => -1,
@@ -185,7 +246,7 @@ pub unsafe extern "C" fn ta_osint_sources(out: *mut u8, cap: usize) -> usize {
                 "requires_key": spec.requires_key,
                 "default_on": osint::default_enabled(*s),
                 "what": osint_text::what(*s),
-                "clipboard": matches!(s, Source::ShodanInternetDb | Source::SpamhausDrop | Source::PhishTank),
+                "clipboard": matches!(s, Source::ShodanInternetDb | Source::SpamhausDrop | Source::PhishTank | Source::AbuseIpdb),
             })
         })
         .collect();
@@ -212,9 +273,24 @@ mod tests {
         assert_eq!(unsafe { ta_osint_sources(buf.as_mut_ptr(), len) }, len);
         let value: serde_json::Value = serde_json::from_slice(&buf).unwrap();
         assert_eq!(value.as_array().unwrap().len(), LIVE_SOURCES.len());
+        // Only a keyed source may need a key, and the list must say so for the Settings screens.
+        for (source, entry) in LIVE_SOURCES.iter().zip(value.as_array().unwrap()) {
+            assert_eq!(
+                entry["requires_key"].as_bool(),
+                Some(osint::source_spec(*source).requires_key)
+            );
+        }
         assert!(LIVE_SOURCES
             .iter()
-            .all(|s| !osint::source_spec(*s).requires_key));
+            .filter(|s| osint::source_spec(**s).requires_key)
+            .all(|s| matches!(
+                *s,
+                Source::Otx
+                    | Source::Urlhaus
+                    | Source::ThreatFox
+                    | Source::AbuseIpdb
+                    | Source::CertStream
+            )));
     }
 
     #[test]

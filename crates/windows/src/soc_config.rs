@@ -70,6 +70,8 @@ pub struct Settings {
     pub radar_layer: bool,
     /// Ids of the OSINT sources the user has turned on. A source that is not listed makes no request.
     pub enabled_sources: Vec<String>,
+    /// Domains watched in the certificate logs (at most 10, the user's own).
+    pub watch_domains: Vec<String>,
 }
 impl Default for Settings {
     fn default() -> Self {
@@ -86,6 +88,7 @@ impl Default for Settings {
             theme: Theme::Classic,
             radar_layer: true,
             enabled_sources: threat_atlas_core::osint::default_enabled_ids(),
+            watch_domains: Vec::new(),
         }
     }
 }

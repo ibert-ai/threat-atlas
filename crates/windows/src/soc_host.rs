@@ -369,6 +369,65 @@ fn start_internetdb_lookup(window: &Window, osint: Option<&Osint>) {
     }
 }
 
+/// Shows the shared text page of one source (the same text as the macOS Settings window).
+fn show_source_page(
+    window: &Window,
+    osint: Option<&Osint>,
+    source: threat_atlas_core::osint::Source,
+) {
+    let spec = threat_atlas_core::osint::source_spec(source);
+    let title = format!("Threat Atlas SOC - {}", spec.name);
+    let Some(osint) = osint else {
+        info_box(window, &title, "OSINT worker is not running in this mode.");
+        return;
+    };
+    let text = threat_atlas_core::osint_text::page(source, &osint.view(), "", feed::now_ms());
+    info_box(window, &title, &text);
+}
+
+/// Click-only AbuseIPDB check of the address on the clipboard, after an explicit confirmation.
+fn start_abuseipdb_check(window: &Window, osint: Option<&Osint>) {
+    const TITLE: &str = "Threat Atlas SOC - AbuseIPDB";
+    let Some(osint) = osint else {
+        info_box(window, TITLE, "OSINT worker is not running in this mode.");
+        return;
+    };
+    let Some(ip) = clipboard_text(window)
+        .as_deref()
+        .and_then(osint_internetdb::parse_ip_text)
+    else {
+        info_box(window, TITLE, "Copy one public IP address first (for example 8.8.8.8), then choose this item again. Nothing was sent.");
+        return;
+    };
+    if !threat_atlas_core::osint_abuseipdb::is_lookup_allowed(ip) {
+        info_box(
+            window,
+            TITLE,
+            "That is not a public internet address. Nothing was sent.",
+        );
+        return;
+    }
+    let ask = format!(
+        "Send {ip} and your AbuseIPDB key to api.abuseipdb.com?\n\nAbuseIPDB also sees your public IP address. Free Individual plan, non-commercial; at most 800 checks a day, answers kept 24 hours.\n\nYES: check it.  NO: cancel."
+    );
+    let answer = unsafe {
+        MessageBoxW(
+            window.hwnd() as HWND,
+            wide(&ask).as_ptr(),
+            wide(TITLE).as_ptr(),
+            MB_YESNO | MB_DEFBUTTON2 | MB_ICONQUESTION,
+        )
+    };
+    if answer == IDYES {
+        osint.lookup_abuse(ip);
+        info_box(
+            window,
+            TITLE,
+            "Check started. Choose \"Show last AbuseIPDB result\" in a few seconds.",
+        );
+    }
+}
+
 fn show_internetdb(window: &Window, view: Option<&OsintView>) {
     const TITLE: &str = "Threat Atlas SOC - Shodan InternetDB";
     let Some(view) = view else {
@@ -532,7 +591,7 @@ fn show_sslbl(window: &Window, view: Option<&OsintView>) {
 }
 
 /// Sources that have a working integration in this build, in the order of the Settings menu.
-const LIVE_SOURCES: [threat_atlas_core::osint::Source; 9] = {
+const LIVE_SOURCES: [threat_atlas_core::osint::Source; 14] = {
     use threat_atlas_core::osint::Source::*;
     [
         CisaKev,
@@ -544,8 +603,39 @@ const LIVE_SOURCES: [threat_atlas_core::osint::Source; 9] = {
         SpamhausDrop,
         PhishTank,
         Sslbl,
+        Otx,
+        Urlhaus,
+        ThreatFox,
+        AbuseIpdb,
+        CertStream,
     ]
 };
+/// Menu ids of the API key entries: set at KEY_BASE_ID + 2 * n, remove at KEY_BASE_ID + 2 * n + 1.
+const KEY_BASE_ID: u32 = 200;
+/// Providers that need a key: (menu label, Credential Manager account, sources that share the key).
+const KEY_PROVIDERS: [(&str, &str, &[threat_atlas_core::osint::Source]); 4] = {
+    use threat_atlas_core::osint::Source::*;
+    [
+        ("AlienVault OTX", "otx", &[Otx]),
+        (
+            "abuse.ch (ThreatFox + URLhaus)",
+            "abusech",
+            &[Urlhaus, ThreatFox],
+        ),
+        ("AbuseIPDB", "abuseipdb", &[AbuseIpdb]),
+        ("SSLMate (certificate watch)", "certspotter", &[CertStream]),
+    ]
+};
+
+/// Hands every stored key to the worker (memory only there).
+fn push_keys(osint: &Osint) {
+    for (_, account, sources) in KEY_PROVIDERS {
+        let key = crate::soc_radar::osint_keys::read(account);
+        for source in sources {
+            osint.set_key(*source, key.clone());
+        }
+    }
+}
 const SOURCE_BASE_ID: u32 = 100;
 
 fn source_on(settings: &Settings, source: threat_atlas_core::osint::Source) -> bool {
@@ -669,11 +759,16 @@ fn menu(
                     } else {
                         0
                     };
+                let label = if spec.requires_key {
+                    format!("{} (needs your key)", spec.name)
+                } else {
+                    spec.name.to_owned()
+                };
                 AppendMenuW(
                     sources_menu,
                     flags,
                     SOURCE_BASE_ID as usize + i,
-                    wide(spec.name).as_ptr(),
+                    wide(&label).as_ptr(),
                 );
             }
             let viewing = [
@@ -686,6 +781,12 @@ fn menu(
                 (45, "Blacklisted SSL certificates (abuse.ch SSLBL)"),
                 (40, "Look up IP from clipboard (Shodan InternetDB)..."),
                 (41, "Show last InternetDB result"),
+                (52, "AlienVault OTX pulses"),
+                (53, "abuse.ch URLhaus"),
+                (54, "abuse.ch ThreatFox"),
+                (55, "Certificate watch (your domains)"),
+                (50, "Check IP from clipboard (AbuseIPDB)..."),
+                (51, "Show last AbuseIPDB result"),
             ];
             for (id, text) in viewing {
                 AppendMenuW(view_menu, MF_STRING, id, wide(text).as_ptr());
@@ -702,6 +803,43 @@ fn menu(
                 view_menu as usize,
                 wide("View data").as_ptr(),
             );
+            let keys_menu = CreatePopupMenu();
+            if !keys_menu.is_null() {
+                for (n, (label, account, _)) in KEY_PROVIDERS.iter().enumerate() {
+                    let have = crate::soc_radar::osint_keys::read(account).is_some();
+                    let set = format!(
+                        "{} key: {}",
+                        label,
+                        if have { "replace..." } else { "add..." }
+                    );
+                    AppendMenuW(
+                        keys_menu,
+                        MF_STRING,
+                        KEY_BASE_ID as usize + 2 * n,
+                        wide(&set).as_ptr(),
+                    );
+                    if have {
+                        AppendMenuW(
+                            keys_menu,
+                            MF_STRING,
+                            KEY_BASE_ID as usize + 2 * n + 1,
+                            wide(&format!("Remove {label} key")).as_ptr(),
+                        );
+                    }
+                }
+                AppendMenuW(
+                    keys_menu,
+                    MF_STRING,
+                    56,
+                    wide("Certificate watch: set domains...").as_ptr(),
+                );
+                AppendMenuW(
+                    settings_menu,
+                    MF_POPUP,
+                    keys_menu as usize,
+                    wide("API keys (your own, stored in Credential Manager)").as_ptr(),
+                );
+            }
             AppendMenuW(
                 settings_menu,
                 MF_STRING,
@@ -891,11 +1029,15 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         Settings::load(&path)
     };
     let osint = (!smoke).then(|| {
-        Osint::start(
+        crate::soc_osint::set_post(crate::soc_osint::winhttp_post);
+        let worker = Osint::start(
             state_dir.clone(),
             settings.enabled_sources.clone(),
             crate::soc_osint::winhttp_fetch,
-        )
+        );
+        push_keys(&worker);
+        worker.set_watch(settings.watch_domains.clone());
+        worker
     });
     if let Some(warning) = warning {
         show_error(&warning);
@@ -968,13 +1110,35 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                     11 => settings.fps = 5, 12 => settings.fps = 10, 13 => settings.fps = 20,
                     25 => settings.theme = Theme::Classic, 26 => settings.theme = Theme::Dashboard,
                     27 => open_token_guide(&display.window),
-                    100..=108 => {
+                    n if (SOURCE_BASE_ID..SOURCE_BASE_ID + LIVE_SOURCES.len() as u32).contains(&n) => {
                         let source = LIVE_SOURCES[(action - SOURCE_BASE_ID) as usize];
                         let id = threat_atlas_core::osint::source_spec(source).id.to_owned();
                         if source_on(&settings, source) { settings.enabled_sources.retain(|e| *e != id); } else { settings.enabled_sources.push(id); }
                         if let Some(osint) = &osint { osint.set_enabled(settings.enabled_sources.clone()); }
                     }
                     46 => open_key_guide(&display.window),
+                    n if (KEY_BASE_ID..KEY_BASE_ID + 2 * KEY_PROVIDERS.len() as u32).contains(&n) => {
+                        let (label, account, _) = KEY_PROVIDERS[((n - KEY_BASE_ID) / 2) as usize];
+                        if (n - KEY_BASE_ID) % 2 == 1 {
+                            crate::soc_radar::osint_keys::delete(account);
+                        } else if let Some(key) = crate::soc_radar::osint_keys::prompt(display.window.hwnd() as HWND, label, account) {
+                            if key.len() < 16 || !key.bytes().all(|b| b.is_ascii_graphic()) || !crate::soc_radar::osint_keys::write(account, &key) {
+                                info_box(&display.window, "Threat Atlas SOC", "That key could not be saved. Nothing was sent anywhere.");
+                            }
+                        }
+                        if let Some(osint) = &osint { push_keys(osint); }
+                    }
+                    56 => {
+                        if let Some(text) = crate::soc_radar::osint_keys::prompt_text(display.window.hwnd() as HWND, "Certificate watch", "Type up to 10 of YOUR OWN domains, separated by commas, in the User name box (for example example.com, example.org). Leave the password empty.", &settings.watch_domains.join(", ")) {
+                            settings.watch_domains = text.split(|c: char| c == ',' || c.is_whitespace()).filter(|d| !d.is_empty()).take(10).map(str::to_ascii_lowercase).collect();
+                            if let Some(osint) = &osint { osint.set_watch(settings.watch_domains.clone()); }
+                        }
+                    }
+                    50 => if require_source(&display.window, &settings, threat_atlas_core::osint::Source::AbuseIpdb) { start_abuseipdb_check(&display.window, osint.as_ref()) },
+                    51..=55 => {
+                        let source = match action { 51 => threat_atlas_core::osint::Source::AbuseIpdb, 52 => threat_atlas_core::osint::Source::Otx, 53 => threat_atlas_core::osint::Source::Urlhaus, 54 => threat_atlas_core::osint::Source::ThreatFox, _ => threat_atlas_core::osint::Source::CertStream };
+                        if require_source(&display.window, &settings, source) { show_source_page(&display.window, osint.as_ref(), source); }
+                    }
                     35 => if require_source(&display.window, &settings, threat_atlas_core::osint::Source::CisaKev) { { let view = osint.as_ref().map(Osint::view); show_kev(&display.window, view.as_ref()); } }
                     36 => if require_source(&display.window, &settings, threat_atlas_core::osint::Source::TorExit) { { let view = osint.as_ref().map(Osint::view); show_tor(&display.window, view.as_ref()); } }
                     37 => { if let Some(osint) = &osint { osint.refresh(); } }
