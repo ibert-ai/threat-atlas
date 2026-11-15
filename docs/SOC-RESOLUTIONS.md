@@ -44,3 +44,13 @@ Panels are placed by **slot order**, never by source, so a source that is switch
 - Golden-image tests at 1280x720, 1920x1080, 2560x1440, 3840x2160, 1920x1200, 3440x1440, 5120x1440.
 - No text below 10 px after scaling; no overlap at any listed size; turning a source off never leaves a gap.
 - 8K and 5120x1440 checked for frame time (budget: under 33 ms on the reference PC).
+
+## Multiple screens (to do, owner request 15 Nov 2026)
+
+The Desktop app must handle two or more screens as an option, the way the screensaver version does
+(see the screensaver's multi-monitor modes in README.md and the earlier graphics-test notes).
+
+- Setting in Settings: one screen (default), span all screens as one canvas, or one panel set per screen.
+- Each screen is sized by the rules above on its own; a spanned canvas counts as one wide frame (32:9 rules).
+- Remember the choice and the screen per window; recover when a screen is unplugged.
+- Test on the multi-monitor PC listed in the project notes before the stable release.
