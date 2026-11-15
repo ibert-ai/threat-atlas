@@ -77,6 +77,51 @@ Both unfiltered and reviewed audit outputs are included in `evidence/`.
 The CI audit fails on new, unreviewed warnings/vulnerabilities. These exceptions
 must be revisited when updating dependencies or adding Linux/custom-font support.
 
+## Hardening round for 0.8.0-rc.1
+
+Done 15-16 November 2026 for AtlasSOC Desktop 0.8.0-rc.1 (build 15), by the coding lead (self-review; an independent
+review by the documentation owner covered PR #78/#79 key handling on 15 November and found it sound for the live OTX
+path, with follow-ups that were fixed or documented). Numbers are from the measured runs named below; nothing here
+is a guarantee that the program is free of faults.
+
+**Robustness of the parsers.** `crates/core/tests/osint_parsers_robustness.rs` feeds every network-facing OSINT
+parser (KEV, EPSS, SANS ISC, Tor list, URLhaus JSON and CSV, ThreatFox, SSLBL, AbuseIPDB, certificate watch, OTX,
+Phishing.Database, Shodan InternetDB, Spamhaus DROP and ASN-DROP, Team Cymru text, ransomware.live) with 3,000
+random inputs, 6,000 mutated real-looking payloads (truncate, bit-flip, insert, repeat, NUL bytes) and eight
+pathological shapes (100,000-deep nesting, a 10,000-digit number, 200,000 rows, a 2 MB line, invalid UTF-8,
+100,000 NUL bytes). Deterministic seeds. Result: no panic, no hang (0.6 s in a release build).
+
+**`unsafe` audit.** `unsafe` appears only in the C ABI used by the macOS host (`lib.rs`, `osint_ffi.rs`) and in the
+Win32 host code (`windows.rs`, `soc_host.rs`, `soc_radar.rs`, `soc_config.rs`). There is none in any parser, the
+network layer or the data worker. Each exported function has a documented safety contract; strings are
+null-checked and UTF-8 checked, output copies are bounded by the caller's capacity, and the worker start is
+wrapped in `catch_unwind`.
+
+**Keys.** The key lives in an in-memory map in the data worker; it is not part of any page, note, cache or state
+file, and is never logged. On macOS it is stored in the Keychain (service `ThreatAtlas.OSINT`), on Windows in
+Credential Manager (`AtlasSOC/OSINT/...`). A source that is off, or without its key, makes no request (tested in
+`nothing_is_requested_while_every_source_is_off`). Release packages are checked with
+`scripts/check-test-token-absent.py`.
+
+**Dependencies.** The CI `quality` job runs the RustSec audit with the reviewed exceptions listed above and fails
+on any new advisory.
+
+**Performance.** Frame render time (release build, 60 records per frame, Apple silicon Mac with a CI build running
+at the same time): mean 11.1 ms at 1440 px width, 12.6 ms at 1920, 13.2 ms at 2560 and 14.0 ms at 3840, against a
+33 ms budget. Occasional single frames took up to about 50 ms while other builds ran. Steady-state memory of the
+Windows app on a partner PC: 140 MB working set (88 MB private, 344 handles, 12 threads) five minutes after start.
+
+**Live checks on macOS with the maintainer's own keys (15 November 2026).** OTX 4 pulses; URLhaus 1,000 recent
+URLs; ThreatFox 1,496 indicators in 24 hours; AbuseIPDB score 0 for the maintainer's address and 24 of 100 (28
+reports, data centre) for a VPN address; certificate watch for one domain with 0 new certificates after the
+baseline. Windows: ransomware.live shows 100 incidents again after the provider fixed its certificate.
+
+**CI.** All checks green on each merged pull request, including Windows x64 build, installer upgrade and
+uninstall test, macOS build, Linux build, updater tests and quality (format, Clippy with warnings as errors, tests,
+audit).
+
+**Soak.** SOAK_PLACEHOLDER
+
 ## Still requiring acceptance testing
 
 - MSI installation, upgrade, rollback, user-launched setup and uninstallation on

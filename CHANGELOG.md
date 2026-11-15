@@ -1,13 +1,20 @@
-## AtlasSOC Desktop 0.8.0-beta.1 — draft, not released
+## AtlasSOC Desktop 0.8.0-rc.1 — release candidate 1, 16 November 2026, build 15
 
-- Adds optional, non-commercial OSINT sources: CISA KEV + FIRST EPSS, Tor exits, SANS ISC top ports, Team Cymru
-  ASN, abuse.ch SSLBL/ThreatFox/URLhaus, AlienVault OTX, ransomware.live aggregates, Shodan InternetDB and
-  AbuseIPDB click lookups, SSLMate Cert Spotter watch-lists, Spamhaus DROP and Phishing.Database.
-- Adds the privacy/attribution documentation, per-source user guide, known-limits section and draft release notes.
-- Windows x64 is the first target and stays unsigned; macOS and Linux follow only after their own checks.
-- Not in scope: RIPE RIS/BGPStream (research only), GeoLite2 file reading and Windows code signing.
-- No package, tag or publication exists for this draft. The optimisation/hardening and documentation gates in
-  docs/VERSION-FEATURES.md must pass before a beta is published.
+- Pre-release (not the latest stable) for Windows x64 (installer and portable ZIP, unsigned) and macOS 14+. No Linux build.
+- Adds 13 optional, non-commercial OSINT sources with a switch each (off = no request): CISA KEV + FIRST EPSS, Tor exits,
+  SANS ISC top ports, ransomware.live, Spamhaus DROP, abuse.ch SSLBL, Phishing.Database and Shodan InternetDB (click-only)
+  without an account; AlienVault OTX, abuse.ch URLhaus and ThreatFox, AbuseIPDB (click-only) and SSLMate certificate watch
+  with the user's own free key.
+- Keys are stored in the macOS Keychain or Windows Credential Manager, held in memory by the data worker and sent only to
+  their own provider. A "Last problem" line per source; a most-attacked-ports block under the top countries.
+- Adds an optional AI help prompt for getting the free keys (the customer does every step), the key guide, the privacy
+  and attribution texts, and a voluntary Ko-fi support link with a page on where the money goes.
+- Fixes: the most-attacked-ports bar no longer runs under its number on narrow columns; the portable ZIP and on-screen
+  stamp carry `rc.1`; the installer file name is unchanged because the update check parses it.
+- Hardening: parser robustness tests for every network-facing OSINT parser (random, mutated and pathological input),
+  frame-time measurements and a dependency audit in CI; evidence in docs/QUALITY.md.
+- Not in this release: Team Cymru ASN, MaxMind GeoLite2, RIPE RIS, the 1920x1080 base scaling, the multi-screen option and
+  Windows code signing.
 
 ## AtlasSOC Desktop 0.7.0 — Linux x86_64 preview, 11 November 2026
 
