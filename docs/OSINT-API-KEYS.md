@@ -34,8 +34,21 @@ Keys are optional. A keyed source stays quiet (no requests at all) until you add
    no requests even if a key is saved.
 
 **Windows**
-Key entry for Windows (stored in Windows Credential Manager) is being added to the 0.8.0 beta. Until it ships,
-keyed sources stay quiet on Windows; the no-key sources work as described below.
+1. Right-click the AtlasSOC window and open **Settings → API keys (your own, stored in Credential Manager)**.
+2. Choose the provider, for example **AlienVault OTX key: add...**. Windows opens its own credential box: paste
+   the key in the **Password** field and press OK. (The User name box is filled in for you; leave it.) The key
+   goes into Windows Credential Manager (entries named `AtlasSOC/OSINT/...`) and is never written to a file.
+3. Open **Settings → Data sources** and tick the source. The source is marked "(needs your key)". Choose
+   **Settings → View data** to see what arrived; the first poll follows within a minute.
+4. **Remove ... key** in the same menu deletes the entry. A source that is off makes no requests.
+
+**Certificate watch** (SSLMate) also needs your own domains: **Settings → API keys → Certificate watch: set
+domains...**. Windows shows its credential box; type up to 10 domains separated by commas in the **User name**
+box and leave the password empty. On macOS the domains go into the text field on the Certificate watch row in
+Settings, then **Save domains**. Only watch domains you are authorised to watch.
+
+**AbuseIPDB** is click-only: copy one public IP address, then **View data → Check IP from clipboard (AbuseIPDB)...**
+on Windows or **Check copied IP...** on macOS, and confirm. Nothing is sent before you confirm.
 
 **If a key is refused**, the row says so ("the API key was refused"). Check that you pasted the whole key without
 spaces, that the account is verified (see the provider steps below), and add the key again. The app does not retry
