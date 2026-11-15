@@ -1089,7 +1089,9 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     let event_loop = EventLoop::new();
     let mut windows = displays(&event_loop, &settings)?;
     // Beta builds carry a BETA stamp next to "SOC DESKTOP" in the heading. Switch off for a stable release.
-    threat_atlas_core::render::soc::set_beta_stamp(&format!("BETA {VERSION} B{BUILD}"));
+    threat_atlas_core::render::soc::set_beta_stamp(&threat_atlas_core::render::soc::release_stamp(
+        include_str!("../../../atlassoc-beta-version.json"),
+    ));
     let mut view = SocView::new();
     let mut intel_ms = 0u64;
     let offline = State::default();
