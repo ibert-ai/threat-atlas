@@ -51,6 +51,7 @@ pub fn page(source: Source, view: &View, clipboard: &str, now_ms: u64) -> String
         Source::SpamhausDrop => spamhaus(view, clipboard, now_ms),
         Source::PhishTank => phishing(view, clipboard, now_ms),
         Source::Sslbl => sslbl(view, now_ms),
+        Source::Otx => otx(view, now_ms),
         Source::ShodanInternetDb => internetdb(view, now_ms),
         _ => "This source is not available in this build yet.".into(),
     };
@@ -75,6 +76,7 @@ fn note_for(view: &View, source: Source) -> Option<&str> {
         Source::PhishTank => "Phishing.Database",
         Source::Sslbl => "SSLBL",
         Source::SpamhausDrop => "Spamhaus DROP",
+        Source::Otx => "OTX",
         _ => return None,
     };
     view.notes.get(key).map(String::as_str)
@@ -128,6 +130,10 @@ pub fn status(source: Source, view: &View, now_ms: u64) -> String {
             view.phish_state.fetched_at_ms().unwrap_or(0),
             format!("{} domains", view.phish.as_ref().map_or(0, |s| s.len())),
         ),
+        Source::Otx => waiting(
+            view.otx_updated_ms,
+            format!("{} pulses", view.otx.as_ref().map_or(0, |o| o.pulses)),
+        ),
         Source::Sslbl => waiting(
             view.sslbl_updated_ms,
             format!("{} certificates", view.sslbl_total),
@@ -152,6 +158,7 @@ pub fn what(source: Source) -> &'static str {
         Source::SpamhausDrop => "Network ranges Spamhaus advises never to route. Check whether an IP address is inside one.",
         Source::PhishTank => "A public list of known phishing domains. Check whether a domain or link is on it.",
         Source::Sslbl => "SSL certificates abuse.ch links to botnet command servers.",
+        Source::Otx => "Recent public threat reports from the AlienVault OTX community: malware families and targeted countries. Needs your own free API key.",
         _ => "",
     }
 }
@@ -268,6 +275,24 @@ pub fn cards(view: &View, enabled: &[String], now_ms: u64) -> Vec<IntelCard> {
                     label: format!("PORT {}", p.target_port),
                     fraction: Some(p.records as f32 / max),
                     value: p.records.to_string(),
+                })
+                .collect(),
+        });
+    }
+    if let Some(o) = view.otx.as_ref().filter(|_| on(Source::Otx)) {
+        let max = o.families.iter().map(|f| f.1).max().unwrap_or(1).max(1) as f32;
+        out.push(IntelCard {
+            title: "OTX COMMUNITY PULSES / 24 H".into(),
+            headline: format!("{} PULSES", o.pulses),
+            caption: format!("{} INDICATORS, COMMUNITY REPORTS", o.indicators),
+            rows: o
+                .families
+                .iter()
+                .take(5)
+                .map(|(name, count)| IntelRow {
+                    label: up(name).chars().take(16).collect(),
+                    fraction: Some(*count as f32 / max),
+                    value: count.to_string(),
                 })
                 .collect(),
         });
@@ -431,6 +456,33 @@ fn phishing(view: &View, clipboard: &str, now: u64) -> String {
         None => text.push_str("\nTo check a domain or link, copy it and open this page again. Nothing is opened or sent."),
     }
     text
+}
+
+fn otx(view: &View, now: u64) -> String {
+    let Some(o) = &view.otx else {
+        return "No data yet. Add your free OTX API key in Settings; the first poll follows."
+            .into();
+    };
+    let list = |items: &[(String, u32)]| {
+        if items.is_empty() {
+            "none".to_string()
+        } else {
+            items
+                .iter()
+                .map(|(n, c)| format!("{n} ({c})"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        }
+    };
+    format!(
+        "Public OTX pulses, last 24 hours: {}\nIndicators in them: {}\nUpdated: {}\n\nMalware families: {}\nTargeted countries: {}\n\nNewest pulses:\n  {}\n\nCommunity reports; quality varies. Indicators are not shown or fetched. Non-commercial use only.",
+        o.pulses,
+        o.indicators,
+        age(view.otx_updated_ms, now),
+        list(&o.families),
+        list(&o.countries),
+        if o.newest.is_empty() { "none".to_string() } else { o.newest.join("\n  ") },
+    )
 }
 
 fn sslbl(view: &View, now: u64) -> String {

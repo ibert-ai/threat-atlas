@@ -13,7 +13,7 @@ use std::{
 };
 
 /// Sources with a working integration in this build, in menu order.
-pub const LIVE_SOURCES: [Source; 8] = [
+pub const LIVE_SOURCES: [Source; 9] = [
     Source::CisaKev,
     Source::TorExit,
     Source::SansIsc,
@@ -22,6 +22,7 @@ pub const LIVE_SOURCES: [Source; 8] = [
     Source::SpamhausDrop,
     Source::PhishTank,
     Source::Sslbl,
+    Source::Otx,
 ];
 
 pub struct OsintHandle {
@@ -52,6 +53,29 @@ unsafe fn copy_out(s: &str, out: *mut u8, cap: usize) -> usize {
         std::ptr::copy_nonoverlapping(s.as_ptr(), out, n);
     }
     s.len()
+}
+
+/// Gives one source its API key (memory only), or removes it when `key` is null or empty. The host
+/// reads the key from the system credential store; it is never logged, stored or shown by the core.
+/// # Safety
+/// `handle` must come from `ta_osint_start`; `id` and `key` must be valid NUL-terminated strings or null.
+#[no_mangle]
+pub unsafe extern "C" fn ta_osint_set_key(
+    handle: *mut OsintHandle,
+    id: *const c_char,
+    key: *const c_char,
+) -> i32 {
+    let (Some(h), Some(id)) = (handle.as_ref(), text(id)) else {
+        return 0;
+    };
+    let Some(source) = LIVE_SOURCES
+        .iter()
+        .find(|s| osint::source_spec(**s).id == id && osint::source_spec(**s).requires_key)
+    else {
+        return 0;
+    };
+    h.osint.set_key(*source, text(key).map(str::to_owned));
+    1
 }
 
 /// Starts the worker. `enabled_json` is a JSON array of source ids; only those make requests.
@@ -212,9 +236,17 @@ mod tests {
         assert_eq!(unsafe { ta_osint_sources(buf.as_mut_ptr(), len) }, len);
         let value: serde_json::Value = serde_json::from_slice(&buf).unwrap();
         assert_eq!(value.as_array().unwrap().len(), LIVE_SOURCES.len());
+        // Only a keyed source may need a key, and the list must say so for the Settings screens.
+        for (source, entry) in LIVE_SOURCES.iter().zip(value.as_array().unwrap()) {
+            assert_eq!(
+                entry["requires_key"].as_bool(),
+                Some(osint::source_spec(*source).requires_key)
+            );
+        }
         assert!(LIVE_SOURCES
             .iter()
-            .all(|s| !osint::source_spec(*s).requires_key));
+            .filter(|s| osint::source_spec(**s).requires_key)
+            .all(|s| *s == Source::Otx));
     }
 
     #[test]
