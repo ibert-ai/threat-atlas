@@ -1135,7 +1135,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                         }
                     }
                     50 => if require_source(&display.window, &settings, threat_atlas_core::osint::Source::AbuseIpdb) { start_abuseipdb_check(&display.window, osint.as_ref()) },
-                    51 | 52 | 53 | 54 | 55 => {
+                    51..=55 => {
                         let source = match action { 51 => threat_atlas_core::osint::Source::AbuseIpdb, 52 => threat_atlas_core::osint::Source::Otx, 53 => threat_atlas_core::osint::Source::Urlhaus, 54 => threat_atlas_core::osint::Source::ThreatFox, _ => threat_atlas_core::osint::Source::CertStream };
                         if require_source(&display.window, &settings, source) { show_source_page(&display.window, osint.as_ref(), source); }
                     }
