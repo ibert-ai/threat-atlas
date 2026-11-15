@@ -238,6 +238,61 @@ are none); "paid support"; "unlock"; "membership"; "guaranteed"; "Cloudflare/Spa
 Do not name Spamhaus in the social copy (its terms prohibit promotional use of the name); say "advisory
 netblocks" instead. In the docs/source dialog, the factual source label is fine.
 
+### Tone and emoji by channel
+
+Threat Atlas is free, open source and non-profit, so the tone can be warm and human. Emojis are fine in social
+media, but they are not a substitute for the facts and must never imply a severity verdict.
+
+| Channel | Emoji policy | Tone |
+|---|---|---|
+| **ibert.se** | **No emojis.** | Calm, factual, documentation-like. |
+| **LinkedIn** | **Restrained: 0–1**, preferably at the end, never in the headline. | Professional, specific, no hype. |
+| **Facebook** | 2–4 relevant emojis; friendly and plain. | Helpful, community-minded, no alarmism. |
+| **Instagram** | 2–5 relevant emojis; visual and short. | Warm, curious, behind-the-scenes. |
+| **README, docs, in-app text** | No emojis (keep the existing plain style). | Precise and scannable. |
+
+Use emojis that describe the project, not the threat: 🌍 map/world, 🔎 context/lookup, 🛡️ defensive posture,
+💚 free/open project, 🤝 community/voluntary support. Do **not** use 🔴/🟠/🟢 or police/alert emojis as severity
+labels; the sources are context, not a verdict. Avoid a wall of emojis; one idea per line is better than five
+symbols in a row.
+
+**LinkedIn variant (one emoji, at the end):**
+
+> AtlasSOC Desktop 0.8.0 beta adds optional, non-commercial OSINT context to the live GreyNoise view: known
+> exploited vulnerabilities, attack ports, malicious certificates and URLs, community reports, ransomware
+> aggregates, click-only host checks, certificate watch-lists, advisory netblocks and phishing domains. Every
+> source is optional and switchable; off means no requests. Your own provider keys stay in the OS credential
+> store, and a copy-paste AI prompt helps you add them safely. Free and open source, with voluntary support
+> through Ko-fi. Windows beta is unsigned. 🔎
+
+**Facebook variant (friendly, 3 emojis):**
+
+> More context, same calm view. 🌍
+>
+> The next AtlasSOC Desktop beta adds optional OSINT context to the GreyNoise map: what is being exploited, which
+> ports are being hit, malicious certificates and URLs, community reports, ransomware trends, a click-only host
+> check, certificate watch and a phishing-domain list. Everything is optional; switch a source off and it makes no
+> requests. Your own free API keys stay in your operating system's credential store, and a copy-paste AI prompt
+> can walk you through setting them up safely. Free, open source, and built to stay that way. 💚
+>
+> Windows beta is unsigned, so SmartScreen may ask first. If you want to support the project, a voluntary Ko-fi
+> tip helps cover signing certificates and licences. 🤝
+
+**Instagram caption (short, 4 emojis):**
+
+> A calmer way to add OSINT context to your SOC view 🔭
+>
+> Known exploited vulnerabilities, attack ports, malicious certificates and URLs, community reports, ransomware
+> trends, click-only host checks, certificate watch and phishing domains — optional, non-commercial, and yours to
+> switch off. Your keys stay in your OS credential store. A copy-paste AI prompt helps you set them up safely 💚
+>
+> Free and open source. Voluntary support via Ko-fi, never required 🤝
+>
+> #ThreatAtlas #AtlasSOC #OSINT #OpenSource #CyberSecurity
+
+Keep the website copy emoji-free even when the same text is reused from social. On LinkedIn, if the post already
+has a visual or a link preview, zero emojis is better than one.
+
 ### README paragraph
 
 > **Your own API keys (optional).** Keyed OSINT sources use your own free provider key. Keys are stored in the
@@ -262,6 +317,8 @@ netblocks" instead. In the docs/source dialog, the factual source label is fine.
   into the project". Robert pays personally; tips go to him for the project.
 - "Cloudflare/OTX/abuse.ch/… endorses us": no provider endorsement is implied.
 - A release date or a promise that 1920x1080 scaling/multi-screen is in this beta. It is not.
+- Emojis on ibert.se, or more than one on LinkedIn, or emojis as severity labels (🔴/🟠/🟢). Keep docs, README
+  and in-app text emoji-free.
 
 ## Open decisions for Robert and CL
 
