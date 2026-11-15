@@ -1352,13 +1352,27 @@ fn draw_intel_card(
     }
 }
 
+/// The ports block heading, shortened to fit the column (13 px text is about 7.8 px per character) so it
+/// never runs into the next column on narrow windows.
+fn port_block_title(room: f32) -> &'static str {
+    const TITLES: [&str; 3] = [
+        "MOST ATTACKED PORTS / DSHIELD",
+        "TOP PORTS / DSHIELD",
+        "TOP PORTS",
+    ];
+    TITLES
+        .into_iter()
+        .find(|title| title.len() as f32 * 7.8 <= room)
+        .unwrap_or("PORTS")
+}
+
 /// The standing ports block at the foot of the wide column: up to five rows with bars.
 fn draw_port_block(r: &mut Renderer, card: &IntelCard, area: (f32, f32, f32, f32)) {
     let (x, y, w, h) = area;
     let left = x as i32 + 19;
     let top = (y + h) as i32 - 138;
     r.rect(x + 19., top as f32 - 8., w - 38., 1., INFO, 70);
-    r.text(left, top, 13, "MOST ATTACKED PORTS / DSHIELD", INFO);
+    r.text(left, top, 13, port_block_title(w - 38.), INFO);
     let chars = ((w - 38.) / 7.5).max(4.) as usize;
     for (i, row) in card.rows.iter().take(5).enumerate() {
         let yy = top + 22 + i as i32 * 22;
@@ -1669,6 +1683,22 @@ fn draw_icon(pixmap: &mut Pixmap, icon: &Icon, alpha: f32) {
 }
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn port_block_title_always_fits_its_column() {
+        for room in [60.0_f32, 90., 120., 150., 180., 230., 260., 400.] {
+            let title = super::port_block_title(room);
+            assert!(
+                title.len() as f32 * 7.8 <= room || title == "PORTS",
+                "room {room}: {title:?} would run past the column"
+            );
+        }
+        assert_eq!(
+            super::port_block_title(400.),
+            "MOST ATTACKED PORTS / DSHIELD"
+        );
+        assert_eq!(super::port_block_title(160.), "TOP PORTS / DSHIELD");
+    }
+
     #[test]
     fn desktop_footer_shows_the_desktop_identity_not_the_screensaver() {
         let read = |file: &str| -> serde_json::Value {
