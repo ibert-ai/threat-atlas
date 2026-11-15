@@ -70,7 +70,7 @@ fn mutate(rng: &mut Rng, seed: &[u8]) -> Vec<u8> {
             };
             b.splice(i..i, rng.bytes(32));
         }
-        3 => b.extend(std::iter::repeat(b'0').take((rng.next() % 4096) as usize)),
+        3 => b.extend(std::iter::repeat_n(b'0', (rng.next() % 4096) as usize)),
         4 => b = b.repeat(((rng.next() % 40) + 1) as usize),
         _ => {
             let i = if b.is_empty() {
