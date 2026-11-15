@@ -248,7 +248,7 @@ pub fn cards(view: &View, enabled: &[String], now_ms: u64) -> Vec<IntelCard> {
             rows: r
                 .ports
                 .iter()
-                .take(3)
+                .take(5)
                 .map(|p| IntelRow {
                     label: format!("PORT {}", p.target_port),
                     fraction: Some(p.records as f32 / max),
