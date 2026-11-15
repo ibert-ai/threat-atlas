@@ -814,7 +814,19 @@ impl SocView {
             );
         }
         if let (_, Some(column)) = wide_split(r.wide_dx) {
-            top_countries(r, &self.counts.0, selected, column, 252, TEXT);
+            // A standing "most attacked ports" block under the countries when that source is on.
+            let ports = self
+                .intel
+                .iter()
+                .find(|c| c.title.starts_with("TOP ATTACKED PORTS"));
+            let mut area = column;
+            if ports.is_some() && column.3 > 420. {
+                area.3 -= 150.;
+            }
+            top_countries(r, &self.counts.0, selected, area, 252, TEXT);
+            if let Some(card) = ports.filter(|_| column.3 > 420.) {
+                draw_port_block(r, card, column);
+            }
         }
         r.wide_raw = false;
 
@@ -1337,6 +1349,46 @@ fn draw_intel_card(
             r.rect(x + 116., y as f32 + 3., w.max(1.), 6., INFO, 170);
         }
         r.text(xi + 278, y, 11, &cut(&row.value, 10), INFO);
+    }
+}
+
+/// The standing ports block at the foot of the wide column: up to five rows with bars.
+fn draw_port_block(r: &mut Renderer, card: &IntelCard, area: (f32, f32, f32, f32)) {
+    let (x, y, w, h) = area;
+    let left = x as i32 + 19;
+    let top = (y + h) as i32 - 138;
+    r.rect(x + 19., top as f32 - 8., w - 38., 1., INFO, 70);
+    r.text(left, top, 13, "MOST ATTACKED PORTS / DSHIELD", INFO);
+    let chars = ((w - 38.) / 7.5).max(4.) as usize;
+    for (i, row) in card.rows.iter().take(5).enumerate() {
+        let yy = top + 22 + i as i32 * 22;
+        r.text(
+            left,
+            yy,
+            11,
+            &row.label.chars().take(12).collect::<String>(),
+            TEXT,
+        );
+        if let Some(f) = row.fraction {
+            let bar = (w - 38.) * 0.45;
+            r.rect(left as f32 + 78., yy as f32 + 3., bar, 6., INFO, 40);
+            r.rect(
+                left as f32 + 78.,
+                yy as f32 + 3.,
+                (bar * f.clamp(0., 1.)).max(1.),
+                6.,
+                INFO,
+                170,
+            );
+        }
+        let v: String = row.value.chars().take(10).collect();
+        r.text(
+            left + (chars.saturating_sub(v.len()) as f32 * 7.5) as i32,
+            yy,
+            11,
+            &v,
+            INFO,
+        );
     }
 }
 
