@@ -93,6 +93,8 @@ pub struct View {
     pub sans: Option<SansReport>,
     pub sans_updated_ms: u64,
     pub note: String,
+    /// Last problem per source, keyed by the source label used in the worker ("KEV", "Tor", ...).
+    pub notes: std::collections::BTreeMap<String, String>,
     /// Ransomware incidents of the last 30 days as counts only (no victim data).
     pub ransom: Option<RansomSummary>,
     pub ransom_updated_ms: u64,
@@ -255,7 +257,11 @@ fn save<T: Serialize>(path: &Path, value: &T) {
     }
 }
 
-fn publish(shared: &Mutex<View>, cache: &Cache, note: &str) {
+fn publish(
+    shared: &Mutex<View>,
+    cache: &Cache,
+    notes: &std::collections::BTreeMap<String, String>,
+) {
     let mut view = shared.lock().unwrap();
     let spamhaus = view.spamhaus.take();
     let phish = view.phish.take();
@@ -269,7 +275,8 @@ fn publish(shared: &Mutex<View>, cache: &Cache, note: &str) {
         tor_updated_ms: cache.tor_updated_ms,
         sans: cache.sans.clone(),
         sans_updated_ms: cache.sans_updated_ms,
-        note: note.to_owned(),
+        note: notes.values().cloned().collect::<Vec<_>>().join(" | "),
+        notes: notes.clone(),
         ransom: cache.ransom.clone(),
         ransom_updated_ms: cache.ransom_updated_ms,
         spamhaus,
@@ -438,9 +445,9 @@ fn worker(
     if cache.epss.is_empty() {
         cache.epss = read_json(&directory.join(EPSS_FILE)).unwrap_or_default();
     }
-    let mut note = String::new();
+    let mut notes: std::collections::BTreeMap<String, String> = std::collections::BTreeMap::new();
     let mut last_internetdb: Option<u64> = None;
-    publish(&shared, &cache, &note);
+    publish(&shared, &cache, &notes);
     if let Some(body) = on(Source::PhishTank)
         .then(|| fs::read(directory.join(PHISH_FILE)).ok())
         .flatten()
@@ -471,10 +478,10 @@ fn worker(
                             cache.epss_updated_ms = now;
                             remember(&mut gates, Source::Epss, &fetched);
                             gate(&mut gates, Source::Epss).success(now, epss_spec.min_interval_ms);
-                            note.clear();
+                            notes.remove("EPSS");
                         }
                         Err(error) => {
-                            note = format!("EPSS: {error}");
+                            notes.insert("EPSS".to_string(), format!("EPSS: {error}"));
                             gate(&mut gates, Source::Epss).failure(now, epss_spec.min_interval_ms);
                         }
                     }
@@ -483,7 +490,7 @@ fn worker(
                     gate(&mut gates, Source::Epss).success(now, epss_spec.min_interval_ms);
                 }
                 Err((status, retry)) => {
-                    note = format!("EPSS: HTTP {status}");
+                    notes.insert("EPSS".to_string(), format!("EPSS: HTTP {status}"));
                     match retry {
                         Some(seconds) => gate(&mut gates, Source::Epss).retry_after(now, seconds),
                         None => {
@@ -505,10 +512,10 @@ fn worker(
                         cache.kev_updated_ms = now;
                         remember(&mut gates, Source::CisaKev, &fetched);
                         gate(&mut gates, Source::CisaKev).success(now, kev_spec.min_interval_ms);
-                        note.clear();
+                        notes.remove("KEV");
                     }
                     Err(error) => {
-                        note = format!("KEV: {error}");
+                        notes.insert("KEV".to_string(), format!("KEV: {error}"));
                         gate(&mut gates, Source::CisaKev).failure(now, kev_spec.min_interval_ms);
                     }
                 },
@@ -516,7 +523,7 @@ fn worker(
                     gate(&mut gates, Source::CisaKev).success(now, kev_spec.min_interval_ms);
                 }
                 Err((status, retry)) => {
-                    note = format!("KEV: HTTP {status}");
+                    notes.insert("KEV".to_string(), format!("KEV: HTTP {status}"));
                     match retry {
                         Some(seconds) => {
                             gate(&mut gates, Source::CisaKev).retry_after(now, seconds)
@@ -539,13 +546,13 @@ fn worker(
                     cache.tor_updated_ms = now;
                     remember(&mut gates, Source::TorExit, &fetched);
                     gate(&mut gates, Source::TorExit).success(now, tor_spec.min_interval_ms);
-                    note.clear();
+                    notes.remove("Tor");
                 }
                 Ok(None) => {
                     gate(&mut gates, Source::TorExit).success(now, tor_spec.min_interval_ms);
                 }
                 Err((status, retry)) => {
-                    note = format!("Tor: HTTP {status}");
+                    notes.insert("Tor".to_string(), format!("Tor: HTTP {status}"));
                     match retry {
                         Some(seconds) => {
                             gate(&mut gates, Source::TorExit).retry_after(now, seconds)
@@ -569,10 +576,10 @@ fn worker(
                         cache.sans_updated_ms = now;
                         remember(&mut gates, Source::SansIsc, &fetched);
                         gate(&mut gates, Source::SansIsc).success(now, sans_spec.min_interval_ms);
-                        note.clear();
+                        notes.remove("SANS ISC");
                     }
                     Err(error) => {
-                        note = format!("SANS ISC: {error}");
+                        notes.insert("SANS ISC".to_string(), format!("SANS ISC: {error}"));
                         gate(&mut gates, Source::SansIsc).failure(now, sans_spec.min_interval_ms);
                     }
                 },
@@ -580,7 +587,7 @@ fn worker(
                     gate(&mut gates, Source::SansIsc).success(now, sans_spec.min_interval_ms);
                 }
                 Err((status, retry)) => {
-                    note = format!("SANS ISC: HTTP {status}");
+                    notes.insert("SANS ISC".to_string(), format!("SANS ISC: HTTP {status}"));
                     match retry {
                         Some(seconds) => {
                             gate(&mut gates, Source::SansIsc).retry_after(now, seconds)
@@ -612,10 +619,13 @@ fn worker(
                             cache.ransom_updated_ms = now;
                             gate(&mut gates, Source::RansomwareLive)
                                 .success(now, ransom_spec.min_interval_ms);
-                            note.clear();
+                            notes.remove("ransomware.live");
                         }
                         Err(error) => {
-                            note = format!("ransomware.live: {error:?}");
+                            notes.insert(
+                                "ransomware.live".to_string(),
+                                format!("ransomware.live: {error:?}"),
+                            );
                             gate(&mut gates, Source::RansomwareLive)
                                 .failure(now, ransom_spec.min_interval_ms);
                         }
@@ -623,7 +633,10 @@ fn worker(
                 }
                 Some(reply) => {
                     let error = osint_ransomware::classify_status(reply.status);
-                    note = format!("ransomware.live: {error:?}");
+                    notes.insert(
+                        "ransomware.live".to_string(),
+                        format!("ransomware.live: {error:?}"),
+                    );
                     match (error, reply.retry_after_s) {
                         (RansomError::RateLimited, Some(seconds)) => {
                             gate(&mut gates, Source::RansomwareLive).retry_after(now, seconds)
@@ -633,7 +646,10 @@ fn worker(
                     }
                 }
                 None => {
-                    note = "ransomware.live: no connection".into();
+                    notes.insert(
+                        "ransomware.live".to_string(),
+                        "ransomware.live: no connection".into(),
+                    );
                     gate(&mut gates, Source::RansomwareLive)
                         .failure(now, ransom_spec.min_interval_ms);
                 }
@@ -663,10 +679,13 @@ fn worker(
                         remember(&mut gates, Source::PhishTank, &fetched);
                         gate(&mut gates, Source::PhishTank)
                             .success(now, phish_spec.min_interval_ms);
-                        note.clear();
+                        notes.remove("Phishing.Database");
                     }
                     Err(error) => {
-                        note = format!("Phishing.Database: {error:?}");
+                        notes.insert(
+                            "Phishing.Database".to_string(),
+                            format!("Phishing.Database: {error:?}"),
+                        );
                         gate(&mut gates, Source::PhishTank)
                             .failure(now, phish_spec.min_interval_ms);
                     }
@@ -678,7 +697,10 @@ fn worker(
                     gate(&mut gates, Source::PhishTank).success(now, phish_spec.min_interval_ms);
                 }
                 Err((status, retry)) => {
-                    note = format!("Phishing.Database: HTTP {status}");
+                    notes.insert(
+                        "Phishing.Database".to_string(),
+                        format!("Phishing.Database: HTTP {status}"),
+                    );
                     match retry {
                         Some(seconds) => {
                             gate(&mut gates, Source::PhishTank).retry_after(now, seconds)
@@ -714,10 +736,10 @@ fn worker(
                         cache.sslbl_top = top;
                         cache.sslbl_updated_ms = now;
                         gate(&mut gates, Source::Sslbl).success(now, sslbl_spec.min_interval_ms);
-                        note.clear();
+                        notes.remove("SSLBL");
                     }
                     Err(error) => {
-                        note = format!("SSLBL: {error}");
+                        notes.insert("SSLBL".to_string(), format!("SSLBL: {error}"));
                         gate(&mut gates, Source::Sslbl).failure(now, sslbl_spec.min_interval_ms);
                     }
                 },
@@ -725,7 +747,7 @@ fn worker(
                     gate(&mut gates, Source::Sslbl).success(now, sslbl_spec.min_interval_ms);
                 }
                 Err((status, retry)) => {
-                    note = format!("SSLBL: HTTP {status}");
+                    notes.insert("SSLBL".to_string(), format!("SSLBL: HTTP {status}"));
                     match retry {
                         Some(seconds) => gate(&mut gates, Source::Sslbl).retry_after(now, seconds),
                         None => {
@@ -780,10 +802,13 @@ fn worker(
                         updated_ms: now,
                     }));
                     gate(&mut gates, Source::SpamhausDrop).success(now, drop_spec.min_interval_ms);
-                    note.clear();
+                    notes.remove("Spamhaus DROP");
                 }
                 Err(error) => {
-                    note = format!("Spamhaus DROP: {error}");
+                    notes.insert(
+                        "Spamhaus DROP".to_string(),
+                        format!("Spamhaus DROP: {error}"),
+                    );
                     gate(&mut gates, Source::SpamhausDrop).failure(now, drop_spec.min_interval_ms);
                 }
             }
@@ -793,7 +818,7 @@ fn worker(
         if dirty {
             save(&cache_path, &cache);
             save(&state_path, &gates);
-            publish(&shared, &cache, &note);
+            publish(&shared, &cache, &notes);
         }
 
         match rx.recv_timeout(Duration::from_secs(60)) {
