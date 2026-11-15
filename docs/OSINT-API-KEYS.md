@@ -11,13 +11,13 @@ provider it belongs to.
 | abuse.ch ThreatFox + URLhaus | abuse.ch Auth-Key | https://auth.abuse.ch/ | fair use; commercial use may need abuse.ch's paid API |
 | AlienVault OTX | OTX API key | https://otx.alienvault.com/ (account settings) | free; non-commercial |
 | AbuseIPDB | API key | https://www.abuseipdb.com/register | free Individual plan, 1,000 checks/day; non-commercial personal |
-| SSLMate Cert Spotter (CT Search API) | API key | https://sslmate.com/signup?for=ct_search_api | free tier of the CT Search API (the paid Cert Spotter monitoring plans are not needed); limits on https://sslmate.com/pricing |
+| SSLMate Cert Spotter (CT Search API) | API key | https://sslmate.com/signup?for=ct_search_api | free tier of the CT Search API (the paid Cert Spotter monitoring plans are not needed); limits on https://sslmate.com/pricing/ct_search_api |
 | Cloudflare Radar (optional, existing) | Radar Read token | [Cloudflare token guide](CLOUDFLARE-RADAR-TOKEN-GUIDE.md) | CC BY-NC 4.0, non-commercial |
 
 No key is used by CISA KEV, FIRST EPSS, Tor Project, SANS ISC, Team Cymru, abuse.ch SSLBL, ransomware.live,
 Shodan InternetDB, Spamhaus DROP or Phishing.Database.
 
-## How to add a key in AtlasSOC (all providers)
+## Add an API key on macOS
 
 <a id="add-a-key"></a>
 
@@ -34,12 +34,10 @@ Keys are optional. A keyed source stays quiet (no requests at all) until you add
    no requests even if a key is saved.
 
 **Windows**
-Key entry for Windows (stored in Windows Credential Manager) is being added to the 0.8.0 beta. Until it ships,
-keyed sources stay quiet on Windows; the no-key sources work as described below.
+This beta supports the sources that work without an API key. The key entry steps above apply to macOS.
 
 **If a key is refused**, the row says so ("the API key was refused"). Check that you pasted the whole key without
-spaces, that the account is verified (see the provider steps below), and add the key again. The app does not retry
-a refused key in a loop.
+spaces, that the account is verified (see the provider steps below), and replace the key in Settings.
 
 ## What each provider's sign-up looks like
 
@@ -63,9 +61,8 @@ at the provider if you think it leaked. Each key only unlocks the free tier of i
 1. Create a free account at https://auth.abuse.ch/ and copy the **Auth-Key**. Do not reuse another person's key.
 2. In AtlasSOC add the key as described in [How to add a key](#add-a-key), then enable ThreatFox and/or URLhaus
    separately. SSLBL needs no key.
-3. The key is stored in Windows Credential Manager or the macOS Keychain and sent only to
-   `threatfox-api.abuse.ch` / `urlhaus-api.abuse.ch`. URLhaus places it in the request path, so the app never
-   logs or displays that path.
+3. The respective provider endpoints are `threatfox-api.abuse.ch` and `urlhaus-api.abuse.ch`.
+   The URLhaus recent API integration uses the `Auth-Key` header.
 4. ThreatFox/URLhaus refresh at most every 15 minutes (the provider's floor is 5 minutes). Disable a source to
    stop its requests immediately.
 5. abuse.ch's community API is free under its fair-use principles; commercial use may require the paid abuse.ch
@@ -77,7 +74,7 @@ at the provider if you think it leaked. Each key only unlocks the free tier of i
 
 1. Sign in at https://otx.alienvault.com/, open the account/API settings and copy the API key.
 2. Add the key as described in [How to add a key](#add-a-key) and enable **AlienVault OTX**.
-3. The key is sent only in the `X-OTX-API-KEY` header to `otx.alienvault.com`, one attempt per 15-minute poll.
+3. The key is sent only in the `X-OTX-API-KEY` header to `otx.alienvault.com`, with at least 15 minutes between scheduled polls. A poll can read several result pages.
    The app keeps public TLP white/green pulses only; private, amber and red pulses are dropped.
 4. Free OTX use is non-commercial; pulse licences can still restrict redistribution. Do not publish pulse
    content beyond what AtlasSOC displays.
@@ -97,6 +94,7 @@ at the provider if you think it leaked. Each key only unlocks the free tier of i
 ## SSLMate Cert Spotter
 
 <a id="sslmated-cert-spotter"></a>
+<a id="sslmate-cert-spotter"></a>
 
 1. Create a free SSLMate account for the CT Search API at https://sslmate.com/signup?for=ct_search_api and an API
    key with the usage **Certificate Transparency Search** (steps in the provider table above). API reference:
@@ -104,7 +102,7 @@ at the provider if you think it leaked. Each key only unlocks the free tier of i
 2. Add the key as described in [How to add a key](#add-a-key), then enter **only domains you are authorised to
    watch** (up to 10). The app polls each domain at most hourly, at most 8 full-domain queries per hour.
 3. The watched domain and key go to `api.certspotter.com`; no other data is sent. The provider may change the API
-   without notice. Free-tier limits are shown on https://sslmate.com/pricing and in your SSLMate account.
+   without notice. Free-tier limits are shown on https://sslmate.com/pricing/ct_search_api and in your SSLMate account.
 
 ## Cloudflare Radar (existing optional source)
 
@@ -128,12 +126,10 @@ click-keyed as above.
 
 <a id="key-storage"></a>
 
-- Keys are stored by Windows Credential Manager or the macOS Keychain, never in the app's settings file, logs,
-  crash reports or Git.
+- On macOS, AtlasSOC stores credentials in Keychain and loads them into memory for API requests.
 - The Settings screen has one on/off switch per source. **Off means no background request for that source**:
   the worker does not fetch it, does not queue a retry and does not send a stored key.
-- Removing a key disables the keyed source. An invalid/revoked key stops after 401/403; the app does not retry in
-  a loop.
+- To stop future polls, switch the source off in Settings. Use **Remove key** to remove its saved credential.
 - The app never fetches a URL, domain or address taken from threat data. Links are defanged and only the
   provider's own page is linked.
 
@@ -152,8 +148,8 @@ The Windows beta is **unsigned**. These prompts are expected; do not disable Win
 4. **Defender** may scan or quarantine the new unsigned executable. Do not add a broad exclusion or disable
    Defender. If it quarantines the verified package, report the detection to the maintainer with the exact file
    hash and package name; use the previous working version meanwhile.
-5. After install, open **Settings → OSINT sources**, verify that a disabled source makes no requests, and enter
-   only the tester's own keys. Uninstall/restore the previous saver or app when the test is done.
+5. After install, open **Settings → OSINT sources**, verify that a disabled source makes no requests, and use
+   the sources available in the Windows build. Uninstall/restore the previous saver or app when the test is done.
 
 ## macOS first open (when a macOS beta exists)
 
