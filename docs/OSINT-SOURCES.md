@@ -151,6 +151,8 @@ fetch a listed domain.
 
 ## Keys, storage and privacy
 
+Key setup and first-run approval steps are in [OSINT-API-KEYS.md](OSINT-API-KEYS.md).
+
 - Keys are entered in the app and stored in Windows Credential Manager / macOS Keychain under the existing
   credential-store pattern. They are sent only to the provider they belong to, never to another source, never
   in a URL that is logged, and never in Git.
