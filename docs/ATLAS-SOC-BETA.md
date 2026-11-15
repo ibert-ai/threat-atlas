@@ -22,6 +22,23 @@ Before the normal app constructs a feed/worker, the user must accept the display
 
 After consent, GreyNoise uses `wss://threat-map-api.greynoise.io/ws` with TLS validation. No probing of observed hosts or added analytics. macOS Radar is opt-in: the tester supplies their own Account/Radar/Read token (step-by-step: [CLOUDFLARE-RADAR-TOKEN-GUIDE.md](CLOUDFLARE-RADAR-TOKEN-GUIDE.md)), stored in macOS Keychain service `ThreatAtlas.PrivateRadarBeta`, account `RadarRead`. Requests go to `api.cloudflare.com`; minimum15 minutes, persisted cooldown, retry/backoff and single-worker lock. Saved aggregate cache/worker lock is under Application Support/ThreatAtlasPrivateRadar. The token is not exported in packages. On Windows the token is stored in Windows Credential Manager (`AtlasSOC/CloudflareRadar`) and the cache/state under `%LOCALAPPDATA%\ThreatAtlasSOC`; same request floor, backoff and single-worker rules. Running saver and standalone may create separate GreyNoise connections. Third-party servers receive normal connection metadata/public IP.
 
+## Shodan InternetDB (Windows Desktop beta)
+
+This lookup is available in Windows beta builds with ATLAS-OSINT-008.
+
+1. Copy a single public IPv4 or IPv6 address to the clipboard.
+2. In AtlasSOC, right-click and choose **Look up IP from clipboard (Shodan InternetDB)...**.
+3. Check the address in the prompt and select **Yes** to proceed. A fresh lookup sends that address and your public IP address to Shodan. Select **No** to cancel.
+4. Choose **Show last InternetDB result** to see the answer. If the lookup is still running, open the result again after a few seconds.
+
+[Shodan InternetDB](https://internetdb.shodan.io/) can show previously observed
+ports, hostnames, software identifiers, tags and possible vulnerabilities.
+Shodan refreshes the dataset weekly. Treat results as context because they may
+be stale, and an empty result only means Shodan has no information for that IP.
+AtlasSOC accepts public addresses only and reuses answers for up to 24 hours
+from its local cache of up to 200 entries. The free lookup is for non-commercial
+use and requires no Shodan account or API key. See the [privacy policy](../PRIVACY.md).
+
 ## Known limits
 
 Unsigned Windows distribution (the Mac app is Developer ID signed and notarised); no trusted automatic update. No standalone installer/upgrade acceptance, physical mixed-DPI/multimonitor/hotplug/Intel-hardware certification, eight-hour soak or full sleep/wake validation. Mirroring is not per-display SOC wall roles or spanning. Dense Radar labels can overlap. Immediate feed-worker shutdown can be delayed during DNS/connect. See SECURITY.md and the versioned verification record; passing offline smoke does not prove live networking or physical hardware coverage.
