@@ -39,15 +39,18 @@ After consent, the Windows Desktop app sends one anonymous request to `api.githu
 ## OSINT sources (AtlasSOC Desktop 0.8.0 beta, draft)
 
 This section applies only when an OSINT source is enabled. The sources are optional and all are non-commercial.
-The full user guide is [docs/OSINT-SOURCES.md](docs/OSINT-SOURCES.md).
+The full user guide is [docs/OSINT-SOURCES.md](docs/OSINT-SOURCES.md); key setup and tester approval steps are in
+[docs/OSINT-API-KEYS.md](docs/OSINT-API-KEYS.md).
 
-- **Keyless feeds:** CISA KEV and FIRST EPSS, the Tor Project exit list, SANS ISC/DShield, Team Cymru ASN,
-  abuse.ch SSLBL, ransomware.live, Shodan InternetDB, Spamhaus DROP and the Phishing.Database list. Each provider
-  receives the user's public IP address and normal HTTPS request metadata when the app fetches the feed. No
-  account, token, screen content or address from the user's own network is sent with those fetches.
-- **Click-only lookups:** Shodan InternetDB and AbuseIPDB receive one **public** IP address, and only when the user
-  explicitly asks for it. For InternetDB the address is read from the clipboard after a confirmation that names
-  Shodan as the recipient; Shodan also sees the user's public IP. Private, loopback, link-local, multicast,
+- **Keyless feed providers:** CISA (`cisa.gov`), FIRST EPSS (`epss.empiricalsecurity.com`), the Tor Project
+  (`check.torproject.org`), SANS ISC (`isc.sans.edu`), Team Cymru, abuse.ch (`urlhaus-api.abuse.ch`,
+  `threatfox-api.abuse.ch`, `sslbl.abuse.ch`), Spamhaus (`spamhaus.org`), ransomware.live (`ransomware.live`) and
+  GitHub raw for the Phishing.Database list. Each sees the tester's public IP and normal HTTPS request metadata
+  when the app fetches the feed. No account, token, screen content or address from the user's own network is sent
+  with those fetches.
+- **Click-only lookups:** Shodan InternetDB receives the clicked **public** IP and the tester's public IP after an
+  explicit clipboard confirmation naming Shodan; AbuseIPDB receives the clicked public IP and the tester's own
+  key. Neither is called unless the user explicitly asks for it. Private, loopback, link-local, multicast,
   documentation and other non-public addresses are never sent. Results are cached locally for 24 hours (at most
   200 InternetDB entries) and are not uploaded.
 - **Keyed sources:** abuse.ch ThreatFox/URLhaus, AlienVault OTX, AbuseIPDB and SSLMate Cert Spotter use the user's
