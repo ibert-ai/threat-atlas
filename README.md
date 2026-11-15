@@ -112,6 +112,12 @@ This viewer cannot verify provider event age or authenticity. Availability and
 schema may change. Review the provider's terms before redistributing or using
 its feed commercially; the MIT license covers this project's code, not telemetry.
 
+**Your own API keys (optional).** Some data sources need a free key of your own. The
+[key guide](docs/OSINT-API-KEYS.md) shows how to get and add one. If you want help
+with the steps, it also contains a [copy-and-paste prompt for any AI assistant](docs/OSINT-API-KEYS.md#ai-guide),
+with a plain list of [what the prompt does and does not do](docs/OSINT-API-KEYS.md#ai-guide-limits).
+Never paste a key into a chat.
+
 ## Build and check
 
 Install Python 3.9+ and current stable Rust. macOS requires Xcode Command Line Tools; Windows
@@ -152,6 +158,14 @@ checks the external feed for increasing records and changed payloads, producing
 frames and JSON. It needs network access and is not an offline CI test.
 
 [Quality review and limitations](docs/QUALITY.md) · [Security policy](SECURITY.md)
+
+## Support the project
+
+Threat Atlas is free and runs without profit. If you want to help cover
+code-signing certificates and licences, you can leave a voluntary tip on
+[Ko-fi](https://ko-fi.com/threatatlas). Tips give no extra features, support or
+rights, and are not required to use the software. All money goes back into the
+project; see [where the money goes](docs/SUPPORT.md).
 
 ## License
 

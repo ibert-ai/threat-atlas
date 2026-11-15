@@ -69,6 +69,85 @@ offers one. Create the account with an address you can open, because most provid
 Keep every key private: treat it like a password, never paste it in chat, e-mail or an issue, and delete a key
 at the provider if you think it leaked. Each key only unlocks the free tier of its own account.
 
+## Let an AI assistant guide you (optional)
+
+<a id="ai-guide"></a>
+
+You can paste the prompt below into any AI assistant (ChatGPT, Claude, Gemini, a local model, and so on). It
+walks you through the sign-up and the AtlasSOC settings one small step at a time. You still do every step
+yourself: the assistant cannot see your screen or your keys and does not set anything up for you.
+
+**Important:** never paste an API key, password or verification code into the chat. Copy the key from the
+provider's website straight into AtlasSOC's key box. An assistant may make mistakes or be out of date, so if its
+instructions do not match what you see, trust what is on the screen and the steps in this guide.
+
+### What the prompt does and does not do
+
+<a id="ai-guide-limits"></a>
+
+**What it does**
+- It is written to work with any AI assistant that can chat: the large cloud assistants, smaller models, and
+  local or open models (for example through Hugging Face, DeepSeek, Ollama or LM Studio). It needs no web access,
+  plugins, settings or system prompt. It is short and plain on purpose, so smaller models can follow it. Smaller
+  models make more mistakes; if one does, trust this guide and your screen.
+- You copy it and paste it into any AI assistant. The assistant first asks which computer you use (macOS or
+  Windows) and which source you want.
+- It gives one small step at a time and waits for your answer. It uses only the official addresses (abuse.ch,
+  AlienVault OTX, AbuseIPDB, SSLMate) and the steps from this guide, so it works even if the assistant cannot
+  browse the web.
+- It shows how the key is added in AtlasSOC on macOS and Windows, and what to do if a key is refused.
+- It reminds you that the account must be your own and free, that use is non-commercial, and that you may only
+  watch domains you are allowed to watch.
+
+**What it does not do**
+- It does not set anything up for you. You make every click and every entry yourself.
+- It does not see your screen, your keys or your accounts, and nobody at Threat Atlas receives your chat or your
+  keys.
+- It never asks for a key, password or verification code in the chat, and it will not check or enter a key for
+  you. If you paste a key by mistake, delete it at the provider and create a new one.
+- The key goes only from the provider's website directly into AtlasSOC's own key box, where it is stored in the
+  macOS Keychain or Windows Credential Manager.
+- It does not say that it works until you confirm that the source row in AtlasSOC shows data.
+- It is not a guarantee. An assistant can be wrong or out of date. If it disagrees with this guide or with what
+  you see on screen, this guide and your screen are right. We do not control any assistant and do not run or
+  see your conversation.
+
+Copy everything in the box:
+
+```text
+TASK: Help me add my own free API keys to AtlasSOC (Threat Atlas SOC, a desktop app). Guide me one small step at a time.
+
+MOST IMPORTANT RULES
+1. Every reply has exactly one step line, then one question line ending in "?". Nothing else. Then wait for me.
+2. Never accept a key, password or code in this chat, and never sign in for me. If I ask you to check, enter, save or test a key, reply only: "I cannot check or enter keys. Copy the key from the provider straight into AtlasSOC's key box yourself." If I paste a key or password anyway, say "It is now exposed. Do not use it." Give one step: delete it at the provider. Ask only: "Have you deleted it?" Do not guess button names.
+3. Certificate watch only for domains I own or have written permission to watch. If I name a company, client, competitor or a domain I do not own, reply only: "I can only help with a domain you own, for your own non-commercial use. Do you own it?" Give no steps.
+
+OTHER RULES
+4. Answer in the language I write in (for example Swedish if I write Swedish). Keep addresses and button names exactly as written here, in English. Use plain short sentences.
+5. Use only the addresses below. Never make up addresses, buttons or settings. If you are not sure, say "I am not sure, please follow the text on your screen and the official guide" and stop guessing.
+6. Only my own account, free plan, non-commercial use.
+7. You cannot see my screen. Never say it works. If I say "it works" without quoting words, ask only: "What exact words does the source row in AtlasSOC show?" Say it works only after I quote words that show data.
+
+FIRST REPLY: if I have not yet told you my computer and the source, send only this text with no greeting before it: "Which computer do you use (macOS or Windows), and which source do you want: abuse.ch, AlienVault OTX, AbuseIPDB or SSLMate certificate watch?" If I already told you both, skip it and give step 1 for that source.
+
+SOURCES (keys are optional and free)
+- abuse.ch (ThreatFox + URLhaus, one key for both): https://auth.abuse.ch/ . Sign in (Google works), create the profile, then Auth Key > Generate Key. The key is shown only once.
+- AlienVault OTX: https://otx.alienvault.com/ . Sign Up, open Settings, the key is the "OTX Key" line.
+- AbuseIPDB: https://www.abuseipdb.com/register . Free Individual plan, confirm the e-mail, then My API > Keys > Create > Show.
+- SSLMate certificate watch: https://sslmate.com/signup?for=ct_search_api . Create the account, then API Keys > Create an API key with usage "Certificate Transparency Search".
+
+IN ATLASSOC
+- macOS: AtlasSOC > Settings (Command-comma) > the source > Add key... > paste > Save > switch the source on. If macOS asks about the Keychain, choose Always Allow. If a key is already saved, press Replace key... instead.
+- Windows: right-click the window > Settings > API keys > the provider > paste the key in the Password field (leave the User name) > OK > Settings > Data sources > tick the source. Windows has no "Replace key...": to replace a key, use Settings > API keys > Remove ... key, then add the key again.
+- Certificate watch domains (up to 10): macOS: text field on the Certificate watch row, then Save domains. Windows: Settings > API keys > Certificate watch: set domains..., domains separated by commas in the User name box, password empty.
+- If AtlasSOC says the key was refused: the whole key must be pasted without spaces and the account e-mail must be confirmed; then replace the key as above.
+
+FINISH: ask "Which source is it, and what exact words does its row in AtlasSOC show?"
+```
+
+If the assistant and this guide disagree, the guide is correct. Report guide mistakes at
+https://github.com/ibert-ai/threat-atlas/issues (never include a key).
+
 ## abuse.ch Auth-Key
 
 <a id="abusech-auth-key"></a>
