@@ -8,7 +8,7 @@ use crate::osint_net::{Fetch, Reply};
 use crate::{
     feed::now_ms,
     osint::{self, EpssScore, KevWithEpss, RateGate, SansReport, Source},
-    osint_abusech,
+    osint_abusech::{self, UrlhausSummary},
     osint_internetdb::{self, InternetDbHost, Lookup},
     osint_otx::{self, OtxError},
     osint_phishtank::{self, DomainSet, FeedState},
@@ -101,6 +101,8 @@ pub struct View {
     pub ransom_updated_ms: u64,
     pub otx: Option<OtxSummary>,
     pub otx_updated_ms: u64,
+    pub urlhaus: Option<UrlhausSummary>,
+    pub urlhaus_updated_ms: u64,
     pub spamhaus: Option<Arc<SpamhausData>>,
     pub phish: Option<Arc<DomainSet>>,
     pub phish_state: FeedState,
@@ -163,6 +165,8 @@ struct Cache {
     ransom_updated_ms: u64,
     otx: Option<OtxSummary>,
     otx_updated_ms: u64,
+    urlhaus: Option<UrlhausSummary>,
+    urlhaus_updated_ms: u64,
     spamhaus_updated_ms: u64,
     phish_state: FeedState,
     phish_fingerprint: String,
@@ -316,6 +320,8 @@ fn publish(
         ransom_updated_ms: cache.ransom_updated_ms,
         otx: cache.otx.clone(),
         otx_updated_ms: cache.otx_updated_ms,
+        urlhaus: cache.urlhaus.clone(),
+        urlhaus_updated_ms: cache.urlhaus_updated_ms,
         spamhaus,
         phish,
         phish_state: cache.phish_state.clone(),
@@ -932,6 +938,82 @@ fn worker(
                                 _ => gate(&mut gates, Source::Otx)
                                     .failure(now, otx_spec.min_interval_ms),
                             }
+                        }
+                    }
+                    dirty = true;
+                }
+            }
+        }
+
+        let urlhaus_spec = osint::source_spec(Source::Urlhaus);
+        if on(Source::Urlhaus) && gate(&mut gates, Source::Urlhaus).due(now) {
+            let key = keys.lock().unwrap().get(urlhaus_spec.id).cloned();
+            match key {
+                None => {
+                    notes.insert(
+                        "URLhaus".to_string(),
+                        "URLhaus: no abuse.ch Auth-Key yet. Add it in Settings.".to_string(),
+                    );
+                    dirty = true;
+                }
+                Some(key) if !osint_abusech::looks_like_auth_key(&key) => {
+                    notes.insert(
+                        "URLhaus".to_string(),
+                        "URLhaus: the key does not look like an abuse.ch Auth-Key".to_string(),
+                    );
+                    dirty = true;
+                }
+                Some(key) => {
+                    let headers = format!(
+                        "Accept: application/json\r\nAuth-Key: {key}\r\nUser-Agent: AtlasSOC-OSINT (+https://ibert.se)\r\n"
+                    );
+                    match fetch_public(
+                        osint_abusech::URLHAUS_HOST,
+                        osint_abusech::URLHAUS_RECENT_PATH,
+                        &headers,
+                        osint_abusech::MAX_URLHAUS_BYTES,
+                    ) {
+                        Some(reply) if reply.status == 200 => {
+                            match osint_abusech::parse_urlhaus_recent(&reply.body) {
+                                Ok(summary) => {
+                                    cache.urlhaus = Some(summary);
+                                    cache.urlhaus_updated_ms = now;
+                                    gate(&mut gates, Source::Urlhaus)
+                                        .success(now, urlhaus_spec.min_interval_ms);
+                                    notes.remove("URLhaus");
+                                }
+                                Err(error) => {
+                                    notes
+                                        .insert("URLhaus".to_string(), format!("URLhaus: {error}"));
+                                    gate(&mut gates, Source::Urlhaus)
+                                        .failure(now, urlhaus_spec.min_interval_ms);
+                                }
+                            }
+                        }
+                        Some(reply) => {
+                            let text = match reply.status {
+                                401 | 403 => {
+                                    "URLhaus: the abuse.ch Auth-Key was refused".to_string()
+                                }
+                                429 => "URLhaus: throttled, waiting".to_string(),
+                                status => format!("URLhaus: HTTP {status}"),
+                            };
+                            notes.insert("URLhaus".to_string(), text);
+                            match (reply.status, reply.retry_after_s) {
+                                (429, Some(seconds)) => {
+                                    gate(&mut gates, Source::Urlhaus).retry_after(now, seconds)
+                                }
+                                _ => gate(&mut gates, Source::Urlhaus)
+                                    .failure(now, urlhaus_spec.min_interval_ms),
+                            }
+                        }
+                        None => {
+                            notes.insert(
+                                "URLhaus".to_string(),
+                                "URLhaus: no connection".to_string(),
+                            );
+                            gate(&mut gates, Source::Urlhaus)
+                                .failure(now, urlhaus_spec.min_interval_ms);
                         }
                     }
                     dirty = true;

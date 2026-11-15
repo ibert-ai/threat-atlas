@@ -52,6 +52,7 @@ pub fn page(source: Source, view: &View, clipboard: &str, now_ms: u64) -> String
         Source::PhishTank => phishing(view, clipboard, now_ms),
         Source::Sslbl => sslbl(view, now_ms),
         Source::Otx => otx(view, now_ms),
+        Source::Urlhaus => urlhaus(view, now_ms),
         Source::ShodanInternetDb => internetdb(view, now_ms),
         _ => "This source is not available in this build yet.".into(),
     };
@@ -77,6 +78,7 @@ fn note_for(view: &View, source: Source) -> Option<&str> {
         Source::Sslbl => "SSLBL",
         Source::SpamhausDrop => "Spamhaus DROP",
         Source::Otx => "OTX",
+        Source::Urlhaus => "URLhaus",
         _ => return None,
     };
     view.notes.get(key).map(String::as_str)
@@ -130,6 +132,13 @@ pub fn status(source: Source, view: &View, now_ms: u64) -> String {
             view.phish_state.fetched_at_ms().unwrap_or(0),
             format!("{} domains", view.phish.as_ref().map_or(0, |s| s.len())),
         ),
+        Source::Urlhaus => waiting(
+            view.urlhaus_updated_ms,
+            format!(
+                "{} recent URLs",
+                view.urlhaus.as_ref().map_or(0, |u| u.total)
+            ),
+        ),
         Source::Otx => waiting(
             view.otx_updated_ms,
             format!("{} pulses", view.otx.as_ref().map_or(0, |o| o.pulses)),
@@ -158,6 +167,7 @@ pub fn what(source: Source) -> &'static str {
         Source::SpamhausDrop => "Network ranges Spamhaus advises never to route. Check whether an IP address is inside one.",
         Source::PhishTank => "A public list of known phishing domains. Check whether a domain or link is on it.",
         Source::Sslbl => "SSL certificates abuse.ch links to botnet command servers.",
+        Source::Urlhaus => "How many malware-download links abuse.ch URLhaus lists as recent, how many are online, and the most common malware tags. No links are shown. Needs your own free abuse.ch Auth-Key.",
         Source::Otx => "Recent public threat reports from the AlienVault OTX community: malware families and targeted countries. Needs your own free API key.",
         _ => "",
     }
@@ -287,6 +297,24 @@ pub fn cards(view: &View, enabled: &[String], now_ms: u64) -> Vec<IntelCard> {
             caption: format!("{} INDICATORS, COMMUNITY REPORTS", o.indicators),
             rows: o
                 .families
+                .iter()
+                .take(5)
+                .map(|(name, count)| IntelRow {
+                    label: up(name).chars().take(16).collect(),
+                    fraction: Some(*count as f32 / max),
+                    value: count.to_string(),
+                })
+                .collect(),
+        });
+    }
+    if let Some(u) = view.urlhaus.as_ref().filter(|_| on(Source::Urlhaus)) {
+        let max = u.tags.iter().map(|t| t.1).max().unwrap_or(1).max(1) as f32;
+        out.push(IntelCard {
+            title: "URLHAUS MALWARE LINKS / RECENT".into(),
+            headline: format!("{} LINKS", u.total),
+            caption: format!("{} ONLINE NOW, COUNTS ONLY", u.online),
+            rows: u
+                .tags
                 .iter()
                 .take(5)
                 .map(|(name, count)| IntelRow {
@@ -456,6 +484,32 @@ fn phishing(view: &View, clipboard: &str, now: u64) -> String {
         None => text.push_str("\nTo check a domain or link, copy it and open this page again. Nothing is opened or sent."),
     }
     text
+}
+
+fn urlhaus(view: &View, now: u64) -> String {
+    let Some(u) = &view.urlhaus else {
+        return "No data yet. Add your free abuse.ch Auth-Key in Settings; the first poll follows."
+            .into();
+    };
+    let list = |items: &[(String, u32)]| {
+        if items.is_empty() {
+            "none".to_string()
+        } else {
+            items
+                .iter()
+                .map(|(n, c)| format!("{n} ({c})"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        }
+    };
+    format!(
+        "Recent malware-download links listed by abuse.ch URLhaus: {}\nOnline now: {}\nUpdated: {}\n\nThreat types: {}\nCommon tags: {}\n\nCounts only: no link or address is stored, shown or opened. Community fair-use API, non-commercial.",
+        u.total,
+        u.online,
+        age(view.urlhaus_updated_ms, now),
+        list(&u.threats),
+        list(&u.tags),
+    )
 }
 
 fn otx(view: &View, now: u64) -> String {

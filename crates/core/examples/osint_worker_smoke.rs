@@ -11,6 +11,36 @@ fn main() {
         .map(|s| osint::source_spec(*s).id.to_owned())
         .collect();
     let worker = Osint::start(dir.clone(), enabled, osint_net::https_get);
+    // Keyed sources: read each key from the macOS Keychain through `security` (service ThreatAtlas.OSINT)
+    // and hand it to the worker. The key is never printed.
+    for source in LIVE_SOURCES {
+        let spec = osint::source_spec(source);
+        if !spec.requires_key {
+            continue;
+        }
+        let account = match spec.id {
+            "alienvault-otx" => "otx",
+            "abuseipdb" => "abuseipdb",
+            "urlhaus" | "threatfox" => "abusech",
+            other => other,
+        };
+        if let Ok(out) = std::process::Command::new("/usr/bin/security")
+            .args([
+                "find-generic-password",
+                "-s",
+                "ThreatAtlas.OSINT",
+                "-a",
+                account,
+                "-w",
+            ])
+            .output()
+        {
+            if out.status.success() {
+                let key = String::from_utf8_lossy(&out.stdout).trim().to_owned();
+                worker.set_key(source, Some(key));
+            }
+        }
+    }
     worker.lookup("1.1.1.1".parse().unwrap());
     std::thread::sleep(std::time::Duration::from_secs(60));
     let view = worker.view();

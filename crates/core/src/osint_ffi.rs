@@ -13,7 +13,7 @@ use std::{
 };
 
 /// Sources with a working integration in this build, in menu order.
-pub const LIVE_SOURCES: [Source; 9] = [
+pub const LIVE_SOURCES: [Source; 10] = [
     Source::CisaKev,
     Source::TorExit,
     Source::SansIsc,
@@ -23,6 +23,7 @@ pub const LIVE_SOURCES: [Source; 9] = [
     Source::PhishTank,
     Source::Sslbl,
     Source::Otx,
+    Source::Urlhaus,
 ];
 
 pub struct OsintHandle {
@@ -246,7 +247,7 @@ mod tests {
         assert!(LIVE_SOURCES
             .iter()
             .filter(|s| osint::source_spec(**s).requires_key)
-            .all(|s| *s == Source::Otx));
+            .all(|s| matches!(*s, Source::Otx | Source::Urlhaus)));
     }
 
     #[test]

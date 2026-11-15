@@ -23,7 +23,7 @@ enum OsintKeys {
     static func account(_ id: String) -> String {
         switch id {
         case "alienvault-otx": return "otx"
-        case "abusech-threatfox", "abusech-urlhaus": return "abusech"
+        case "threatfox", "urlhaus": return "abusech"
         case "abuseipdb": return "abuseipdb"
         case "cert-spotter": return "certspotter"
         default: return id
