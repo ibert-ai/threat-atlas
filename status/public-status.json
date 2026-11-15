@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-14T08:28:49Z",
-  "source_updated_at": "2026-11-14T08:28:49Z",
+  "generated_at": "2026-11-15T19:55:23Z",
+  "source_updated_at": "2026-11-15T19:55:23Z",
   "title": "Atlas — Project status",
   "state": "Screensaver 0.4.8 stable · AtlasSOC Desktop 0.7.0 stable (Windows + macOS) · AtlasSOC Linux preview",
   "summary": "Screensaver 0.4.8 (build 16) and AtlasSOC Desktop 0.7.0 (build 13) were published as stable on 11 Nov 2026 from commit 7fba1cc; every asset was downloaded back and its SHA-256 verified. macOS packages are Developer ID signed and notarized. Windows packages are still unsigned: a Certum certificate was ordered on 14 Nov 2026. An AtlasSOC Linux preview (no Radar) followed on 12 Nov 2026.",
@@ -182,9 +182,9 @@
   },
   "desktop": {
     "name": "AtlasSOC Desktop",
-    "state": "0.7.0 stable (Windows + macOS) · Linux preview",
-    "summary": "Stable 0.7.0 (build 13) for Windows x64 (installer and ZIP) and macOS universal (Developer ID signed, notarized), with Cloudflare Radar, wide layout, Dashboard layout and an update check on Windows. A Linux x86_64 preview (no Radar) was published on 12 Nov 2026 as a separate pre-release. Windows packages are unsigned.",
-    "updated_at": "2026-11-14T08:28:49Z",
+    "state": "0.7.0 stable (Windows + macOS) · 0.8.0-rc.1 release candidate (pre-release) · Linux preview",
+    "summary": "AtlasSOC Desktop 0.8.0-rc.1 (build 15) was published as a pre-release on 15 Nov 2026 for Windows x64 (unsigned) and macOS (Developer ID signed, notarized): 13 optional OSINT sources, keys in the system credential store, an AI help prompt for getting free keys and a voluntary support link. It is not the latest stable; 0.7.0 remains stable. Tag atlassoc-v0.8.0-rc.1, source commit 4434b91.",
+    "updated_at": "2026-11-15T19:55:23Z",
     "release": {
       "name": "AtlasSOC Desktop 0.7.0 / build 13",
       "decision": "PUBLISHED STABLE · Windows x64 + macOS universal · Linux preview",
