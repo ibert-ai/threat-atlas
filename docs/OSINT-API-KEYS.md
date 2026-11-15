@@ -1,8 +1,7 @@
 # OSINT API keys and first-run approvals
 
 Draft for **AtlasSOC Desktop 0.8.0-beta.1**. This page is for testers and customers. Keys are optional; the base GreyNoise
-view needs none. Each key belongs to the tester, is stored by the operating system, and is sent only to the
-provider it belongs to.
+view needs none. Each key belongs to the tester, is stored by the operating system, and is used to authenticate requests to its provider.
 
 ## Keyed sources at a glance
 
@@ -56,6 +55,8 @@ at the provider if you think it leaked. Each key only unlocks the free tier of i
 
 ## abuse.ch Auth-Key
 
+URLhaus integration is in development. ThreatFox setup applies once that source is available in your build.
+
 <a id="abusech-auth-key"></a>
 
 1. Create a free account at https://auth.abuse.ch/ and copy the **Auth-Key**. Do not reuse another person's key.
@@ -74,12 +75,12 @@ at the provider if you think it leaked. Each key only unlocks the free tier of i
 
 1. Sign in at https://otx.alienvault.com/, open the account/API settings and copy the API key.
 2. Add the key as described in [How to add a key](#add-a-key) and enable **AlienVault OTX**.
-3. The key is sent only in the `X-OTX-API-KEY` header to `otx.alienvault.com`, with at least 15 minutes between scheduled polls. A poll can read several result pages.
+3. The OTX request uses the `X-OTX-API-KEY` header with `otx.alienvault.com`, with at least 15 minutes between scheduled polls. A poll can read several result pages.
    The app keeps public TLP white/green pulses only; private, amber and red pulses are dropped.
 4. Free OTX use is non-commercial; pulse licences can still restrict redistribution. Do not publish pulse
    content beyond what AtlasSOC displays.
 
-## AbuseIPDB
+## AbuseIPDB (planned)
 
 <a id="abuseipdb"></a>
 
@@ -91,7 +92,7 @@ at the provider if you think it leaked. Each key only unlocks the free tier of i
    other non-public addresses are never sent.
 4. The clicked public IP and the key go to `api.abuseipdb.com`; AbuseIPDB also sees the tester's public IP.
 
-## SSLMate Cert Spotter
+## SSLMate Cert Spotter (planned)
 
 <a id="sslmated-cert-spotter"></a>
 <a id="sslmate-cert-spotter"></a>
