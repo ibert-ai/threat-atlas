@@ -13,6 +13,25 @@ pub const YELLOW: [u8; 3] = [242, 201, 76];
 pub const GREEN: [u8; 3] = [72, 199, 142];
 static BETA_STAMP: std::sync::Mutex<String> = std::sync::Mutex::new(String::new());
 
+/// The heading stamp for a release identity (`atlassoc-beta-version.json`): `"BETA 0.8.0 B14"` for
+/// `beta.N`, `"RC1 0.8.0 B15"` for `rc.N`, the upper-cased kind for any other prerelease, and an
+/// empty text (no stamp) for a stable release.
+pub fn release_stamp(identity: &str) -> String {
+    let value: serde_json::Value = serde_json::from_str(identity).unwrap_or_default();
+    let (Some(version), Some(build)) = (value["version"].as_str(), value["build"].as_u64()) else {
+        return String::new();
+    };
+    let Some(pre) = value["prerelease"].as_str() else {
+        return String::new();
+    };
+    let (kind, n) = pre.split_once('.').unwrap_or((pre, ""));
+    let kind = match (kind, n) {
+        ("rc", n) if !n.is_empty() => format!("RC{n}"),
+        (kind, _) => kind.to_ascii_uppercase(),
+    };
+    format!("{kind} {version} B{build}")
+}
+
 /// Hosts of beta builds call this before the first frame with the text of the stamp, for example
 /// `"BETA 0.8.0-beta.1 B14"`. An empty text means no stamp (a stable build).
 pub fn set_beta_stamp(label: &str) {
@@ -1669,6 +1688,21 @@ fn draw_icon(pixmap: &mut Pixmap, icon: &Icon, alpha: f32) {
 }
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn release_stamp_names_beta_rc_and_stable() {
+        let id = |pre: &str, build: u32| {
+            format!(r#"{{"version":"0.8.0","build":{build},"prerelease":{pre}}}"#)
+        };
+        assert_eq!(
+            super::release_stamp(&id("\"beta.1\"", 14)),
+            "BETA 0.8.0 B14"
+        );
+        assert_eq!(super::release_stamp(&id("\"rc.1\"", 15)), "RC1 0.8.0 B15");
+        assert_eq!(super::release_stamp(&id("\"rc.2\"", 16)), "RC2 0.8.0 B16");
+        assert_eq!(super::release_stamp(&id("null", 17)), "");
+        assert_eq!(super::release_stamp("not json"), "");
+    }
+
     #[test]
     fn desktop_footer_shows_the_desktop_identity_not_the_screensaver() {
         let read = |file: &str| -> serde_json::Value {

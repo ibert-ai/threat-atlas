@@ -102,7 +102,7 @@ struct RadarView: View {
     private var setupHeader: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Threat Atlas SOC Desktop").font(.largeTitle.bold())
-            Text("AtlasSOC BETA \(radarLicenseTerms.version) · build \(radarLicenseTerms.build) · Ibert Consulting").foregroundStyle(.orange)
+            Text("AtlasSOC \(radarReleaseStamp) · Ibert Consulting").foregroundStyle(.orange)
             Text("Live: GreyNoise public threat-map records as received (not unique attacks), classified by the provider. Cloudflare Radar: past-day aggregate shares; never turned into routes or individual events.")
             HStack {
                 SecureField(model.hasToken ? "Token saved in Keychain · paste a new one to replace it"
@@ -137,7 +137,7 @@ struct RadarView: View {
     private var statusItems: some View {
         HStack(spacing: 8) {
             Text("Threat Atlas SOC DESKTOP").font(.headline)
-            Text("BETA \(radarLicenseTerms.version) · \(radarLicenseTerms.build)").font(.caption.bold()).foregroundStyle(.black)
+            Text(radarReleaseStamp).font(.caption.bold()).foregroundStyle(.black)
                 .padding(.horizontal, 6).padding(.vertical, 1).background(Color.orange, in: Capsule())
             Circle().fill(model.enabled ? Color.green : Color.secondary).frame(width: 8, height: 8)
             Text(model.busy ? "Radar…" : model.enabled ? "Radar on" : "Radar paused").font(.callout)
@@ -268,7 +268,7 @@ struct TokenSettings: View {
     }
 }
 @main struct PrivateRadarApp: App {
-    init() { ta_soc_set_beta("BETA \(radarLicenseTerms.version) B\(radarLicenseTerms.build)") }
+    init() { ta_soc_set_beta(radarReleaseStamp) }
     // The licence gate wraps everything: no feed, worker or Keychain access before acceptance.
     var body: some Scene {
         WindowGroup { ConsentGate(terms: radarLicenseTerms) { RadarView().onAppear { OsintController.shared.start() } } }

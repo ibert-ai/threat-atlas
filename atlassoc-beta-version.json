@@ -1,8 +1,8 @@
 {
   "product": "AtlasSOC",
   "version": "0.8.0",
-  "build": 14,
-  "prerelease": "beta.1",
-  "tag": "atlassoc-v0.8.0-beta.1",
+  "build": 15,
+  "prerelease": "rc.1",
+  "tag": "atlassoc-v0.8.0-rc.1",
   "screensaver_version_unchanged": true
 }
