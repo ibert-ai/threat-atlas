@@ -12,6 +12,8 @@ struct OsintSettingsView: View {
     @ObservedObject private var osint = OsintController.shared
     @State private var page: OsintPage?
     @State private var confirmLookup: String?
+    @State private var keyFor: OsintSource?
+    @State private var keyText = ""
     private var version: String {
         let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
         let b = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
@@ -41,6 +43,15 @@ struct OsintSettingsView: View {
                             .id(osint.tick)
                         Text("\(source.licence) Interval at least \(source.min_minutes) min. \(source.requires_key ? "Needs your own API key." : "No key needed.")")
                             .font(.caption2).foregroundStyle(.secondary)
+                        if source.requires_key {
+                            HStack {
+                                Text(osint.keyed.contains(source.id) ? "API key: saved in the Keychain" : "API key: not set")
+                                    .font(.caption).foregroundStyle(osint.keyed.contains(source.id) ? Color.green : Color.orange)
+                                Spacer()
+                                Button(osint.keyed.contains(source.id) ? "Replace key…" : "Add key…") { keyText = ""; keyFor = source }
+                                if osint.keyed.contains(source.id) { Button("Remove key") { osint.removeKey(source.id) } }
+                            }
+                        }
                     }
                 }
                 Button("Refresh data now") { osint.refresh() }
@@ -48,7 +59,7 @@ struct OsintSettingsView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("API keys") {
-                Text("Sources that need your own API key will appear here once their key entry is added. Step-by-step instructions for every provider are kept on GitHub.")
+                Text("Keys are stored in your Keychain, held in memory by the data worker and sent only to their own provider. A keyed source stays quiet until its key is added. Step-by-step instructions for every provider are kept on GitHub.")
                     .font(.callout).foregroundStyle(.secondary)
                 Button("How to add API keys (opens GitHub)…") { NSWorkspace.shared.open(osintKeyGuideURL) }
             }
@@ -72,6 +83,20 @@ struct OsintSettingsView: View {
                 ScrollView { Text(p.text).font(.system(.body, design: .monospaced)).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) }
                 HStack { Spacer(); Button("Done") { page = nil }.keyboardShortcut(.defaultAction) }
             }.padding(20).frame(width: 640, height: 460)
+        }
+        .sheet(item: $keyFor) { source in
+            VStack(alignment: .leading, spacing: 12) {
+                Text("API key for \(source.name)").font(.headline)
+                Text("Paste the key. It is saved in your Keychain and is never written to a file or shown again.")
+                    .font(.callout).foregroundStyle(.secondary)
+                SecureField("API key", text: $keyText).textFieldStyle(.roundedBorder)
+                HStack {
+                    Spacer()
+                    Button("Cancel") { keyText = ""; keyFor = nil }
+                    Button("Save") { osint.setKey(source.id, keyText); keyText = ""; keyFor = nil }
+                        .keyboardShortcut(.defaultAction).disabled(keyText.trimmingCharacters(in: .whitespacesAndNewlines).count < 16)
+                }
+            }.padding(20).frame(width: 460)
         }
         .alert("Send this address to Shodan?", isPresented: Binding(get: { confirmLookup != nil }, set: { if !$0 { confirmLookup = nil } })) {
             Button("Look up") {

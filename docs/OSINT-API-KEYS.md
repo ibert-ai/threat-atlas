@@ -1,6 +1,6 @@
 # OSINT API keys and first-run approvals
 
-Draft for **AtlasSOC Desktop 0.8.0-beta.1**. This page is for testers. Keys are optional; the base GreyNoise
+Draft for **AtlasSOC Desktop 0.8.0-beta.1**. This page is for testers and customers. Keys are optional; the base GreyNoise
 view needs none. Each key belongs to the tester, is stored by the operating system, and is sent only to the
 provider it belongs to.
 
@@ -17,12 +17,51 @@ provider it belongs to.
 No key is used by CISA KEV, FIRST EPSS, Tor Project, SANS ISC, Team Cymru, abuse.ch SSLBL, ransomware.live,
 Shodan InternetDB, Spamhaus DROP or Phishing.Database.
 
+## How to add a key in AtlasSOC (all providers)
+
+<a id="add-a-key"></a>
+
+Keys are optional. A keyed source stays quiet (no requests at all) until you add its key **and** switch it on.
+
+**macOS**
+1. Open **Settings** (menu AtlasSOC → Settings, or Command-comma).
+2. Under **Data sources**, find the source. Under its description the row says **API key: not set**.
+3. Press **Add key…**, paste the key and press **Save**. The key goes into your Keychain (service
+   `ThreatAtlas.OSINT`) and is never written to a file, shown again or logged. macOS may ask once whether
+   AtlasSOC may use the Keychain item: choose **Always Allow**.
+4. Switch the source on. The row shows its status ("No data yet" until the first poll, which follows within a
+   minute). **Replace key…** and **Remove key** appear once a key is saved. A source that is switched off makes
+   no requests even if a key is saved.
+
+**Windows**
+Key entry for Windows (stored in Windows Credential Manager) is being added to the 0.8.0 beta. Until it ships,
+keyed sources stay quiet on Windows; the no-key sources work as described below.
+
+**If a key is refused**, the row says so ("the API key was refused"). Check that you pasted the whole key without
+spaces, that the account is verified (see the provider steps below), and add the key again. The app does not retry
+a refused key in a loop.
+
+## What each provider's sign-up looks like
+
+Provider sites change; if a button has moved, look for the words in bold. Use a Google sign-in where the provider
+offers one. Create the account with an address you can open, because most providers send a confirmation link.
+
+| Provider | Steps (about 5 minutes) |
+|---|---|
+| **abuse.ch** | 1. Open https://auth.abuse.ch/ and sign in (Google, GitHub, X, LinkedIn or an e-mail link). 2. On **Profile Settings** choose a user name and display name and press **Create Profile** (a Cloudflare check may need a click). 3. Under **Auth Key** press **Generate Key**. The key is shown **once**: copy it before you close the box. |
+| **AlienVault OTX** | 1. Open https://otx.alienvault.com/ and choose **Sign Up** (the Google button is quickest). 2. Pick a user name and country and accept the processing consent. 3. Open **Settings** (https://otx.alienvault.com/settings). Your key is the **OTX Key** line at the top. |
+| **AbuseIPDB** | 1. Open https://www.abuseipdb.com/register, choose the free **Individual** plan, fill in the form, tick the captcha and press **Register**. 2. Open the confirmation e-mail and follow its link (the key page stays closed until the address is confirmed). 3. **My API → Keys**, type a name, press **Create**, then **Show** and copy the key. |
+| **SSLMate (Cert Spotter / CT Search)** | 1. Open https://sslmate.com/signup?for=ct_search_api and create the account (user name, e-mail, password). 2. **API Keys → Create an API key**, give it a name and choose the usage **Certificate Transparency Search** (the smallest permission that works). 3. Copy the key from the page that opens. |
+
+Keep every key private: treat it like a password, never paste it in chat, e-mail or an issue, and delete a key
+at the provider if you think it leaked. Each key only unlocks the free tier of its own account.
+
 ## abuse.ch Auth-Key
 
 <a id="abusech-auth-key"></a>
 
 1. Create a free account at https://auth.abuse.ch/ and copy the **Auth-Key**. Do not reuse another person's key.
-2. In AtlasSOC, open **Settings → OSINT sources → abuse.ch** and paste the key. Enable ThreatFox and/or URLhaus
+2. In AtlasSOC add the key as described in [How to add a key](#add-a-key), then enable ThreatFox and/or URLhaus
    separately. SSLBL needs no key.
 3. The key is stored in Windows Credential Manager or the macOS Keychain and sent only to
    `threatfox-api.abuse.ch` / `urlhaus-api.abuse.ch`. URLhaus places it in the request path, so the app never
@@ -37,7 +76,7 @@ Shodan InternetDB, Spamhaus DROP or Phishing.Database.
 <a id="alienvault-otx"></a>
 
 1. Sign in at https://otx.alienvault.com/, open the account/API settings and copy the API key.
-2. In **Settings → OSINT sources → AlienVault OTX**, paste the key and enable the source.
+2. Add the key as described in [How to add a key](#add-a-key) and enable **AlienVault OTX**.
 3. The key is sent only in the `X-OTX-API-KEY` header to `otx.alienvault.com`, one attempt per 15-minute poll.
    The app keeps public TLP white/green pulses only; private, amber and red pulses are dropped.
 4. Free OTX use is non-commercial; pulse licences can still restrict redistribution. Do not publish pulse
@@ -49,7 +88,7 @@ Shodan InternetDB, Spamhaus DROP or Phishing.Database.
 
 1. Create an AbuseIPDB account and API key at https://www.abuseipdb.com/register. Use the free **Individual**
    plan (1,000 checks/day, one account per person, non-commercial).
-2. In **Settings → OSINT sources → AbuseIPDB**, paste the key and enable the click lookup.
+2. Add the key as described in [How to add a key](#add-a-key) and enable the click lookup.
 3. The app looks up an address **only after a click**, at most 800 checks per UTC day (below the plan so the
    tester's other tools keep room), caches 24 hours, and stops on 401/429. Private, loopback, link-local and
    other non-public addresses are never sent.
@@ -61,7 +100,7 @@ Shodan InternetDB, Spamhaus DROP or Phishing.Database.
 
 1. Create an SSLMate account and API key; see https://sslmate.com/help/reference/ct_search_api_v1 and the
    Cert Spotter product page.
-2. In **Settings → OSINT sources → Cert Spotter**, paste the key and enter **only domains you are authorised to
+2. Add the key as described in [How to add a key](#add-a-key), then enter **only domains you are authorised to
    watch** (up to 10). The app polls each domain at most hourly, at most 8 full-domain queries per hour.
 3. The watched domain and key go to `api.certspotter.com`; no other data is sent. The provider may change the API
    without notice. The free tier is 100 single-host / 10 full-domain queries per hour.

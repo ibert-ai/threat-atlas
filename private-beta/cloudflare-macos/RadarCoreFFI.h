@@ -36,6 +36,7 @@ void ta_soc_drop(void *session);
 void *ta_osint_start(const char *directory, const char *enabled_json);
 void ta_osint_set_enabled(void *handle, const char *enabled_json);
 void ta_osint_refresh(void *handle);
+int32_t ta_osint_set_key(void *handle, const char *source_id, const char *key);
 // 0 = queued, -1 = refused (not a public address, source off, bad input). Ask the user first.
 int32_t ta_osint_lookup(void *handle, const char *ip);
 // Writes the page text and returns its full length in bytes.

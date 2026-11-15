@@ -16,6 +16,50 @@ struct OsintSource: Identifiable, Decodable, Equatable {
     let what: String
 }
 
+/// The user'"'"'s own API keys, kept in the macOS Keychain (never in a file, preference or log).
+enum OsintKeys {
+    private static let service = "ThreatAtlas.OSINT"
+    /// Keychain account name per source id. Several sources of one provider share a key.
+    static func account(_ id: String) -> String {
+        switch id {
+        case "alienvault-otx": return "otx"
+        case "abusech-threatfox", "abusech-urlhaus": return "abusech"
+        case "abuseipdb": return "abuseipdb"
+        case "cert-spotter": return "certspotter"
+        default: return id
+        }
+    }
+    private static func query(_ id: String) -> [String: Any] {
+        [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
+         kSecAttrAccount as String: account(id)]
+    }
+    static func read(_ id: String) -> String? {
+        var q = query(id)
+        q[kSecReturnData as String] = true
+        q[kSecMatchLimit as String] = kSecMatchLimitOne
+        var value: CFTypeRef?
+        guard SecItemCopyMatching(q as CFDictionary, &value) == errSecSuccess,
+              let data = value as? Data, let key = String(data: data, encoding: .utf8) else { return nil }
+        return key.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    static func exists(_ id: String) -> Bool {
+        var q = query(id)
+        q[kSecMatchLimit as String] = kSecMatchLimitOne
+        return SecItemCopyMatching(q as CFDictionary, nil) == errSecSuccess
+    }
+    @discardableResult static func save(_ id: String, key: String) -> Bool {
+        let data = Data(key.trimmingCharacters(in: .whitespacesAndNewlines).utf8)
+        let status = SecItemUpdate(query(id) as CFDictionary, [kSecValueData as String: data] as CFDictionary)
+        if status == errSecItemNotFound {
+            var q = query(id)
+            q[kSecValueData as String] = data
+            return SecItemAdd(q as CFDictionary, nil) == errSecSuccess
+        }
+        return status == errSecSuccess
+    }
+    static func remove(_ id: String) { SecItemDelete(query(id) as CFDictionary) }
+}
+
 /// Owns the shared OSINT worker. A source that is switched off makes no request at all; the worker
 /// itself checks the switch before every request.
 final class OsintController: ObservableObject {
@@ -26,6 +70,8 @@ final class OsintController: ObservableObject {
     @Published private(set) var enabled: Set<String> = []
     /// Bumped by a timer so the status lines in Settings stay current.
     @Published private(set) var tick = 0
+    /// Which keyed sources currently have a key in the Keychain (the key itself is never published).
+    @Published private(set) var keyed: Set<String> = []
     private var timer: Timer?
     private var handle: UnsafeMutableRawPointer?
 
@@ -60,6 +106,29 @@ final class OsintController: ObservableObject {
             .appendingPathComponent("ThreatAtlasPrivateRadar/osint", isDirectory: true)
         try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         handle = ta_osint_start(base.path, json())
+        pushKeys()
+    }
+
+    /// Hands every stored key to the worker, which keeps it in memory only.
+    func pushKeys() {
+        var have: Set<String> = []
+        for source in sources where source.requires_key {
+            guard let key = OsintKeys.read(source.id) else { continue }
+            have.insert(source.id)
+            if let handle { _ = ta_osint_set_key(handle, source.id, key) }
+        }
+        keyed = have
+    }
+
+    func setKey(_ id: String, _ key: String) {
+        guard OsintKeys.save(id, key: key) else { return }
+        pushKeys()
+    }
+
+    func removeKey(_ id: String) {
+        OsintKeys.remove(id)
+        if let handle { _ = ta_osint_set_key(handle, id, nil) }
+        keyed.remove(id)
     }
 
     func startTicking() {
