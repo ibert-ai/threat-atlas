@@ -13,7 +13,7 @@ use std::{
 };
 
 /// Sources with a working integration in this build, in menu order.
-pub const LIVE_SOURCES: [Source; 11] = [
+pub const LIVE_SOURCES: [Source; 13] = [
     Source::CisaKev,
     Source::TorExit,
     Source::SansIsc,
@@ -25,6 +25,8 @@ pub const LIVE_SOURCES: [Source; 11] = [
     Source::Otx,
     Source::Urlhaus,
     Source::ThreatFox,
+    Source::AbuseIpdb,
+    Source::CertStream,
 ];
 
 pub struct OsintHandle {
@@ -141,6 +143,36 @@ pub unsafe extern "C" fn ta_osint_lookup(handle: *mut OsintHandle, ip: *const c_
     }
 }
 
+/// Replaces the certificate watch list from a JSON array of domains (at most 10 are kept). Returns how many
+/// were accepted.
+/// # Safety
+/// `handle` must be a live pointer; `json` a valid NUL-terminated string.
+#[no_mangle]
+pub unsafe extern "C" fn ta_osint_set_watch(handle: *mut OsintHandle, json: *const c_char) -> i32 {
+    let (Some(h), Some(json)) = (handle.as_ref(), text(json)) else {
+        return -1;
+    };
+    h.osint.set_watch(ids(json)) as i32
+}
+
+/// Queues one AbuseIPDB check for the address in `ip`. Returns 0 when queued, -1 when refused (not a
+/// public address, source off). The host asks the user to confirm first.
+/// # Safety
+/// `handle` must be a live pointer; `ip` a valid NUL-terminated string.
+#[no_mangle]
+pub unsafe extern "C" fn ta_osint_lookup_abuse(handle: *mut OsintHandle, ip: *const c_char) -> i32 {
+    let (Some(h), Some(ip)) = (handle.as_ref(), text(ip)) else {
+        return -1;
+    };
+    match crate::osint_internetdb::parse_ip_text(ip) {
+        Some(ip) if crate::osint_abuseipdb::is_lookup_allowed(ip) => {
+            h.osint.lookup_abuse(ip);
+            0
+        }
+        _ => -1,
+    }
+}
+
 /// Writes the text page of one source into `out` and returns its full length in bytes.
 /// # Safety
 /// `handle` must be a live pointer; strings valid; `out` writable for `cap` bytes (or null).
@@ -214,7 +246,7 @@ pub unsafe extern "C" fn ta_osint_sources(out: *mut u8, cap: usize) -> usize {
                 "requires_key": spec.requires_key,
                 "default_on": osint::default_enabled(*s),
                 "what": osint_text::what(*s),
-                "clipboard": matches!(s, Source::ShodanInternetDb | Source::SpamhausDrop | Source::PhishTank),
+                "clipboard": matches!(s, Source::ShodanInternetDb | Source::SpamhausDrop | Source::PhishTank | Source::AbuseIpdb),
             })
         })
         .collect();
@@ -251,7 +283,14 @@ mod tests {
         assert!(LIVE_SOURCES
             .iter()
             .filter(|s| osint::source_spec(**s).requires_key)
-            .all(|s| matches!(*s, Source::Otx | Source::Urlhaus | Source::ThreatFox)));
+            .all(|s| matches!(
+                *s,
+                Source::Otx
+                    | Source::Urlhaus
+                    | Source::ThreatFox
+                    | Source::AbuseIpdb
+                    | Source::CertStream
+            )));
     }
 
     #[test]

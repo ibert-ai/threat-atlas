@@ -23,6 +23,7 @@ fn main() {
             "alienvault-otx" => "otx",
             "abuseipdb" => "abuseipdb",
             "urlhaus" | "threatfox" => "abusech",
+            "cert-watch" => "certspotter",
             other => other,
         };
         if let Ok(out) = std::process::Command::new("/usr/bin/security")
@@ -43,6 +44,8 @@ fn main() {
         }
     }
     worker.lookup("1.1.1.1".parse().unwrap());
+    worker.lookup_abuse("8.8.8.8".parse().unwrap());
+    worker.set_watch(vec!["ibert.se".to_string()]);
     std::thread::sleep(std::time::Duration::from_secs(60));
     let view = worker.view();
     let now = threat_atlas_core::feed::now_ms();

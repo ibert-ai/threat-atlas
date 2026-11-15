@@ -9,6 +9,8 @@ use crate::{
     feed::now_ms,
     osint::{self, EpssScore, KevWithEpss, RateGate, SansReport, Source},
     osint_abusech::{self, ThreatFoxSummary, UrlhausSummary},
+    osint_abuseipdb::{self, CheckError, CheckResult},
+    osint_certstream::{self, CtError},
     osint_internetdb::{self, InternetDbHost, Lookup},
     osint_otx::{self, OtxError},
     osint_phishtank::{self, DomainSet, FeedState},
@@ -133,6 +135,19 @@ pub struct View {
     /// Last click-only InternetDB lookup, kept until the next one.
     pub lookup: Option<LookupView>,
     pub lookup_pending: bool,
+    /// Last click-only AbuseIPDB check, kept until the next one.
+    pub abuse: Option<AbuseView>,
+    pub abuse_pending: bool,
+    pub ct: Vec<CtDomain>,
+}
+
+/// Result of one AbuseIPDB check the user asked for.
+#[derive(Clone, Debug)]
+pub struct AbuseView {
+    pub ip: String,
+    pub outcome: Result<CheckResult, String>,
+    pub at_ms: u64,
+    pub from_cache: bool,
 }
 
 /// What the OTX poll keeps: counts and a few names, never indicators.
@@ -144,6 +159,24 @@ pub struct OtxSummary {
     pub countries: Vec<(String, u32)>,
     /// Names of the three newest pulses.
     pub newest: Vec<String>,
+}
+
+/// What is kept per watched domain from the CT log polls.
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct CtDomain {
+    pub domain: String,
+    /// Certificates counted so far (the first polls build the baseline page by page).
+    pub known: u32,
+    /// Certificates that appeared in the latest poll after the baseline was complete.
+    pub new_last_poll: u32,
+    pub new_total: u32,
+    /// True while older history is still being paged in (a full page came back).
+    pub catching_up: bool,
+    pub last_poll_ms: u64,
+    pub cursor: Option<String>,
+    pub newest_issuer: Option<String>,
+    pub newest_not_before: Option<String>,
+    pub newest_names: Vec<String>,
 }
 
 /// Spamhaus DROP netblocks and ASN-DROP, parsed from the last good downloads.
@@ -196,6 +229,12 @@ struct Cache {
     sslbl_top: Vec<(String, u32)>,
     sslbl_newest_ms: u64,
     sslbl_updated_ms: u64,
+    /// AbuseIPDB checks used today (UTC day number, count), so a restart cannot reset the local budget.
+    abuse_day: u64,
+    abuse_used: u32,
+    ct: BTreeMap<String, CtDomain>,
+    ct_hour: u64,
+    ct_used: u32,
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -220,6 +259,7 @@ struct Fetched {
 enum Command {
     Refresh,
     Lookup(IpAddr),
+    AbuseLookup(IpAddr),
 }
 
 /// One background OSINT worker. Started only after licence consent, never by the offline smoke.
@@ -229,6 +269,8 @@ pub struct Osint {
     enabled: Arc<Mutex<Vec<String>>>,
     /// API keys by source id. Memory only: never written to disk, logged or put in a note.
     keys: Arc<Mutex<BTreeMap<String, String>>>,
+    /// Domains the user watches in the certificate logs (at most 10, already normalised).
+    watch: Arc<Mutex<Vec<String>>>,
 }
 
 /// Whether a source may make requests, given the ids the user turned on.
@@ -249,12 +291,15 @@ impl Osint {
         let switches = enabled.clone();
         let keys = Arc::new(Mutex::new(BTreeMap::new()));
         let worker_keys = keys.clone();
-        thread::spawn(move || worker(directory, state, rx, switches, worker_keys));
+        let watch = Arc::new(Mutex::new(Vec::new()));
+        let worker_watch = watch.clone();
+        thread::spawn(move || worker(directory, state, rx, switches, worker_keys, worker_watch));
         Self {
             shared,
             wake,
             enabled,
             keys,
+            watch,
         }
     }
 
@@ -279,6 +324,20 @@ impl Osint {
         let _ = self.wake.send(Command::Refresh);
     }
 
+    /// Replaces the certificate watch list (normalised, no duplicates, at most 10). Returns how many
+    /// entries were accepted.
+    pub fn set_watch(&self, domains: Vec<String>) -> usize {
+        let mut list = osint_certstream::WatchList::default();
+        for d in &domains {
+            let _ = list.add(d);
+        }
+        let accepted = list.domains().to_vec();
+        let count = accepted.len();
+        *self.watch.lock().unwrap() = accepted;
+        let _ = self.wake.send(Command::Refresh);
+        count
+    }
+
     pub fn view(&self) -> View {
         self.shared.lock().unwrap().clone()
     }
@@ -290,6 +349,17 @@ impl Osint {
     /// Ids of the sources that are switched on.
     pub fn enabled(&self) -> Vec<String> {
         self.enabled.lock().unwrap().clone()
+    }
+
+    /// Queues one AbuseIPDB check. Only the host's click handler calls this, after the user has confirmed
+    /// that the address will be sent to AbuseIPDB.
+    pub fn lookup_abuse(&self, ip: IpAddr) {
+        if osint_abuseipdb::is_lookup_allowed(ip)
+            && is_enabled(&self.enabled.lock().unwrap(), Source::AbuseIpdb)
+        {
+            self.shared.lock().unwrap().abuse_pending = true;
+            let _ = self.wake.send(Command::AbuseLookup(ip));
+        }
     }
 
     /// Queues one InternetDB lookup. Only the host's click handler calls this, after the user has
@@ -328,6 +398,8 @@ fn publish(
     let phish = view.phish.take();
     let lookup = view.lookup.take();
     let lookup_pending = view.lookup_pending;
+    let abuse = view.abuse.take();
+    let abuse_pending = view.abuse_pending;
     *view = View {
         kev: cache.kev.clone(),
         kev_updated_ms: cache.kev_updated_ms,
@@ -355,6 +427,9 @@ fn publish(
         sslbl_updated_ms: cache.sslbl_updated_ms,
         lookup,
         lookup_pending,
+        abuse,
+        abuse_pending,
+        ct: cache.ct.values().cloned().collect(),
     };
 }
 
@@ -366,6 +441,88 @@ fn load_spamhaus(directory: &Path, updated_ms: u64) -> Option<SpamhausData> {
         asn: osint_spamhaus::parse_asndrop(&read(SPAMHAUS_FILES[2].1)?).ok()?,
         updated_ms,
     })
+}
+
+/// One AbuseIPDB check: 24 h memory cache, local daily budget (persisted), key from memory only.
+fn lookup_abuse(
+    ip: IpAddr,
+    key: Option<String>,
+    cache: &mut Cache,
+    memory: &mut BTreeMap<String, (u64, CheckResult)>,
+) -> AbuseView {
+    let text = ip.to_string();
+    let now = now_ms();
+    let view = |outcome, at_ms, from_cache| AbuseView {
+        ip: text.clone(),
+        outcome,
+        at_ms,
+        from_cache,
+    };
+    if let Some((at, result)) = memory.get(&text) {
+        if osint_abuseipdb::cache_fresh(*at, now) {
+            return view(Ok(result.clone()), *at, true);
+        }
+    }
+    let Some(key) = key.filter(|k| osint_abuseipdb::looks_like_key(k)) else {
+        return view(
+            Err("No AbuseIPDB API key yet. Add it in Settings. Nothing was sent.".into()),
+            now,
+            false,
+        );
+    };
+    let Some(path) = osint_abuseipdb::check_path(ip) else {
+        return view(
+            Err("Not a public address; nothing was sent.".into()),
+            now,
+            false,
+        );
+    };
+    let mut budget = osint_abuseipdb::DailyBudget {
+        day: cache.abuse_day,
+        used: cache.abuse_used,
+    };
+    let allowed = budget.take(now, osint_abuseipdb::LOCAL_DAILY_BUDGET);
+    cache.abuse_day = budget.day;
+    cache.abuse_used = budget.used;
+    if !allowed {
+        return view(
+            Err("Today's local AbuseIPDB limit is used up. Try again tomorrow (UTC).".into()),
+            now,
+            false,
+        );
+    }
+    let headers = format!(
+        "Accept: application/json\r\nKey: {key}\r\nUser-Agent: AtlasSOC-OSINT (+https://ibert.se)\r\n"
+    );
+    let answer = match fetch_public(
+        osint_abuseipdb::HOST,
+        &path,
+        &headers,
+        osint_abuseipdb::MAX_BODY_BYTES,
+    ) {
+        None => Err("AbuseIPDB: no connection.".to_string()),
+        Some(reply) if reply.status == 200 => {
+            osint_abuseipdb::parse_check(&reply.body).map_err(|e| match e {
+                CheckError::Auth => "AbuseIPDB: the API key was refused.".to_string(),
+                CheckError::RateLimited => "AbuseIPDB: limit reached. Try later.".to_string(),
+                CheckError::Api(d) | CheckError::Malformed(d) => format!("AbuseIPDB: {d}"),
+            })
+        }
+        Some(reply) => Err(
+            match osint_abuseipdb::classify_error(reply.status, &reply.body) {
+                CheckError::Auth => "AbuseIPDB: the API key was refused.".to_string(),
+                CheckError::RateLimited => "AbuseIPDB: limit reached. Try later.".to_string(),
+                CheckError::Api(d) | CheckError::Malformed(d) => format!("AbuseIPDB: {d}"),
+            },
+        ),
+    };
+    if let Ok(result) = &answer {
+        if memory.len() >= 200 {
+            memory.clear();
+        }
+        memory.insert(text.clone(), (now, result.clone()));
+    }
+    view(answer, now, false)
 }
 
 fn lookup_internetdb(ip: IpAddr, cache: &mut Cache, last_request: &mut Option<u64>) -> LookupView {
@@ -547,6 +704,7 @@ fn worker(
     rx: Receiver<Command>,
     enabled: Arc<Mutex<Vec<String>>>,
     keys: Arc<Mutex<BTreeMap<String, String>>>,
+    watch: Arc<Mutex<Vec<String>>>,
 ) {
     let on = |source: Source| is_enabled(&enabled.lock().unwrap(), source);
     let _ = fs::create_dir_all(&directory);
@@ -559,6 +717,7 @@ fn worker(
     }
     let mut notes: std::collections::BTreeMap<String, String> = std::collections::BTreeMap::new();
     let mut last_internetdb: Option<u64> = None;
+    let mut abuse_memory: BTreeMap<String, (u64, CheckResult)> = BTreeMap::new();
     publish(&shared, &cache, &notes);
     if let Some(body) = on(Source::PhishTank)
         .then(|| fs::read(directory.join(PHISH_FILE)).ok())
@@ -1122,6 +1281,119 @@ fn worker(
             dirty = true;
         }
 
+        let ct_spec = osint::source_spec(Source::CertStream);
+        if on(Source::CertStream) {
+            let domains = watch.lock().unwrap().clone();
+            let key = keys.lock().unwrap().get(ct_spec.id).cloned();
+            // Forget domains that are no longer watched.
+            let before = cache.ct.len();
+            cache.ct.retain(|d, _| domains.contains(d));
+            if cache.ct.len() != before {
+                dirty = true;
+            }
+            if domains.is_empty() {
+                notes.insert(
+                    "Cert watch".to_string(),
+                    "Cert watch: no domains to watch yet. Add up to 10 in Settings.".to_string(),
+                );
+                dirty = true;
+            } else if key.is_none() {
+                notes.insert(
+                    "Cert watch".to_string(),
+                    "Cert watch: no SSLMate API key yet. Add it in Settings.".to_string(),
+                );
+                dirty = true;
+            } else if let Some(key) = key {
+                let mut budget = osint_certstream::HourlyBudget {
+                    hour: cache.ct_hour,
+                    used: cache.ct_used,
+                };
+                for domain in &domains {
+                    let last = cache
+                        .ct
+                        .get(domain)
+                        .map(|d| d.last_poll_ms)
+                        .filter(|t| *t != 0);
+                    if !osint_certstream::poll_due(last, now) {
+                        continue;
+                    }
+                    if !budget.take(now, osint_certstream::LOCAL_HOURLY_BUDGET) {
+                        break;
+                    }
+                    let entry = cache.ct.entry(domain.clone()).or_insert_with(|| CtDomain {
+                        domain: domain.clone(),
+                        ..CtDomain::default()
+                    });
+                    let Some(path) = osint_certstream::watch_path(domain, entry.cursor.as_deref())
+                    else {
+                        continue;
+                    };
+                    let headers = format!(
+                        "Accept: application/json\r\nAuthorization: Bearer {key}\r\nUser-Agent: AtlasSOC-OSINT (+https://ibert.se)\r\n"
+                    );
+                    entry.last_poll_ms = now;
+                    let answer = fetch_public(
+                        osint_certstream::HOST,
+                        &path,
+                        &headers,
+                        osint_certstream::MAX_BODY_BYTES,
+                    );
+                    let problem = match answer {
+                        None => Some("Cert watch: no connection".to_string()),
+                        Some(reply) => match osint_certstream::status_error(reply.status) {
+                            Some(CtError::Auth) => {
+                                Some("Cert watch: the SSLMate API key was refused".to_string())
+                            }
+                            Some(CtError::RateLimited) => {
+                                Some("Cert watch: throttled, waiting for the next hour".to_string())
+                            }
+                            Some(CtError::Api(d)) | Some(CtError::Malformed(d)) => {
+                                Some(format!("Cert watch: {d}"))
+                            }
+                            None => match osint_certstream::parse_issuances(&reply.body) {
+                                Err(CtError::Auth) | Err(CtError::RateLimited) => {
+                                    Some("Cert watch: the provider refused the request".to_string())
+                                }
+                                Err(CtError::Api(d)) | Err(CtError::Malformed(d)) => {
+                                    Some(format!("Cert watch: {d}"))
+                                }
+                                Ok(list) => {
+                                    let baseline_done =
+                                        !entry.catching_up && entry.cursor.is_some();
+                                    let count = list.len() as u32;
+                                    entry.known += count;
+                                    entry.new_last_poll = if baseline_done { count } else { 0 };
+                                    entry.new_total += entry.new_last_poll;
+                                    entry.catching_up = count as usize >= 100;
+                                    if let Some(c) = osint_certstream::next_cursor(&list) {
+                                        entry.cursor = Some(c.to_owned());
+                                    }
+                                    if let Some(last) = list.last() {
+                                        entry.newest_issuer = last.issuer.clone();
+                                        entry.newest_not_before = last.not_before.clone();
+                                        entry.newest_names =
+                                            last.dns_names.iter().take(3).cloned().collect();
+                                    }
+                                    None
+                                }
+                            },
+                        },
+                    };
+                    match problem {
+                        Some(text) => {
+                            notes.insert("Cert watch".to_string(), text);
+                        }
+                        None => {
+                            notes.remove("Cert watch");
+                        }
+                    }
+                }
+                cache.ct_hour = budget.hour;
+                cache.ct_used = budget.used;
+                dirty = true;
+            }
+        }
+
         if dirty {
             save(&cache_path, &cache);
             save(&state_path, &gates);
@@ -1136,6 +1408,21 @@ fn worker(
                 let mut view = shared.lock().unwrap();
                 view.lookup = Some(result);
                 view.lookup_pending = false;
+            }
+            Ok(Command::AbuseLookup(ip)) if on(Source::AbuseIpdb) => {
+                let key = keys
+                    .lock()
+                    .unwrap()
+                    .get(osint::source_spec(Source::AbuseIpdb).id)
+                    .cloned();
+                let result = lookup_abuse(ip, key, &mut cache, &mut abuse_memory);
+                save(&cache_path, &cache);
+                let mut view = shared.lock().unwrap();
+                view.abuse = Some(result);
+                view.abuse_pending = false;
+            }
+            Ok(Command::AbuseLookup(_)) => {
+                shared.lock().unwrap().abuse_pending = false;
             }
             Ok(Command::Lookup(_)) => {
                 shared.lock().unwrap().lookup_pending = false;
@@ -1183,6 +1470,7 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("atlassoc-offtest-{}", std::process::id()));
         let worker = Osint::start(dir.clone(), Vec::new(), counting_fetch);
         worker.lookup("1.1.1.1".parse().unwrap());
+        worker.lookup_abuse("8.8.8.8".parse().unwrap());
         worker.refresh();
         thread::sleep(Duration::from_millis(2500));
         assert_eq!(CALLS.load(SeqCst), 0, "a source that is off made a request");

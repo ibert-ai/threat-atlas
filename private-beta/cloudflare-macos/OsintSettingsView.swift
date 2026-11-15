@@ -14,6 +14,8 @@ struct OsintSettingsView: View {
     @State private var confirmLookup: String?
     @State private var keyFor: OsintSource?
     @State private var keyText = ""
+    @State private var confirmAbuse: String?
+    @State private var watchText = OsintController.shared.watchDomains.joined(separator: ", ")
     private var version: String {
         let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
         let b = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
@@ -34,6 +36,9 @@ struct OsintSettingsView: View {
                             Spacer()
                             Button("View") { page = OsintPage(title: source.name, text: osint.page(source)) }
                                 .disabled(!osint.isOn(source.id))
+                            if source.id == "abuseipdb" {
+                                Button("Check copied IP…") { askAbuse() }.disabled(!osint.isOn(source.id))
+                            }
                             if source.id == "shodan-internetdb" {
                                 Button("Look up copied IP…") { askLookup() }.disabled(!osint.isOn(source.id))
                             }
@@ -43,6 +48,13 @@ struct OsintSettingsView: View {
                             .id(osint.tick)
                         Text("\(source.licence) Interval at least \(source.min_minutes) min. \(source.requires_key ? "Needs your own API key." : "No key needed.")")
                             .font(.caption2).foregroundStyle(.secondary)
+                        if source.id == "cert-watch" {
+                            HStack {
+                                TextField("your-domain.com, other-domain.org (up to 10, your own domains only)", text: $watchText)
+                                    .textFieldStyle(.roundedBorder)
+                                Button("Save domains") { osint.setWatch(watchText); watchText = osint.watchDomains.joined(separator: ", ") }
+                            }
+                        }
                         if source.requires_key {
                             HStack {
                                 Text(osint.keyed.contains(source.id) ? "API key: saved in the Keychain" : "API key: not set")
@@ -98,6 +110,17 @@ struct OsintSettingsView: View {
                 }
             }.padding(20).frame(width: 460)
         }
+        .alert("Send this address to AbuseIPDB?", isPresented: Binding(get: { confirmAbuse != nil }, set: { if !$0 { confirmAbuse = nil } })) {
+            Button("Check") {
+                if let ip = confirmAbuse, osint.lookupAbuse(ip) {
+                    page = OsintPage(title: "AbuseIPDB", text: "Check started. Close this window and press View in a few seconds.")
+                }
+                confirmAbuse = nil
+            }
+            Button("Cancel", role: .cancel) { confirmAbuse = nil }
+        } message: {
+            Text("\(confirmAbuse ?? "") and your AbuseIPDB key will be sent to api.abuseipdb.com. AbuseIPDB also sees your public IP address. Free Individual plan, non-commercial. At most 800 checks a day; answers are kept 24 hours.")
+        }
         .alert("Send this address to Shodan?", isPresented: Binding(get: { confirmLookup != nil }, set: { if !$0 { confirmLookup = nil } })) {
             Button("Look up") {
                 if let ip = confirmLookup, osint.lookup(ip) {
@@ -109,6 +132,15 @@ struct OsintSettingsView: View {
         } message: {
             Text("\(confirmLookup ?? "") will be sent to internetdb.shodan.io. Shodan receives the address and your public IP address. Free for non-commercial use only. Answers are kept for 24 hours.")
         }
+    }
+
+    private func askAbuse() {
+        let text = OsintController.clipboardText().trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty, text.count <= 64, !text.contains(where: \.isWhitespace) else {
+            page = OsintPage(title: "AbuseIPDB", text: "Copy one public IP address first (for example 8.8.8.8), then press the button again. Nothing was sent.")
+            return
+        }
+        confirmAbuse = text
     }
 
     private func askLookup() {

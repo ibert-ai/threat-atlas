@@ -24,6 +24,7 @@ enum OsintKeys {
         switch id {
         case "alienvault-otx": return "otx"
         case "threatfox", "urlhaus": return "abusech"
+        case "cert-watch": return "certspotter"
         case "abuseipdb": return "abuseipdb"
         case "cert-spotter": return "certspotter"
         default: return id
@@ -65,6 +66,9 @@ enum OsintKeys {
 final class OsintController: ObservableObject {
     static let shared = OsintController()
     private static let defaultsKey = "atlassoc.enabledSources"
+    private static let watchKey = "atlassoc.watchDomains"
+    /// Domains the user watches in the certificate logs (at most 10, own domains only).
+    @Published private(set) var watchDomains: [String] = UserDefaults.standard.stringArray(forKey: "atlassoc.watchDomains") ?? []
 
     @Published private(set) var sources: [OsintSource] = []
     @Published private(set) var enabled: Set<String> = []
@@ -107,6 +111,7 @@ final class OsintController: ObservableObject {
         try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         handle = ta_osint_start(base.path, json())
         pushKeys()
+        pushWatch()
     }
 
     /// Hands every stored key to the worker, which keeps it in memory only.
@@ -118,6 +123,26 @@ final class OsintController: ObservableObject {
             if let handle { _ = ta_osint_set_key(handle, source.id, key) }
         }
         keyed = have
+    }
+
+    private func pushWatch() {
+        guard let handle else { return }
+        let data = (try? JSONSerialization.data(withJSONObject: watchDomains)) ?? Data("[]".utf8)
+        _ = ta_osint_set_watch(handle, String(decoding: data, as: UTF8.self))
+    }
+
+    /// Saves the watched domains (comma or space separated, at most 10) and hands them to the worker.
+    func setWatch(_ text: String) {
+        let parts = text.split(whereSeparator: { $0 == "," || $0.isWhitespace }).map { String($0).lowercased() }
+        watchDomains = Array(parts.prefix(10))
+        UserDefaults.standard.set(watchDomains, forKey: Self.watchKey)
+        pushWatch()
+    }
+
+    /// Queues the click-only AbuseIPDB check. Returns false when refused.
+    func lookupAbuse(_ ip: String) -> Bool {
+        guard let handle, isOn("abuseipdb") else { return false }
+        return ta_osint_lookup_abuse(handle, ip) == 0
     }
 
     func setKey(_ id: String, _ key: String) {
