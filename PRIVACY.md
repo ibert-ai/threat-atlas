@@ -73,3 +73,20 @@ The full user guide is [docs/OSINT-SOURCES.md](docs/OSINT-SOURCES.md); key setup
 - **Provider terms:** each source's licence, attribution and rate limit is shown in the app's OSINT sources
   dialog and in [docs/OSINT-SOURCES.md](docs/OSINT-SOURCES.md). A provider's privacy policy also applies to the
   requests that reach it.
+
+## Screensaver with optional OSINT sources (saver-parity draft)
+
+This section is a draft for the saver-parity Beta. It does not describe the stable 0.4.8 screensaver, which sends only the GreyNoise feed described above.
+
+When the saver-parity build is used, the screensaver can show the optional OSINT cards. It reads the same source switches and keys as AtlasSOC from the shared settings. It never writes keys, never shows key-entry dialogs, and never makes a request for a source that is off. **Off means no request.** The saver adds no analytics, advertising or tracking.
+
+Recipients when a source is enabled:
+
+- **Keyless feeds:** CISA (CISA KEV), FIRST EPSS, the Tor Project, SANS ISC/DShield, abuse.ch SSLBL, Spamhaus DROP, ransomware.live and the Phishing.Database list on GitHub. Each provider sees the user's public IP address and normal HTTPS request metadata. No screen content or address from the user's own network is sent.
+- **Keyed sources:** abuse.ch ThreatFox/URLhaus, AlienVault OTX and SSLMate Cert Spotter use the user's own key, read from the macOS Keychain or Windows Credential Manager and sent only to that provider. SSLMate also receives the watched domain names. Keys are never logged, shipped or uploaded.
+- **Not part of the saver:** click-only lookups (Shodan InternetDB and AbuseIPDB), key entry and consent dialogs remain in AtlasSOC. The saver only displays data from the sources that are already enabled in AtlasSOC Settings.
+
+Received data is public telemetry or aggregates, kept in bounded memory for display and discarded when the process ends. The saver never fetches, resolves or connects to a URL, domain or address taken from threat data. Provider terms and privacy policies apply to each request.
+
+The short on-screen attribution lines and the full per-source notice list are in [docs/SAVER-ATTRIBUTION.md](docs/SAVER-ATTRIBUTION.md). If the saver's network behaviour changes, this section and that list must be updated before release.
+
