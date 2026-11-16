@@ -158,7 +158,7 @@ frames and JSON. It needs network access and is not an offline CI test.
 
 ## Follow
 
-- [Instagram](https://www.instagram.com/ibert_consulting/)
+- [Instagram](https://www.instagram.com/threatatlas/)
 - [Facebook](https://www.facebook.com/people/Ibert-Consulting/61596073604638/)
 - [LinkedIn](https://www.linkedin.com/company/ibert-consulting-ab/)
 - [X](https://x.com/robert_ibert)
