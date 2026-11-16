@@ -20,6 +20,8 @@ Release candidate. These are the known limits of this build, not a claim that no
 | AI help prompt | The prompt was tested with Claude models only (including one simulating a small model), never with a real Hugging Face, DeepSeek or local model, and not against live provider pages. Assistants can be wrong; the guide and your screen win. | Disclosed. |
 | Spamhaus naming | The DROP terms forbid using the Spamhaus name in marketing/promotional material. Product docs and the in-app label may name it factually. | Marketing restriction. |
 | Not included | Team Cymru ASN, MaxMind GeoLite2 file reading and RIPE RIS/BGPStream are not in this release. | Not in scope. |
+| macOS Settings text | Settings → Updates still says "This beta is not Developer ID signed yet", although this macOS build is Developer ID signed and notarised. The text is wrong, not the signature. | Open; fix in the next version, see [UPDATE-CHANNELS.md](UPDATE-CHANNELS.md). |
+| Updates | There is no automatic update and no channel choice (Stable, Release Candidates, Betas) in AtlasSOC Desktop yet; Settings → Updates only opens the GitHub releases page. | Planned, see [UPDATE-CHANNELS.md](UPDATE-CHANNELS.md). |
 
 ## Known behavior requiring improvement
 
