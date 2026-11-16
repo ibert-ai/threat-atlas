@@ -61,6 +61,7 @@ contracts and takeover steps.
 | ATLAS-OSINT-011 | FAS 3 | Open — CL distribution | Watch-list and CT stream consumer |
 | ATLAS-OSINT-012 | FAS 3 | Open — CL distribution | DROP/EDROP parser and daily gate |
 | ATLAS-OSINT-013 | FAS 3 | Open — CL distribution | PhishTank key and conservative interval |
+| ATLAS-UPDATE-001 | Next version | Specified, not built; owner decisions open | Update channels (Stable default, RC, Beta) with fallback, automatic upgrade with OS approval, `get-latest` scripts, maintained Git feed. See [UPDATE-CHANNELS.md](UPDATE-CHANNELS.md) |
 
 ## FAS 1 — foundation, no new secrets
 
