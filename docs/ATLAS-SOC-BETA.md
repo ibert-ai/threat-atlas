@@ -1,6 +1,6 @@
 # AtlasSOC Desktop 0.7.0 — stable, build 13
 
-Standalone application for Windows x64 and macOS 14+ (Apple silicon and Intel). Separate from the existing Threat Atlas screensaver. Product: AtlasSOC by Ibert Consulting; Sentinel is the current working icon, with final design selection still open.
+Standalone application for Windows x64 and macOS 14+ (Apple silicon and Intel). Separate from the existing Threat Atlas screensaver. Product: AtlasSOC, a Threat Atlas project. Administrative and legal operator: Ibert Consulting. Sentinel is the current working icon, with final design selection still open.
 
 ## What it does
 

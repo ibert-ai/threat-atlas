@@ -1,6 +1,6 @@
 # Windows standalone SOC development beta
 
-The PR19 Windows host is a standalone app, separate from `ThreatAtlas.scr`. It uses the same SOC renderer as the macOS app, with a single GreyNoise feed shared by every display window. The development package is AtlasSOC0.7.0/build9 by Ibert Consulting, using the exact Sentinel resources from PR20. This is not a new screensaver release or public-release acceptance.
+The PR19 Windows host is a standalone app, separate from `ThreatAtlas.scr`. It uses the same SOC renderer as the macOS app, with a single GreyNoise feed shared by every display window. The development package is AtlasSOC 0.7.0/build9 (Threat Atlas project; legal operator Ibert Consulting), using the exact Sentinel resources from PR20. This is not a new screensaver release or public-release acceptance.
 
 ## Build and run
 
