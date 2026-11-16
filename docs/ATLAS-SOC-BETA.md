@@ -1,6 +1,6 @@
 # AtlasSOC Desktop 0.7.0 — stable, build 13
 
-Standalone application for Windows x64 and macOS 14+ (Apple silicon and Intel). Separate from the existing Threat Atlas screensaver. Product: AtlasSOC by Ibert Consulting; Sentinel is the current working icon, with final design selection still open.
+Standalone application for Windows x64 and macOS 14+ (Apple silicon and Intel). Separate from the existing Threat Atlas screensaver. Product: AtlasSOC, a Threat Atlas project. Administrative and legal operator: Ibert Consulting. Sentinel is the current working icon, with final design selection still open.
 
 ## What it does
 
@@ -12,7 +12,7 @@ macOS and Windows additionally support optional Cloudflare Radar past-day aggreg
 
 **Windows:** run `AtlasSOC-Setup-0.7.0-build13.exe` and choose **Just me** (no administrator rights) or **Everyone**, plus optional desktop and Start menu shortcuts; or extract the portable `AtlasSOC-Windows-x64-v0.7.0-build13.zip` into a user-owned folder and run `AtlasSOC.exe`. Windows 10/11 x64. Both are unsigned: follow OS trust policy and do not disable security protections. At start AtlasSOC asks `api.github.com` whether a newer AtlasSOC exists and offers it in the right-click menu; nothing installs without your confirmation. Settings/consent stay in `%LOCALAPPDATA%\ThreatAtlasSOC`. Existing screensaver installers are separate products.
 
-**macOS:** unzip `AtlasSOC-macOS-universal-v0.7.0-build13-signed.zip`, then copy `AtlasSOC.app` to your chosen Applications location. Requires macOS14+. The app is signed with Developer ID (Robert Ibert, team 7NXP86HMVH), notarised by Apple and stapled; organisational policy may still restrict it. Do not disable Gatekeeper or strip quarantine as a workaround. It installs no startup agent or automatic updater; check the releases page for new versions. Quit before replacement/removal. The existing development bundle identifier `dev.threatatlas.private.radar` and Radar support/Keychain locations are retained for continuity; this bundle is separate from the stable screensaver.
+**macOS:** unzip `AtlasSOC-macOS-universal-v0.7.0-build13-signed.zip`, then copy `AtlasSOC.app` to your chosen Applications location. Requires macOS14+. The app is signed with Developer ID (team 7NXP86HMVH), notarised by Apple and stapled; organisational policy may still restrict it. Do not disable Gatekeeper or strip quarantine as a workaround. It installs no startup agent or automatic updater; check the releases page for new versions. Quit before replacement/removal. The existing development bundle identifier `dev.threatatlas.private.radar` and Radar support/Keychain locations are retained for continuity; this bundle is separate from the stable screensaver.
 
 The Windows installer offers `%LocalAppData%\Programs\AtlasSOC` for one user (default, no elevation) or `%ProgramFiles%\AtlasSOC` for all users, with independent desktop and Start menu shortcut choices; it upgrades an earlier AtlasSOC installation in place. See ATLAS-SOC-INSTALLER.md.
 
@@ -30,4 +30,4 @@ Unfiltered audit reports three inherited warnings: proc-macro-error1.0.4/RUSTSEC
 
 ## Updates, feedback and rollback
 
-Download the next explicitly named AtlasSOC standalone package, quit the app and replace only its folder/bundle. Keep a copy of a working prior beta. Do not use the screensaver's signed updater to install this unsigned beta. Preserve profile settings/Keychain data unless you intentionally remove them. Report platform/OS, exact version/build, steps and sanitised logs at https://github.com/ibert-ai/threat-atlas/issues ; never attach tokens or raw private telemetry.
+Download the next explicitly named AtlasSOC standalone package, quit the app and replace only its folder/bundle. Keep a copy of a working prior beta. Do not use the screensaver's signed updater to install this unsigned beta. Preserve profile settings/Keychain data unless you intentionally remove them. Report platform/OS, exact version/build, steps and sanitised logs at https://github.com/Ibert-Iam/threat-atlas/issues ; never attach tokens or raw private telemetry.

@@ -99,7 +99,7 @@ the requests, and **Show Cloudflare Radar on the map** hides or shows the marker
 - **Your token stays yours.** It is stored only in your Mac's Keychain or in Windows
   Credential Manager for your account. Threat Atlas never sends it anywhere except to
   Cloudflare (`api.cloudflare.com`), over verified HTTPS.
-- **Never share the token** in email, chat, screenshots or support requests. Ibert Consulting
+- **Never share the token** in email, chat, screenshots or support requests. Threat Atlas
   will never ask you for it. If you think it was exposed, delete it in Cloudflare and create a
   new one.
 - **Data licence:** Cloudflare Radar data is licensed CC BY-NC 4.0 (attribution, non-commercial).

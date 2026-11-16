@@ -46,7 +46,7 @@ try {
         if (Get-Process -Name 'ThreatAtlas' -ErrorAction SilentlyContinue) { exit 0 }
         $headers = @{ 'User-Agent' = 'ThreatAtlas-Updater'; 'Accept' = 'application/vnd.github+json' }
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        $release = Invoke-RestMethod 'https://api.github.com/repos/ibert-ai/threat-atlas/releases/latest' -Headers $headers -TimeoutSec 30
+        $release = Invoke-RestMethod 'https://api.github.com/repos/Ibert-Iam/threat-atlas/releases/latest' -Headers $headers -TimeoutSec 30
         if ($release.draft -or $release.prerelease) { throw 'Only stable public releases are accepted.' }
         $version = Stable-Version $release.tag_name
         $current = Stable-Version ((Get-ItemProperty 'HKCU:\Software\Ibert Consulting\ThreatAtlas').DocsVersion)
@@ -55,7 +55,7 @@ try {
         $assets = @($release.assets | Where-Object { $_.name -ceq $name })
         if ($assets.Count -ne 1 -or $assets[0].size -gt 104857600) { throw 'Missing or oversized signed MSI.' }
         $url = [uri]$assets[0].browser_download_url
-        if ($url.Scheme -ne 'https' -or $url.Host -ne 'github.com' -or !$url.AbsolutePath.StartsWith('/ibert-ai/threat-atlas/releases/download/')) { throw 'Unexpected download URL.' }
+        if ($url.Scheme -ne 'https' -or $url.Host -ne 'github.com' -or !$url.AbsolutePath.StartsWith('/Ibert-Iam/threat-atlas/releases/download/')) { throw 'Unexpected download URL.' }
         $stage = Join-Path $env:LOCALAPPDATA ('ThreatAtlas-update-' + [guid]::NewGuid())
         New-Item -ItemType Directory $stage | Out-Null
         try {

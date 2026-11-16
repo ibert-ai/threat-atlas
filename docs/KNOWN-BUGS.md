@@ -1,9 +1,9 @@
 # Known bugs and limitations
 
 Reviewed against published release notes on 14 November 2026. Current releases are
-[screensaver 0.4.8 / build 16](https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.8),
-[AtlasSOC Desktop 0.7.0 / build 13](https://github.com/ibert-ai/threat-atlas/releases/tag/atlassoc-v0.7.0)
-and the separate [Linux Desktop preview](https://github.com/ibert-ai/threat-atlas/releases/tag/atlassoc-v0.7.0-linux).
+[screensaver 0.4.8 / build 16](https://github.com/Ibert-Iam/threat-atlas/releases/tag/v0.4.8),
+[AtlasSOC Desktop 0.7.0 / build 13](https://github.com/Ibert-Iam/threat-atlas/releases/tag/atlassoc-v0.7.0)
+and the separate [Linux Desktop preview](https://github.com/Ibert-Iam/threat-atlas/releases/tag/atlassoc-v0.7.0-linux).
 This review checks documentation and source, not execution of downloaded packages.
 Historical version-specific observations below are retained; no unverified issue is closed.
 
@@ -48,6 +48,6 @@ On-device Settings preview, idle/lock transitions, multiple displays/HiDPI, Inte
 
 ## Report and resolve
 
-[Report a reproducible bug](https://github.com/ibert-ai/threat-atlas/issues/new) with the exact version/build, OS/architecture, steps, expected/actual behavior and redacted logs. Follow [SECURITY.md](../SECURITY.md) for security concerns.
+[Report a reproducible bug](https://github.com/Ibert-Iam/threat-atlas/issues/new) with the exact version/build, OS/architecture, steps, expected/actual behavior and redacted logs. Follow [SECURITY.md](../SECURITY.md) for security concerns.
 
 For each confirmed issue, record affected versions, issue link, workaround, status and the first release containing a verified fix. Keep unverified reports and testing gaps labelled separately. Every release note must include its own **Known bugs** section describing that exact release; do not infer a fix from a later candidate.

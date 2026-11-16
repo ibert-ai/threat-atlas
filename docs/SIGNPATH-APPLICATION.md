@@ -5,8 +5,8 @@ There is no active SignPath certificate or signing integration. Certificate
 work is on hold; the application material below is not a claim of approval.
 
 Application submitted 28 October 2026; approval is not yet confirmed. Public
-repository: https://github.com/ibert-ai/threat-atlas
-Published preview downloads: https://github.com/ibert-ai/threat-atlas/releases
+repository: https://github.com/Ibert-Iam/threat-atlas
+Published preview downloads: https://github.com/Ibert-Iam/threat-atlas/releases
 This reference records application information; it does not establish signing approval.
 
 The public repository and unsigned preview are available. Use their public URLs;
