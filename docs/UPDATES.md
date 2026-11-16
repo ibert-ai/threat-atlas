@@ -18,7 +18,7 @@ and an already installed, matching signed saver in `~/Library/Screen Savers`.
 The app is copied to `~/Applications` if needed. Launchd checks at login/load and
 every 24 hours. System-wide screen saver installations are not auto-updated.
 
-Both use the fixed public `ibert-ai/threat-atlas` GitHub latest-stable-release API,
+Both use the fixed public `Ibert-Iam/threat-atlas` GitHub latest-stable-release API,
 HTTPS, strict three-part versions, and reject prereleases/downgrades. Failed
 checks leave the current installation in place. Windows defers when ThreatAtlas
 runs; macOS also defers for screen saver hosts, System Settings and the preview.

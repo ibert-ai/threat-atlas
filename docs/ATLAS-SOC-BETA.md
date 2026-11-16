@@ -30,4 +30,4 @@ Unfiltered audit reports three inherited warnings: proc-macro-error1.0.4/RUSTSEC
 
 ## Updates, feedback and rollback
 
-Download the next explicitly named AtlasSOC standalone package, quit the app and replace only its folder/bundle. Keep a copy of a working prior beta. Do not use the screensaver's signed updater to install this unsigned beta. Preserve profile settings/Keychain data unless you intentionally remove them. Report platform/OS, exact version/build, steps and sanitised logs at https://github.com/ibert-ai/threat-atlas/issues ; never attach tokens or raw private telemetry.
+Download the next explicitly named AtlasSOC standalone package, quit the app and replace only its folder/bundle. Keep a copy of a working prior beta. Do not use the screensaver's signed updater to install this unsigned beta. Preserve profile settings/Keychain data unless you intentionally remove them. Report platform/OS, exact version/build, steps and sanitised logs at https://github.com/Ibert-Iam/threat-atlas/issues ; never attach tokens or raw private telemetry.

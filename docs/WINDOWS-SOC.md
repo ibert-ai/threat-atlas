@@ -57,7 +57,7 @@ The script can also be run by hand:
 Run this in PowerShell. It asks for stable or beta, verifies the installer's SHA256 against GitHub, and starts the normal installer. Windows may show a UAC prompt or an unsigned-file warning.
 
 ```powershell
-irm https://raw.githubusercontent.com/ibert-ai/threat-atlas/main/scripts/update-atlassoc.ps1 -OutFile "$env:TEMP\update-atlassoc.ps1"; powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\update-atlassoc.ps1"
+irm https://raw.githubusercontent.com/Ibert-Iam/threat-atlas/main/scripts/update-atlassoc.ps1 -OutFile "$env:TEMP\update-atlassoc.ps1"; powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\update-atlassoc.ps1"
 ```
 
 Add `-Channel beta` or `-Channel stable` to skip the question, `-Force` to reinstall the same version, or `-DownloadOnly` to stop after verification. `stable` finds nothing until a full AtlasSOC release exists.

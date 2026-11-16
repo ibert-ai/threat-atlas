@@ -6,7 +6,7 @@ Applies to the unsigned 0.4.5 stable installer; Windows 10/11 x64 only. Windows 
 
 ## All-users MSI installation
 
-1. Download the MSI from the [published release](https://github.com/ibert-ai/threat-atlas/releases). Check its SHA-256 against that release's checksum manifest.
+1. Download the MSI from the [published release](https://github.com/Ibert-Iam/threat-atlas/releases). Check its SHA-256 against that release's checksum manifest.
 2. Install the MSI and approve the administrator prompt. It installs one 64-bit `ThreatAtlas.scr` into `%WINDIR%\System32` and its documents into `%ProgramFiles%\Threat Atlas`. If an older per-user install exists, the installer stops: uninstall that one first.
 3. Open **Start > Threat Atlas SOC > Set up Threat Atlas**, then select the saver, choose the wait time and Apply.
 4. **Preview Threat Atlas** opens a normal live window. A working windowed preview does not prove Settings discovery or idle activation.

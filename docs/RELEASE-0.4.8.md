@@ -1,7 +1,7 @@
 # Threat Atlas screensaver 0.4.8 — published stable, build 16
 
 Published 11 November 2026 from `7fba1cc1b3c0b7cdc295d67d4bff378d6d46fff4`.
-[Release notes and downloads](https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.8).
+[Release notes and downloads](https://github.com/Ibert-Iam/threat-atlas/releases/tag/v0.4.8).
 
 ## Identity and packages
 
@@ -40,5 +40,5 @@ maintainer's release decision, not a claim that these gaps passed.
 Use the release's SHA-256 files before installation. The macOS ZIP has a
 separate signed-package checksum file. Existing release assets remain unchanged.
 See [known bugs and limitations](KNOWN-BUGS.md), the
-[Desktop stable release](https://github.com/ibert-ai/threat-atlas/releases/tag/atlassoc-v0.7.0)
+[Desktop stable release](https://github.com/Ibert-Iam/threat-atlas/releases/tag/atlassoc-v0.7.0)
 and [Linux Desktop preview](ATLAS-SOC-LINUX.md).

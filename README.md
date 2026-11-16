@@ -10,7 +10,7 @@ GreyNoise public threat-map feed. The header shows both UTC and the computer's l
 
 ## Maintainer
 
-Threat Atlas SOC and AtlasSOC Desktop are free and open source software under the [MIT licence](LICENSE), maintained by the Threat Atlas project. Ibert Consulting is the legal and administrative operator, in this repository, [github.com/ibert-ai/threat-atlas](https://github.com/ibert-ai/threat-atlas). Releases are published here and the software is free to use.
+Threat Atlas SOC and AtlasSOC Desktop are free and open source software under the [MIT licence](LICENSE), maintained by the Threat Atlas project. Ibert Consulting is the legal and administrative operator, in this repository, [github.com/Ibert-Iam/threat-atlas](https://github.com/Ibert-Iam/threat-atlas). Releases are published here and the software is free to use.
 
 ## Release status
 
@@ -19,24 +19,24 @@ portable ZIP), the Linux x86_64 windowed preview and macOS 12+ (Developer ID sig
 notarized). It promotes the 0.4.7-rc.1 implementation, including the two-display Windows
 panorama. Windows packages are unsigned. Stable is the maintainer's release decision, not a
 claim that every hardware/manual check passed; see the release notes for test limits.
-[Release downloads](https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.8).
+[Release downloads](https://github.com/Ibert-Iam/threat-atlas/releases/tag/v0.4.8).
 
 **AtlasSOC Desktop 0.7.0**, build **13**, is the stable standalone SOC view for Windows x64
 and macOS 14+; see [docs/ATLAS-SOC-BETA.md](docs/ATLAS-SOC-BETA.md) and its
-[release downloads](https://github.com/ibert-ai/threat-atlas/releases/tag/atlassoc-v0.7.0).
+[release downloads](https://github.com/Ibert-Iam/threat-atlas/releases/tag/atlassoc-v0.7.0).
 
 **AtlasSOC Desktop 0.8.0 RC1**, build **15**, is a pre-release for testing the new OSINT
 sources: Windows x64 (unsigned; SmartScreen may warn) and macOS 14+ universal (Developer ID
 signed and notarized), with 13 optional OSINT sources, per-source switches, keys in the system
 credential store and an optional AI prompt for adding free provider keys. It is **not** the
 latest stable; 0.7.0 remains stable. See the
-[RC1 release notes and downloads](https://github.com/ibert-ai/threat-atlas/releases/tag/atlassoc-v0.8.0-rc.1)
+[RC1 release notes and downloads](https://github.com/Ibert-Iam/threat-atlas/releases/tag/atlassoc-v0.8.0-rc.1)
 and [known limits](docs/KNOWN-BUGS.md). No Linux RC1 build.
 
-A separate **AtlasSOC Desktop Linux x86_64 preview**, build **13**, was published on 12 November 2026 from newer source. It has no Radar, saved settings or update check; physical Linux and live-feed acceptance remain unverified. See [preview details](docs/ATLAS-SOC-LINUX.md) and [downloads](https://github.com/ibert-ai/threat-atlas/releases/tag/atlassoc-v0.7.0-linux).
+A separate **AtlasSOC Desktop Linux x86_64 preview**, build **13**, was published on 12 November 2026 from newer source. It has no Radar, saved settings or update check; physical Linux and live-feed acceptance remain unverified. See [preview details](docs/ATLAS-SOC-LINUX.md) and [downloads](https://github.com/Ibert-Iam/threat-atlas/releases/tag/atlassoc-v0.7.0-linux).
 
 The earlier **0.4.5 stable release**, build **13**, promoted the approved 0.4.4-rc.1 implementation for Windows x64 (all-users MSI and portable ZIP) and Linux x86_64 (windowed X11/XWayland preview).
-[Release downloads](https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.5).
+[Release downloads](https://github.com/Ibert-Iam/threat-atlas/releases/tag/v0.4.5).
 That older 0.4.5 release has no macOS package; this historical restriction does not apply to the signed 0.4.8 macOS download. Stable is the maintainer's release decision, not trusted signing or a claim that every hardware/manual check passed. Lock-on-resume and browser-downloaded MSI installation remain UNTESTED; see release notes. Existing releases are preserved.
 
 The official **0.4.0**, build **8**, release ships without trusted code signing.
@@ -44,7 +44,7 @@ Windows SCR/MSI files are unsigned; macOS bundles are ad-hoc signed and unnotari
 Systems may warn or block installation. Do not disable OS security protections.
 It includes dual clocks, optional signed-update support, macOS preview fixes and
 screenshot thumbnails. Automatic updates remain unavailable without trusted signing.
-[Downloads](https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.0).
+[Downloads](https://github.com/Ibert-Iam/threat-atlas/releases/tag/v0.4.0).
 Manual platform acceptance remains incomplete; see docs/QUALITY.md.
 See [release/version handling](docs/RELEASING.md) and [change history](CHANGELOG.md).
 

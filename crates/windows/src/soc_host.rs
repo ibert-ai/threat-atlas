@@ -256,7 +256,7 @@ fn open_token_guide(window: &Window) {
         })
         .filter(|path| path.is_file());
     let target = local.map_or_else(
-        || "https://github.com/ibert-ai/threat-atlas/blob/main/docs/CLOUDFLARE-RADAR-TOKEN-GUIDE.md".to_string(),
+        || "https://github.com/Ibert-Iam/threat-atlas/blob/main/docs/CLOUDFLARE-RADAR-TOKEN-GUIDE.md".to_string(),
         |path| path.display().to_string(),
     );
     unsafe {
