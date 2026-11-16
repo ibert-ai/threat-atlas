@@ -19,7 +19,7 @@ import sys
 import urllib.parse
 import urllib.request
 
-REPO = "ibert-ai/threat-atlas"
+REPO = "Ibert-Iam/threat-atlas"
 DOWNLOAD_PREFIX = f"https://github.com/{REPO}/releases/download/"
 SCHEMA = 1
 CHANNELS = ("stable", "rc", "beta")
@@ -42,7 +42,7 @@ ASSET_RULES = (  # (regex on asset name, platform, kind)
 
 
 def download_url_ok(url, tags, name):
-    """True only for https://github.com/ibert-ai/threat-atlas/releases/download/<tag>/<name>.
+    """True only for https://github.com/Ibert-Iam/threat-atlas/releases/download/<tag>/<name>.
 
     A string-prefix test is not enough: '..' segments, percent-encoding, user-info, ports, queries and
     fragments all let a URL that starts with the right text point somewhere else once a client
@@ -58,7 +58,7 @@ def download_url_ok(url, tags, name):
         return False
     owner, repo, releases, download, tag, filename = parts[1:]
     safe = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
-    return ((owner, repo, releases, download) == ("ibert-ai", "threat-atlas", "releases", "download")
+    return ((owner, repo, releases, download) == ("Ibert-Iam", "threat-atlas", "releases", "download")
             and tag in tags and filename == name
             and safe.fullmatch(tag) is not None and safe.fullmatch(filename) is not None
             and ".." not in tag and ".." not in filename)
