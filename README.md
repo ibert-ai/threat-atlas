@@ -23,6 +23,14 @@ claim that every hardware/manual check passed; see the release notes for test li
 and macOS 14+; see [docs/ATLAS-SOC-BETA.md](docs/ATLAS-SOC-BETA.md) and its
 [release downloads](https://github.com/ibert-ai/threat-atlas/releases/tag/atlassoc-v0.7.0).
 
+**AtlasSOC Desktop 0.8.0 RC1**, build **15**, is a pre-release for testing the new OSINT
+sources: Windows x64 (unsigned; SmartScreen may warn) and macOS 14+ universal (Developer ID
+signed and notarized), with 13 optional OSINT sources, per-source switches, keys in the system
+credential store and an optional AI prompt for adding free provider keys. It is **not** the
+latest stable; 0.7.0 remains stable. See the
+[RC1 release notes and downloads](https://github.com/ibert-ai/threat-atlas/releases/tag/atlassoc-v0.8.0-rc.1)
+and [known limits](docs/KNOWN-BUGS.md). No Linux RC1 build.
+
 A separate **AtlasSOC Desktop Linux x86_64 preview**, build **13**, was published on 12 November 2026 from newer source. It has no Radar, saved settings or update check; physical Linux and live-feed acceptance remain unverified. See [preview details](docs/ATLAS-SOC-LINUX.md) and [downloads](https://github.com/ibert-ai/threat-atlas/releases/tag/atlassoc-v0.7.0-linux).
 
 The earlier **0.4.5 stable release**, build **13**, promoted the approved 0.4.4-rc.1 implementation for Windows x64 (all-users MSI and portable ZIP) and Linux x86_64 (windowed X11/XWayland preview).
