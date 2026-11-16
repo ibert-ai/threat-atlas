@@ -32,7 +32,7 @@ Rules:
 - Versions use SemVer precedence: `0.8.0-beta.2 < 0.8.0-rc.1 < 0.8.0`. A newer stable always beats an older RC or beta, so a user on Beta moves to the stable release when it ships.
 - **Pulling a version:** the feed lists `withdrawn` tags. The client never offers a withdrawn version and skips it when resolving the channel, which gives the fallback automatically (a withdrawn beta resolves to the newest good RC, and so on).
 - If the **installed** version is withdrawn, the app shows a warning and offers the channel's resolved version as a **user-approved** move. It never downgrades silently. Downgrades need an explicit `rollback_to` entry in the feed and the user's approval.
-- Switching to a more stable channel never downgrades automatically. It only stops offering newer prereleases. The user may install the stable version manually from Settings.
+- **Switching to Stable from a pre-release channel reinstalls the whole app with the latest stable version** (decision Q4, section 11). It happens only after a confirmation dialog ("This replaces 0.9.0-beta.2 with 0.7.0") with a Cancel button, never automatically. Settings are backed up first and keys stay in the Keychain / Credential Manager. Switching from Beta to RC works the same way if the RC is older than the installed version.
 - A channel pointer that is empty or unreachable falls through to the next channel; if the feed itself is unreachable or invalid, the app keeps the current version and shows the last successful check time.
 
 ## 4. The update feed
@@ -92,9 +92,9 @@ Rules:
 
 - Installed version, build and **its own channel** (for example "0.8.0 RC 1, build 15, release candidate").
 - **Channel selector:** Stable (default), Release Candidates, Betas. Selecting RC or Beta shows a plain warning: *"Pre-release versions can contain bugs. If a pre-release is pulled, you are offered the next safer version."*
-- **Automatic updates:** Off, Notify me, or Download and ask. "Download and ask" downloads and verifies in the background, then starts the installer when the user approves. Operating-system approval prompts remain. Never silent elevation, never a disabled security check.
+- **Automatic updates:** Off, Notify me (default) or **Download and install**. Download and install downloads and verifies in the background and **applies the update the next time the user starts the app**, never by closing or restarting a running app. If no instance is running when the check happens, it installs at once. Without that mode the app shows a banner about a new version in the user's own channel. Operating-system approval prompts remain. Never silent elevation, never a disabled security check.
 - **Check now**, last check time and result, the version that would be installed, and a link to the release notes.
-- Defers while the app, the screensaver host or System Settings is running; never forces a process to close.
+- Never forces a process to close. A running app, screensaver host or System Settings simply defers the installation to its next start. A long-running SOC wall therefore keeps its version until someone starts it again; the banner says "Update downloaded, installs next time the app starts".
 - Offline or feed errors: keep the current version, show the reason.
 
 ## 7. Scripts (direct download of the newest version per channel)
@@ -103,7 +103,7 @@ Rules:
 - They read the feed, apply the same fallback rules, verify the SHA-256 and print the resolved version, channel and file path. They start the normal installer only when asked.
 - The existing `scripts/update-atlassoc.ps1` is extended from `stable|beta` to `stable|rc|beta` and moved onto the feed. A one-line command for each channel goes into `README.md` and `docs/UPDATES.md`.
 
-## 8. Scope and order of work
+## 8. Scope and order of work (superseded by the work packages in section 12)
 
 1. Feed schema, `scripts/update-feed.py`, CI checks, initial feed (stable, RC1, empty beta), decisions in section 10.
 2. Core resolver in `crates/core/src/update.rs` (channel resolution, withdrawn handling, unit tests including every fallback case) and Swift/PowerShell equivalents.
@@ -131,3 +131,45 @@ Rules:
 3. **Default automatic mode on a fresh install:** *Notify me*. "Download and ask" and "Off" stay selectable. Nothing is downloaded in the background by default.
 4. **One implementation:** the screensaver and AtlasSOC share one Settings → Updates design and one feed.
 5. **Beta channel display:** shown only when the feed lists a beta for that product.
+
+## 11. Decisions from the design interview (16 November 2026)
+
+All 13 questions were answered by the owner. Q-numbers match the interview.
+
+| # | Decision |
+|---|---|
+| Q1 | Install **directly**, but never by closing a running app (Q1c): the update waits and installs the next time the user starts the app. |
+| Q1b | Direct install only for users who chose the mode *Download and install*. Everyone else gets a banner about a new version in their own channel (Beta, RC or Stable). Default stays *Notify me*. |
+| Q2 | Automatic updates only for Windows installed **per user**. A machine-wide Windows installation gets a notice and a button that opens the installer, where the user approves UAC. |
+| Q3 | One check per day at start or the first opportunity, with a random delay, plus a **Check now** button. Same interval for all channels. |
+| Q4 | Switching to Stable **reinstalls the whole app** with Stable (see section 3 and Q4b). |
+| Q4b | A dialog with Cancel before the reinstall; settings are backed up first (Windows `settings.json` has `schema_version`; on macOS the preferences are exported because `UserDefaults` has no version); keys stay in the Keychain / Credential Manager; if the older version cannot read the settings it starts with defaults and the backup is kept. |
+| Q5 | A withdrawn installed version gets a visible banner offering the next safe version. The scenario is untested; we only make room for it. |
+| Q6 | The app stores and sends nothing beyond what cannot be avoided (the request itself reveals the IP address to the host). No version header, no installation ID, a generic user agent, nothing reused for other purposes. Stated in the privacy text. |
+| Q7 / Q7b | A custom feed is a good feature and is offered **as a mirror only**: the user copies our signed feed and files to their own https server. We run nothing, see no traffic and keep no logs. Our signing keys stay required (no custom keys in this version). A banner says "custom feed in use". The mirror owner is responsible for their own server and logs. |
+| Q8 / Q8b | Automatic installation of **unsigned Windows builds** is allowed only after the user actively ticks a consent box (not pre-ticked) saying the build is not signed by a trusted publisher, that Windows therefore cannot confirm who created it, that the software is open source under the MIT licence and provided as is, and that the user wants automatic installation. The feed signature and the SHA-256 check stay mandatory. The consent is stored locally (date, version; nothing is sent) and is asked again when the signing state changes and for every new major version. Without consent nothing is installed automatically. **The wording is reviewed by a qualified person before release**, because the owner is legally responsible for what is published. |
+| Q9 | The screensaver shows a banner, but the user must go into Settings and click Update; no automatic installation on Windows until a signed certificate exists. |
+| Q10 | Banners appear at the top of the apps and in Settings → Updates; for the screensaver only in its settings dialog, never while it runs. |
+| Q11 | A banner can be dismissed per version and returns only for a newer version in the same channel; Settings always shows that an update exists. |
+| Q12 | The screensaver's Update button downloads and verifies the file, then opens the normal installer where the user approves UAC or the macOS prompt. |
+| Q13 | The macOS screensaver's existing automatic updater stays as an optional switch, off by default; with the switch off the banner and button apply. |
+
+Still open (not decided): the exact wording of the consent text (work package WP7, owner review), the test plan for N → N+1 before a signed Windows build exists (WP9), and which version is the first to include the Updates view (owner decision at release planning).
+
+## 12. Work packages
+
+| WP | Work | Owner | Needs |
+|---|---|---|---|
+| WP1 | Publish the feed on the `update-feed` branch, signing script (key held by the publisher in the macOS Keychain), daily link and hash CI job | CL | owner's offline recovery public key (R1) |
+| WP2 | Core resolver, staging area and apply-on-start logic in `crates/core/src/update.rs`, with tests for every channel and fallback case | CL | PR 94 merged |
+| WP3 | Windows host: Settings → Updates (channel selector, banner, modes, per-user rule, machine-wide notice, consent box, reinstall to Stable, mirror setting) | CL | WP2, WP7 text |
+| WP4 | macOS app: the same view; fix the stale text "This beta is not Developer ID signed yet" | CL | WP2 |
+| WP5 | Screensaver: banner and Update button in the settings dialogs, macOS optional auto switch | CL | WP2 |
+| WP6 | `get-latest` scripts (PR 95) finished and reviewed | CL, review MAC | PR 94, 95 |
+| WP7 | Consent text, privacy text (Q6), `docs/UPDATES.md`, `PRIVACY.md`, README | MAC drafts; owner has the consent text reviewed (R2) | decisions above |
+| WP8 | Guide for mirroring the feed (Q7b), no data on our side | MAC | WP1 |
+| WP9 | Test plan and execution: Windows per-user and machine-wide, withdrawn-version fallback, Beta to RC to Stable, switch to Stable reinstall, offline, interrupted download, wrong hash, no silent installation; macOS equivalents | Billy (Windows), CL (macOS) | WP2 to WP5 builds |
+| WP10 | Announcement and website text after release | Seek | release published |
+| R1 | Create and hold the offline recovery key; give CL the public part | Robert | none |
+| R2 | Have the consent text reviewed by a qualified person | Robert | WP7 draft |
+| R3 | Choose the first version that includes the Updates view | Robert | WP2 to WP5 progress |
