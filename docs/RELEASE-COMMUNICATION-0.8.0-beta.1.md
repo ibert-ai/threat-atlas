@@ -301,6 +301,33 @@ has a visual or a link preview, zero emojis is better than one.
 > adding the keys, copy the **AI key guide** prompt into any chat assistant — it walks you through one step at a
 > time and never asks for the key. See [docs/OSINT-API-KEYS.md](docs/OSINT-API-KEYS.md).
 
+## GitHub follow and transparent source — carry to the next release
+
+**Not published now.** Keep this for the next release notes/README/social copy.
+
+Use the GitHub link **sparingly**, not in every post. It is a follow/source link, not a sales CTA.
+
+- Public repository: https://github.com/ibert-ai/threat-atlas
+- To get release notifications: open the repository, choose **Watch → Custom → Releases**. A logged-in user can
+  also open https://github.com/ibert-ai/threat-atlas/subscription directly.
+- The full project source is open on GitHub. Read it **before** you decide to use the app or get involved.
+- In-app updates are **being worked on**, not available yet. Until they ship, get new versions from the GitHub
+  Releases page and verify the published checksums. Do not promise a release date.
+
+### Ready-to-use follow/source copy (use at most once per release)
+
+> Want to follow the work? Watch the repository on GitHub and choose **Releases** to be notified when a new
+> version is out: https://github.com/ibert-ai/threat-atlas. The project is open source — you can read the whole
+> thing before you decide to use it.
+>
+> We are working on updating versions from inside the app. Until that is ready, releases are published on GitHub
+> with checksums. Nothing is hidden: read the source, the release notes and the known limits first.
+
+Short version for a release note footer:
+
+> Follow releases on GitHub: https://github.com/ibert-ai/threat-atlas (Watch → Custom → Releases). In-app
+> updates are in development; the full source is open for inspection before you use it.
+
 ## Do not say (guardrails)
 
 - "Released", "available now", "stable" or a download link until Robert gives the go and the exact build exists.
@@ -340,3 +367,7 @@ has a visual or a link preview, zero emojis is better than one.
   in the same working branch. Confirm the final PR/build contents before announcing either.
 - Out: Team Cymru (004), RIPE RIS (010), GeoLite2, Windows signing, 1920x1080 scaling, multi-screen.
 - The public status page is CL-owned; do not edit `public-status.json` by hand.
+- The GitHub follow/source link is used sparingly, at most once per release — not as a recurring CTA. Do not
+  promise that in-app updates are available now or give a date; say they are being worked on.
+- Do not imply the GitHub watch/subscription page is a download page. The public download source is the Releases
+  page; the subscription page is only for notification settings and requires login.
