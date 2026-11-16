@@ -1,6 +1,6 @@
 # Plan: lift the screensaver to AtlasSOC's feature level without a rewrite
 
-Status: **plan only, nothing built.** Requested by the owner on 16 November 2026. Reference `ATLAS-SAVER-PARITY-001`.
+Status: **plan approved by the owner on 16 November 2026 (D1-D4 and the Linux to-do); implementation not started.** Requested by the owner on 16 November 2026. Reference `ATLAS-SAVER-PARITY-001`.
 
 ## 1. Why this is mostly composition, not new code
 
@@ -48,7 +48,16 @@ A screensaver has no mouse and no keyboard (any input ends it). Sorted by that r
 | SP8 | Tests: multi-monitor, idle and lock, battery/CPU against 0.4.8, mixed DPI; ✅/⚠️/🚨 per case | Billy (Windows), MAC (macOS) | SP4, SP5 | result line per case in the handover files |
 | SP9 | Docs, website and release: wishlist row, release notes, website text, Beta-channel feed entry | Seek (texts), CL (release), MAC (review) | SP8 | optimisation gate passed, Beta pre-release published |
 
-## 5. Owner decisions needed (D1-D4)
+## 5. Owner decisions (D1-D4) — ANSWERED 16 November 2026
+
+Robert answered "yes, as you recommend" for all four, and approved the Linux to-do (section 7) as written:
+
+- **D1 Scope: GreyNoise, rotating OSINT cards and the ports block in the first beta; Radar later.**
+- **D2 Radar in the saver: waits for Cloudflare's answer.**
+- **D3 Version: the saver stays on its own line, next version 0.5.0 (Beta channel first).**
+- **D4 Configuration: saver settings live in AtlasSOC Settings (one place); the saver only reads them.**
+
+Original options, for the record:
 
 - **D1 Scope:** which of the SOC features in §2 "port non-interactive" you want in the first beta (proposal: GreyNoise + rotating OSINT cards + ports block; Radar later).
 - **D2 Radar in the saver:** wait for Cloudflare's answer (recommended) or ship without Radar.
