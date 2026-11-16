@@ -16,6 +16,7 @@ import json
 import re
 import subprocess
 import sys
+import urllib.parse
 import urllib.request
 
 REPO = "ibert-ai/threat-atlas"
@@ -38,6 +39,29 @@ ASSET_RULES = (  # (regex on asset name, platform, kind)
     (re.compile(r"Linux.*\.tar\.gz$"), "linux-x64", "portable"),
     (re.compile(r"SHA256.*\.txt$|SHA256SUMS"), "any", "checksums"),
 )
+
+
+def download_url_ok(url, tags, name):
+    """True only for https://github.com/ibert-ai/threat-atlas/releases/download/<tag>/<name>.
+
+    A string-prefix test is not enough: '..' segments, percent-encoding, user-info, ports, queries and
+    fragments all let a URL that starts with the right text point somewhere else once a client
+    normalises it. Compare the parsed components exactly instead.
+    """
+    if not isinstance(url, str) or any(c in url for c in "\\%?#@ \t\r\n"):
+        return False
+    p = urllib.parse.urlsplit(url)
+    if p.scheme != "https" or p.netloc != "github.com" or p.query or p.fragment:
+        return False
+    parts = p.path.split("/")
+    if len(parts) != 7 or parts[0] != "":
+        return False
+    owner, repo, releases, download, tag, filename = parts[1:]
+    safe = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
+    return ((owner, repo, releases, download) == ("ibert-ai", "threat-atlas", "releases", "download")
+            and tag in tags and filename == name
+            and safe.fullmatch(tag) is not None and safe.fullmatch(filename) is not None
+            and ".." not in tag and ".." not in filename)
 
 
 def parse_version(text):
@@ -161,11 +185,8 @@ def validate(feed):
                     errors.append(f"{pname} {v} {a.get('name')}: sha256 must be 64 lowercase hex digits")
                 if not isinstance(a.get("size"), int) or a["size"] <= 0:
                     errors.append(f"{pname} {v} {a.get('name')}: size must be a positive integer")
-                url = str(a.get("url", ""))
-                if not url.startswith(DOWNLOAD_PREFIX) or url.split("/")[-2] not in tags:
-                    errors.append(f"{pname} {v} {a.get('name')}: url must be a {REPO} release download of this tag")
-                elif url.rsplit("/", 1)[-1] != a.get("name"):
-                    errors.append(f"{pname} {v}: url file name differs from asset name {a.get('name')}")
+                if not download_url_ok(a.get("url"), tags, a.get("name")):
+                    errors.append(f"{pname} {v} {a.get('name')}: url must be a {REPO} release download of this tag and file")
                 if a.get("name") in names:
                     errors.append(f"{pname} {v}: duplicate asset {a.get('name')}")
                 names.add(a.get("name"))
