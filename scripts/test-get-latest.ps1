@@ -23,7 +23,7 @@ Assert-Refuses { & $script -FeedFile $feed -ResolveOnly } 'Feed signature' 'ran 
 $bad = Get-Content -LiteralPath $feed -Raw | ConvertFrom-Json
 foreach ($a in $bad.products.atlassoc.releases[0].assets) { $a.url = 'https://evil.example/x.exe' }
 $dots = Get-Content -LiteralPath $feed -Raw | ConvertFrom-Json
-foreach ($a in $dots.products.atlassoc.releases[0].assets) { $a.url = 'https://github.com/ibert-ai/threat-atlas/releases/download/../../../evil/x/' + $dots.products.atlassoc.releases[0].tag + '/' + $a.name }
+foreach ($a in $dots.products.atlassoc.releases[0].assets) { $a.url = 'https://github.com/Ibert-Iam/threat-atlas/releases/download/../../../evil/x/' + $dots.products.atlassoc.releases[0].tag + '/' + $a.name }
 $dotsFile = Join-Path ([IO.Path]::GetTempPath()) 'dots-feed.json'
 $dots | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $dotsFile -Encoding UTF8
 $badFile = Join-Path ([IO.Path]::GetTempPath()) 'bad-feed.json'

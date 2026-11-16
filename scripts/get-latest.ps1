@@ -30,7 +30,7 @@ param(
     [ValidateSet('stable', 'rc', 'beta')][string]$Channel = 'stable',
     [string]$Platform = 'windows-x64',
     [ValidateSet('auto', 'installer', 'portable')][string]$Kind = 'auto',
-    [string]$FeedUrl = 'https://raw.githubusercontent.com/ibert-ai/threat-atlas/update-feed/feed.json',
+    [string]$FeedUrl = 'https://raw.githubusercontent.com/Ibert-Iam/threat-atlas/update-feed/feed.json',
     [string]$FeedFile,
     [string]$OutDir = (Join-Path $env:LOCALAPPDATA 'ThreatAtlas\Downloads'),
     [switch]$ResolveOnly,
@@ -40,7 +40,7 @@ param(
 $ErrorActionPreference = 'Stop'
 # Windows PowerShell 5.1 may default to old TLS versions; GitHub needs TLS 1.2.
 try { [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12 } catch { }
-$DownloadPrefix = 'https://github.com/ibert-ai/threat-atlas/releases/download/'
+$DownloadPrefix = 'https://github.com/Ibert-Iam/threat-atlas/releases/download/'
 $Allowed = @{ stable = @('stable'); rc = @('stable', 'rc'); beta = @('stable', 'rc', 'beta') }
 
 function Get-VersionKey([string]$Version) {
@@ -56,14 +56,14 @@ function Test-VersionNewer([string]$A, [string]$B) {
     return $false
 }
 function Test-DownloadUrl([string]$Url, [string]$Name, $Release) {
-    # Exact https://github.com/ibert-ai/threat-atlas/releases/download/<tag>/<name>; no '..', '%', '\', '@', '?', '#'.
+    # Exact https://github.com/Ibert-Iam/threat-atlas/releases/download/<tag>/<name>; no '..', '%', '\', '@', '?', '#'.
     if ([string]::IsNullOrEmpty($Url) -or $Url -match '[\\%?#@\s]' -or $Url -match '(^|/)\.\.?(/|$)') { return $false }
     $u = $null
     if (-not [Uri]::TryCreate($Url, [UriKind]::Absolute, [ref]$u)) { return $false }
     if ($u.Scheme -ne 'https' -or $u.Host -ne 'github.com' -or -not $u.IsDefaultPort) { return $false }
     $parts = $u.AbsolutePath.Split('/')
     if ($parts.Count -ne 7 -or $parts[0] -ne '') { return $false }
-    if ($parts[1] -cne 'ibert-ai' -or $parts[2] -cne 'threat-atlas' -or $parts[3] -cne 'releases' -or $parts[4] -cne 'download') { return $false }
+    if ($parts[1] -cne 'Ibert-Iam' -or $parts[2] -cne 'threat-atlas' -or $parts[3] -cne 'releases' -or $parts[4] -cne 'download') { return $false }
     if ($parts[5] -cne $Release.tag -and $parts[5] -cne "$($Release.tag)-linux") { return $false }
     if ($parts[5] -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$' -or $parts[6] -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$') { return $false }
     return ($parts[6] -ceq $Name)

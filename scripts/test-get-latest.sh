@@ -35,7 +35,7 @@ import json, sys
 f = json.load(open(sys.argv[1]))
 rel = f["products"]["atlassoc"]["releases"][0]
 for a in rel["assets"]:
-    a["url"] = "https://github.com/ibert-ai/threat-atlas/releases/download/../../../evil/x/" + rel["tag"] + "/" + a["name"]
+    a["url"] = "https://github.com/Ibert-Iam/threat-atlas/releases/download/../../../evil/x/" + rel["tag"] + "/" + a["name"]
 json.dump(f, open(sys.argv[2], "w"))
 PY
 if bash "$here/get-latest.sh" --channel beta --platform windows-x64 --feed-file "$tmp" --resolve-only --allow-unsigned-feed >/dev/null 2>&1; then echo "FAIL: accepted a dot-dot URL"; fail=$((fail + 1)); fi

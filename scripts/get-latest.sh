@@ -9,7 +9,7 @@
 # Channels: stable (default), rc, beta. Fallback: beta -> rc -> stable; rc -> stable.
 set -euo pipefail
 
-DEFAULT_FEED="https://raw.githubusercontent.com/ibert-ai/threat-atlas/update-feed/feed.json"
+DEFAULT_FEED="https://raw.githubusercontent.com/Ibert-Iam/threat-atlas/update-feed/feed.json"
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 product="atlassoc"; channel="stable"; platform=""; kind="auto"
 feed_url="$DEFAULT_FEED"; feed_file=""; out_dir="${XDG_CACHE_HOME:-$HOME/.cache}/threat-atlas/downloads"
@@ -70,7 +70,7 @@ fi
 line="$(python3 "$here/update_feed.py" pick-asset "$work/feed.json" --product "$product" --channel "$channel" \
         --platform "$platform" --kind "$kind")" || die "no release available for $product / $channel / $platform"
 IFS=$'\t' read -r version found_channel url sha size name <<<"$line"
-case "$url" in https://github.com/ibert-ai/threat-atlas/releases/download/*) ;; *) die "refusing a download URL outside the project's GitHub releases" ;; esac
+case "$url" in https://github.com/Ibert-Iam/threat-atlas/releases/download/*) ;; *) die "refusing a download URL outside the project's GitHub releases" ;; esac
 # update_feed.py already validated the URL by its parsed parts; refuse anything a client could normalise elsewhere.
 case "$url" in *..*|*%*|*\\*|*\?*|*\#*|*@*) die "refusing a download URL with traversal or special characters" ;; esac
 case "$name" in *[!A-Za-z0-9._-]*|"") die "refusing an unsafe file name" ;; esac
