@@ -39,7 +39,7 @@ Rules:
 
 **Why a feed instead of calling the GitHub API directly:** one source for the apps and both scripts, no API rate limits for many users, explicit control over what each channel offers, and a way to withdraw a version without deleting a release.
 
-**Location (decided):** a dedicated branch `update-feed` in the public repository, containing only `feed.json` and `history/`. Apps read `https://raw.githubusercontent.com/ibert-ai/threat-atlas/update-feed/feed.json`. A separate branch means a release does not need a merge to `main`. A copy of the feed is also uploaded as a release asset for offline mirrors.
+**Location (decided):** a dedicated branch `update-feed` in the public repository, containing only `feed.json` and `history/`. Apps read `https://raw.githubusercontent.com/Ibert-Iam/threat-atlas/update-feed/feed.json`. A separate branch means a release does not need a merge to `main`. A copy of the feed is also uploaded as a release asset for offline mirrors.
 
 **Shape (draft, `schema_version` 1):**
 
@@ -61,11 +61,11 @@ Rules:
           "min_supported_from": "0.6.0",
           "assets": [
             { "platform": "windows-x64", "kind": "installer", "name": "AtlasSOC-Setup-0.8.0-build15.exe",
-              "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.8.0-rc.1/AtlasSOC-Setup-0.8.0-build15.exe",
+              "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/atlassoc-v0.8.0-rc.1/AtlasSOC-Setup-0.8.0-build15.exe",
               "sha256": "e86ecccc3f348de59d04af80637bae2e4d76829df27f8a4178e0bd39b31acc13", "size": 4099642,
               "signature": "unsigned" }
           ],
-          "notes_url": "https://github.com/ibert-ai/threat-atlas/releases/tag/atlassoc-v0.8.0-rc.1"
+          "notes_url": "https://github.com/Ibert-Iam/threat-atlas/releases/tag/atlassoc-v0.8.0-rc.1"
         }
       ],
       "withdrawn": []
@@ -78,7 +78,8 @@ Rules:
 **Trust rules (unchanged in spirit from `docs/UPDATES.md`):**
 
 - The feed is only a **pointer**. It never authorises installation by itself. The client verifies the SHA-256 from the feed, then the OS signature where the artifact is signed (Authenticode, Developer ID plus Gatekeeper), and fails closed on a mismatch or on an unexpected publisher.
-- Downloads come only from `https://github.com/ibert-ai/threat-atlas/releases/download/…`; any other host in the feed is rejected.
+- Downloads come only from `https://github.com/Ibert-Iam/threat-atlas/releases/download/…`; any other host in the feed is rejected.
+- **Owner name:** the GitHub account was renamed from `ibert-ai` to `Ibert-Iam` on 16 November 2026. Only `Ibert-Iam` is accepted. The old name is an empty reserved organisation (so nobody else can claim it) and every validator rejects it explicitly; old URLs still redirect, but an updater must never trust a redirect target it did not pin. Shipped 0.4.x screensaver updaters pin the old path and therefore reject the new URLs (known limit of already released versions).
 - **Decided:** sign `feed.json` with a detached Ed25519 signature (public keys built into the apps) so a compromised branch cannot redirect users. See section 10, decision 2, for who holds the keys and the rotation rule. Without it, anyone with push rights to the branch controls what users are offered.
 
 ## 5. Keeping the feed maintained
