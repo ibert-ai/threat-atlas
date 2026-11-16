@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-15T19:55:23Z",
+  "generated_at": "2026-11-16T12:20:39Z",
   "source_updated_at": "2026-11-15T19:55:23Z",
   "title": "Atlas — Project status",
   "state": "Screensaver 0.4.8 stable · AtlasSOC Desktop 0.7.0 stable (Windows + macOS) · AtlasSOC Linux preview",
@@ -184,7 +184,7 @@
     "name": "AtlasSOC Desktop",
     "state": "0.7.0 stable (Windows + macOS) · 0.8.0-rc.1 release candidate (pre-release) · Linux preview",
     "summary": "AtlasSOC Desktop 0.8.0-rc.1 (build 15) was published as a pre-release on 15 Nov 2026 for Windows x64 (unsigned) and macOS (Developer ID signed, notarized): 13 optional OSINT sources, keys in the system credential store, an AI help prompt for getting free keys and a voluntary support link. It is not the latest stable; 0.7.0 remains stable. Tag atlassoc-v0.8.0-rc.1, source commit 4434b91.",
-    "updated_at": "2026-11-15T19:55:23Z",
+    "updated_at": "2026-11-16T12:20:39Z",
     "release": {
       "name": "AtlasSOC Desktop 0.7.0 / build 13",
       "decision": "PUBLISHED STABLE · Windows x64 + macOS universal · Linux preview",
@@ -225,6 +225,14 @@
     },
     "tasks": [
       {
+        "task": "RC1 0.8.0-rc.1 build 15 published as pre-release; downloads re-downloaded and SHA-256 verified",
+        "status": "checked"
+      },
+      {
+        "task": "RC1 physical checks still open: Windows keyed sources on a second PC, longer soak, 125/150/200 % scaling",
+        "status": "pending"
+      },
+      {
         "task": "Stable 0.7.0 build 13 published (Windows + macOS)",
         "status": "checked"
       },
@@ -244,6 +252,34 @@
         "task": "Physical tests: Windows scaling 150/200 %, ultrawide, Intel Mac, Linux desktop",
         "status": "pending"
       }
-    ]
+    ],
+    "release_candidate": {
+      "name": "AtlasSOC Desktop 0.8.0-rc.1 / build 15",
+      "decision": "PRE-RELEASE (release candidate) · Windows x64 unsigned · macOS universal Developer ID signed and notarized · not the latest stable",
+      "published_at": "2026-11-15T19:54:43Z",
+      "url": "https://github.com/ibert-ai/threat-atlas/releases/tag/atlassoc-v0.8.0-rc.1",
+      "downloads": [
+        {
+          "name": "AtlasSOC-Setup-0.8.0-build15.exe",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.8.0-rc.1/AtlasSOC-Setup-0.8.0-build15.exe",
+          "sha256": "e86ecccc3f348de59d04af80637bae2e4d76829df27f8a4178e0bd39b31acc13"
+        },
+        {
+          "name": "AtlasSOC-Windows-x64-v0.8.0-rc.1-build15.zip",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.8.0-rc.1/AtlasSOC-Windows-x64-v0.8.0-rc.1-build15.zip",
+          "sha256": "9d5cc610cca083be41f6f381668a2c32aeb196bc5e6f6c7b458d89380396b91d"
+        },
+        {
+          "name": "AtlasSOC-macOS-universal-v0.8.0-rc.1-build15.zip",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.8.0-rc.1/AtlasSOC-macOS-universal-v0.8.0-rc.1-build15.zip",
+          "sha256": "dcbf8313482328b2e35e794c66248f1d884415b14d744cf845c4e21b4bd0c8f0"
+        },
+        {
+          "name": "AtlasSOC-v0.8.0-rc.1-SHA256SUMS.txt",
+          "url": "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.8.0-rc.1/AtlasSOC-v0.8.0-rc.1-SHA256SUMS.txt",
+          "sha256": "41f92a411a6845b3c39eeb54857b1b94c4c719c9e8506b8ffd05f1d5d7dd3487"
+        }
+      ]
+    }
   }
 }
