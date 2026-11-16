@@ -28,14 +28,14 @@ jobs:
   publish:
     needs: test
     # Only scheduled/manual runs in the real repository publish; pull requests (incl. forks) never get the token.
-    if: github.repository == 'ibert-ai/threat-atlas' && github.event_name != 'pull_request'
+    if: github.repository == 'Ibert-Iam/threat-atlas' && github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1 (Node 24)
       - name: Publish public agent health
         env:
-          # Fine-grained token with read-only Contents on ibert-ai/project-status-dashboard only.
+          # Fine-grained token with read-only Contents on Ibert-Iam/project-status-dashboard only.
           HANDOVER_TOKEN: ${{ secrets.AGENT_HEALTH_READ_TOKEN }}
           GH_TOKEN: ${{ github.token }}
         run: python3 -I tools/status/agent_health.py

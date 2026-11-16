@@ -16,7 +16,7 @@
 - Not in this release: Team Cymru ASN, MaxMind GeoLite2, RIPE RIS, the 1920x1080 base scaling, the multi-screen option and
   Windows code signing.
 
-## AtlasSOC Desktop 0.7.0 — Linux x86_64 preview, 11 November 2026
+## AtlasSOC Desktop 0.7.0 — Linux x86_64 preview, published 12 November 2026
 
 - First AtlasSOC Desktop build for Linux: the shared SOC view in a resizable X11/XWayland window, with keyboard controls, country focus by click and the wide layout. See docs/ATLAS-SOC-LINUX.md.
 - Preview scope: no Cloudflare Radar, update check, saved settings or fullscreen toggle. Checked by CI under a virtual display only; not tested on a physical Linux desktop.

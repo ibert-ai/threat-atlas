@@ -19,6 +19,9 @@ cost: token/cloud storage and signing subscriptions may be additional charges.
 Azure Artifact Signing currently accepts EU organizations but individual applicants
 only in the US/Canada. Check eligibility before buying anything.
 
+Certum Open Source Code Signing in the Cloud (SimplySign) is the paid option chosen for this
+project; the procedure is in [SIGNING-CERTUM.md](SIGNING-CERTUM.md).
+
 Certificate-store/token workflow on Windows:
 1. Build SCR with scripts/build-windows.ps1.
 2. Sign dist/ThreatAtlas.scr with scripts/sign-windows.ps1 -Thumbprint YOUR_THUMBPRINT -File dist/ThreatAtlas.scr.
