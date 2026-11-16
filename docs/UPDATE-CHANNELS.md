@@ -79,7 +79,7 @@ Rules:
 
 - The feed is only a **pointer**. It never authorises installation by itself. The client verifies the SHA-256 from the feed, then the OS signature where the artifact is signed (Authenticode, Developer ID plus Gatekeeper), and fails closed on a mismatch or on an unexpected publisher.
 - Downloads come only from `https://github.com/ibert-ai/threat-atlas/releases/download/…`; any other host in the feed is rejected.
-- **Decided:** sign `feed.json` with a detached Ed25519 signature (public key built into the apps) so a compromised branch cannot redirect users. The signing key must be held by the owner, not stored in the repository. Without it, anyone with push rights to the branch controls what users are offered.
+- **Decided:** sign `feed.json` with a detached Ed25519 signature (public keys built into the apps) so a compromised branch cannot redirect users. See section 10, decision 2, for who holds the keys and the rotation rule. Without it, anyone with push rights to the branch controls what users are offered.
 
 ## 5. Keeping the feed maintained
 
@@ -123,7 +123,11 @@ Rules:
 ## 10. Owner decisions (taken 16 November 2026: all recommendations accepted)
 
 1. **Feed location:** a dedicated branch `update-feed` in the public repository (not a file on `main`).
-2. **Feed signature:** `feed.json` is signed with a detached Ed25519 signature. The private key is held only by the owner and is never stored in the repository, in Git handovers or by an agent. Apps embed the public key and reject an unsigned or wrongly signed feed (they keep the installed version). Open detail for the implementation: how the owner signs each feed update without giving the key to an agent (for example, an agent prepares the unsigned feed and the owner signs it locally with a small script).
+2. **Feed signature (revised the same day at the owner's request):** `feed.json` is signed with a detached Ed25519 signature, and the **publisher agent (CL) holds the daily signing key**, so feed updates and withdrawals never wait for the owner (for example during the night). Safeguards that go with this:
+   - The signing key is generated on the publisher's machine for this one purpose, stored in the macOS Keychain, and never written to the repository, Git handovers, Telegram, logs or command arguments. It signs only `feed.json` for Threat Atlas and AtlasSOC, and is never used for anything else.
+   - Apps embed **two** public keys: the signing key and an offline **recovery key held only by the owner**. A feed update that rotates the signing key must be signed by the recovery key. If the signing key is ever lost or suspected compromised, the owner rotates it without shipping a new app version.
+   - The signing script refuses to sign a feed that fails `scripts/update-feed.py` validation (hashes, URLs, channel pointers, withdrawn tags), and logs each signing (feed hash, time, release tag) in the private handover.
+   - Apps reject an unsigned or wrongly signed feed and keep the installed version.
 3. **Default automatic mode on a fresh install:** *Notify me*. "Download and ask" and "Off" stay selectable. Nothing is downloaded in the background by default.
 4. **One implementation:** the screensaver and AtlasSOC share one Settings → Updates design and one feed.
 5. **Beta channel display:** shown only when the feed lists a beta for that product.
