@@ -7,6 +7,7 @@ Apps and scripts must still verify the SHA-256 and the operating-system signatur
   update_feed.py from-github --out feed.json [--releases-json FILE] [--keep-from OLD.json]
   update_feed.py validate feed.json
   update_feed.py resolve feed.json --product atlassoc --channel beta [--platform windows-x64]
+  update_feed.py pick-asset feed.json --product atlassoc --channel rc --platform windows-x64 [--kind installer]
   update_feed.py check-online feed.json [--hash]
 """
 import argparse
@@ -138,15 +139,15 @@ def build_product(product, releases, withdrawn=()):
     return block
 
 
-def resolve(block, channel, platform=None):
-    """Highest non-withdrawn release the channel may offer; None if there is none."""
+def resolve(block, channel, platform=None, kind="auto"):
+    """Highest non-withdrawn release the channel may offer that has a file for platform/kind; None if none."""
     if channel not in ALLOWED:
         raise ValueError(f"unknown channel: {channel}")
     best = None
     for rel in block["releases"]:
         if rel["version"] in block.get("withdrawn", []) or rel["channel"] not in ALLOWED[channel]:
             continue
-        if platform and not any(a["platform"] == platform and a["kind"] != "checksums" for a in rel["assets"]):
+        if platform and pick_asset(rel, platform, kind) is None:
             continue
         if best is None or parse_version(rel["version"]) > parse_version(best["version"]):
             best = rel
@@ -219,6 +220,16 @@ def validate(feed):
     return errors
 
 
+def pick_asset(release, platform, kind):
+    """The asset of `release` for platform/kind (kind 'auto': installer, else portable), or None."""
+    kinds = (kind,) if kind != "auto" else ("installer", "portable")
+    for k in kinds:
+        for a in release["assets"]:
+            if a["platform"] == platform and a["kind"] == k:
+                return a
+    return None
+
+
 def load_releases(path):
     if path:
         with open(path, encoding="utf-8") as f:
@@ -272,6 +283,12 @@ def main(argv=None):
     r.add_argument("--product", required=True, choices=sorted(TAGS))
     r.add_argument("--channel", required=True, choices=CHANNELS)
     r.add_argument("--platform")
+    pa = sub.add_parser("pick-asset", help="print version, channel, url, sha256, size, name (tab separated)")
+    pa.add_argument("feed")
+    pa.add_argument("--product", required=True, choices=sorted(TAGS))
+    pa.add_argument("--channel", required=True, choices=CHANNELS)
+    pa.add_argument("--platform", required=True)
+    pa.add_argument("--kind", default="auto", choices=("auto", "installer", "portable"))
     c = sub.add_parser("check-online")
     c.add_argument("feed")
     c.add_argument("--hash", action="store_true", help="download every file and compare SHA-256")
@@ -311,6 +328,14 @@ def main(argv=None):
             print("no release available", file=sys.stderr)
             return 2
         print(json.dumps(rel, indent=2))
+        return 0
+    if args.cmd == "pick-asset":
+        rel = resolve(feed["products"][args.product], args.channel, args.platform, args.kind)
+        asset = rel and pick_asset(rel, args.platform, args.kind)
+        if asset is None:
+            print("no release available", file=sys.stderr)
+            return 2
+        print("\t".join([rel["version"], rel["channel"], asset["url"], asset["sha256"], str(asset["size"]), asset["name"]]))
         return 0
     problems = check_online(feed, args.hash)
     print("\n".join(problems) if problems else "all feed links verified")

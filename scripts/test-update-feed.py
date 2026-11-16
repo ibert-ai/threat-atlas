@@ -88,6 +88,14 @@ class ResolutionTests(unittest.TestCase):
         self.assertEqual(ver(block, "rc", "macos-universal"), "0.8.0-rc.1")
 
 
+class KindFallbackTests(unittest.TestCase):
+    def test_kind_filter_falls_back_to_an_older_release_that_has_the_file(self):
+        releases = [rel("atlassoc-v0.7.0"), rel("atlassoc-v0.8.0-rc.1", pre=True, assets=("Windows-X.zip",))]
+        block = uf.build_feed(releases, now="x")["products"]["atlassoc"]
+        self.assertEqual(ver(block, "rc", "windows-x64"), "0.8.0-rc.1")
+        self.assertEqual(uf.resolve(block, "rc", "windows-x64", "installer")["version"], "0.7.0")
+
+
 class DownloadUrlTests(unittest.TestCase):
     TAGS = {"atlassoc-v0.7.0", "atlassoc-v0.7.0-linux"}
     GOOD = "https://github.com/Ibert-Iam/threat-atlas/releases/download/atlassoc-v0.7.0/AtlasSOC-Setup-0.7.0.exe"
@@ -212,6 +220,27 @@ class ValidationTests(unittest.TestCase):
             self.assertEqual(uf.main(["validate", str(path)]), 1)
             path.write_bytes(b" " * (uf.MAX_FEED_BYTES + 1))
             self.assertEqual(uf.main(["validate", str(path)]), 1)
+
+
+class SharedFixtureTests(unittest.TestCase):
+    """The same cases are checked by scripts/test-get-latest.ps1 against the PowerShell resolver."""
+
+    def test_sample_feed_is_valid_and_every_case_resolves_as_recorded(self):
+        fixtures = pathlib.Path(__file__).with_name("fixtures")
+        sample = json.loads((fixtures / "update-feed-sample.json").read_text())
+        cases = json.loads((fixtures / "update-feed-cases.json").read_text())["cases"]
+        self.assertEqual(uf.validate(sample), [])
+        self.assertGreaterEqual(len(cases), 15)
+        for c in cases:
+            rel = uf.resolve(sample["products"][c["product"]], c["channel"], c["platform"])
+            asset = rel and uf.pick_asset(rel, c["platform"], "auto")
+            self.assertEqual((rel and rel["version"], asset and asset["name"]), (c["version"], c["asset"]), c)
+
+    def test_withdrawn_version_is_never_picked(self):
+        sample = json.loads(pathlib.Path(__file__).with_name("fixtures").joinpath("update-feed-sample.json").read_text())
+        self.assertIn("0.8.0-rc.2", sample["products"]["atlassoc"]["withdrawn"])
+        for ch in uf.CHANNELS:
+            self.assertNotEqual(ver(sample["products"]["atlassoc"], ch, "windows-x64"), "0.8.0-rc.2")
 
 
 if __name__ == "__main__":

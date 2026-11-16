@@ -3,7 +3,7 @@
     Downloads the newest AtlasSOC Desktop installer for Windows and starts it.
 
 .DESCRIPTION
-    Reads the public ibert-ai/threat-atlas GitHub releases, picks the newest
+    Reads the public Ibert-Iam/threat-atlas GitHub releases, picks the newest
     AtlasSOC release for the chosen channel, checks the installer's SHA256
     against the digest GitHub reports, and starts the normal installer window.
     The installer stays interactive: you choose the install scope, approve any
@@ -46,7 +46,7 @@ $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-$ReleasesApi = 'https://api.github.com/repos/ibert-ai/threat-atlas/releases?per_page=100'
+$ReleasesApi = 'https://api.github.com/repos/Ibert-Iam/threat-atlas/releases?per_page=100'
 $TagPattern = '^atlassoc-v\d+\.\d+\.\d+'
 $AssetPattern = '^AtlasSOC-Setup-(\d+\.\d+\.\d+)-build(\d+)\.exe$'
 $Headers = @{
