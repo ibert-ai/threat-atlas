@@ -88,6 +88,45 @@ class ResolutionTests(unittest.TestCase):
         self.assertEqual(ver(block, "rc", "macos-universal"), "0.8.0-rc.1")
 
 
+class DownloadUrlTests(unittest.TestCase):
+    TAGS = {"atlassoc-v0.7.0", "atlassoc-v0.7.0-linux"}
+    GOOD = "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0/AtlasSOC-Setup-0.7.0.exe"
+
+    def ok(self, url, name="AtlasSOC-Setup-0.7.0.exe"):
+        return uf.download_url_ok(url, self.TAGS, name)
+
+    def test_accepts_the_exact_release_download_url(self):
+        self.assertTrue(self.ok(self.GOOD))
+
+    def test_rejects_dot_dot_and_encoded_traversal(self):
+        base = "https://github.com/ibert-ai/threat-atlas/releases/download/"
+        for bad in (base + "../../../evil/x/atlassoc-v0.7.0/AtlasSOC-Setup-0.7.0.exe",
+                    base + "%2e%2e/%2e%2e/evil/atlassoc-v0.7.0/AtlasSOC-Setup-0.7.0.exe",
+                    base + "atlassoc-v0.7.0/../AtlasSOC-Setup-0.7.0.exe"):
+            self.assertFalse(self.ok(bad), bad)
+
+    def test_rejects_other_hosts_userinfo_ports_queries_and_schemes(self):
+        for bad in ("https://github.com@evil.example/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0/AtlasSOC-Setup-0.7.0.exe",
+                    "https://evil.example/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0/AtlasSOC-Setup-0.7.0.exe",
+                    "https://github.com:8443/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0/AtlasSOC-Setup-0.7.0.exe",
+                    self.GOOD + "?x=1", self.GOOD + "#frag",
+                    self.GOOD.replace("https", "http"),
+                    self.GOOD.replace("ibert-ai", "other-org"),
+                    self.GOOD.replace("/", "\\", 3),
+                    "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v9.9.9/AtlasSOC-Setup-0.7.0.exe"):
+            self.assertFalse(self.ok(bad), bad)
+
+    def test_rejects_name_mismatch_and_non_strings(self):
+        self.assertFalse(self.ok(self.GOOD, "Other.exe"))
+        self.assertFalse(self.ok(None))
+
+    def test_validate_reports_a_traversal_url(self):
+        f = feed()
+        r = f["products"]["atlassoc"]["releases"][0]
+        r["assets"][0]["url"] = "https://github.com/ibert-ai/threat-atlas/releases/download/../../../evil/x/" + r["tag"] + "/" + r["assets"][0]["name"]
+        self.assertTrue(any("url must be" in p for p in uf.validate(f)))
+
+
 class WithdrawalTests(unittest.TestCase):
     def test_withdrawn_beta_falls_back_to_rc(self):
         block = feed(["0.9.0-beta.1"])["products"]["atlassoc"]
