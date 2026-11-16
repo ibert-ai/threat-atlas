@@ -62,6 +62,7 @@ contracts and takeover steps.
 | ATLAS-OSINT-012 | FAS 3 | Open — CL distribution | DROP/EDROP parser and daily gate |
 | ATLAS-OSINT-013 | FAS 3 | Open — CL distribution | PhishTank key and conservative interval |
 | ATLAS-UPDATE-001 | Next version | Specified, owner decisions taken 16 Nov 2026; not built | Update channels (Stable default, RC, Beta) with fallback, automatic upgrade with OS approval, `get-latest` scripts, maintained Git feed. See [UPDATE-CHANNELS.md](UPDATE-CHANNELS.md) |
+| ATLAS-BRAND-001 | Next version | Open; not for RC1, not urgent | Use the Threat Atlas (TA) logo, profile 1.0 approved 16 Nov 2026, in every project's next version: app and installer icons (favicon.ico, ThreatAtlas.icns, TA globe 16-1024 px), window title bars (16-32 px globe), README header, release notes and the Windows/macOS/Linux SOC apps and the screensaver. Dark is the default; light only on light surfaces. Alt text "Threat Atlas Project - Open Source"; slogan "Information is key". The pack is held by the owner; ibert.se already uses it (16 Nov 2026). |
 
 ## FAS 1 — foundation, no new secrets
 
