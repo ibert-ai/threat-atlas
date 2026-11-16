@@ -129,7 +129,7 @@ func main() throws {
     let stage = fm.temporaryDirectory.appendingPathComponent("ThreatAtlas-update-\(UUID().uuidString)")
     try fm.createDirectory(at: stage, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700]); defer { try? fm.removeItem(at: stage) }
     let metadata = stage.appendingPathComponent("release.json")
-    try download(URL(string: "https://api.github.com/repos/ibert-ai/threat-atlas/releases/latest")!, to: metadata, limit: 2_000_000)
+    try download(URL(string: "https://api.github.com/repos/Ibert-Iam/threat-atlas/releases/latest")!, to: metadata, limit: 2_000_000)
     let release = try JSONDecoder().decode(Release.self, from: Data(contentsOf: metadata))
     guard !release.draft, !release.prerelease else { throw UpdateError.invalid("Only stable releases accepted") }
     let next = try version(release.tag_name), current = try version(bundleVersion(saver))
@@ -137,7 +137,7 @@ func main() throws {
     let matches = release.assets.filter { $0.name == "ThreatAtlas-macOS.zip" }
     guard matches.count == 1, let asset = matches.first, asset.size > 0, asset.size <= 100_000_000,
           asset.browser_download_url.scheme == "https", asset.browser_download_url.host == "github.com",
-          asset.browser_download_url.path.hasPrefix("/ibert-ai/threat-atlas/releases/download/") else { throw UpdateError.invalid("Missing stable macOS update asset") }
+          asset.browser_download_url.path.hasPrefix("/Ibert-Iam/threat-atlas/releases/download/") else { throw UpdateError.invalid("Missing stable macOS update asset") }
     let archive = stage.appendingPathComponent("update.zip")
     try download(asset.browser_download_url, to: archive, limit: 100_000_000)
     try inspectArchive(archive)
