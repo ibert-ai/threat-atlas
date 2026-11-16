@@ -28,7 +28,7 @@ jobs:
   publish:
     needs: test
     # Only scheduled/manual runs in the real repository publish; pull requests (incl. forks) never get the token.
-    if: github.repository == 'ibert-ai/threat-atlas' && github.event_name != 'pull_request'
+    if: github.repository == 'Ibert-Iam/threat-atlas' && github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
