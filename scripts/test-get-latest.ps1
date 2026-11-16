@@ -14,12 +14,25 @@ foreach ($c in $cases) {
         if ($r.version -ne $c.version -or $r.name -ne $c.asset) { throw "got $($r.version) / $($r.name)" }
     } catch { Write-Host "FAIL $($c.product) $($c.channel) $($c.platform): $_"; $failed++ }
 }
-try { & $script -FeedFile $feed -ResolveOnly | Out-Null; Write-Host 'FAIL: ran without -AllowUnsignedFeed'; $failed++ } catch { }
+function Assert-Refuses([scriptblock]$Run, [string]$Pattern, [string]$What) {
+    $threw = $false
+    try { & $Run | Out-Null } catch { $threw = $true; if ($_.Exception.Message -notmatch $Pattern) { Write-Host "FAIL ${What}: refused for another reason: $($_.Exception.Message)"; $script:failed++; return } }
+    if (-not $threw) { Write-Host "FAIL: $What"; $script:failed++ }
+}
+Assert-Refuses { & $script -FeedFile $feed -ResolveOnly } 'Feed signature' 'ran without -AllowUnsignedFeed'
 $bad = Get-Content -LiteralPath $feed -Raw | ConvertFrom-Json
 foreach ($a in $bad.products.atlassoc.releases[0].assets) { $a.url = 'https://evil.example/x.exe' }
+$dots = Get-Content -LiteralPath $feed -Raw | ConvertFrom-Json
+foreach ($a in $dots.products.atlassoc.releases[0].assets) { $a.url = 'https://github.com/ibert-ai/threat-atlas/releases/download/../../../evil/x/' + $dots.products.atlassoc.releases[0].tag + '/' + $a.name }
+$dotsFile = Join-Path ([IO.Path]::GetTempPath()) 'dots-feed.json'
+$dots | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $dotsFile -Encoding UTF8
 $badFile = Join-Path ([IO.Path]::GetTempPath()) 'bad-feed.json'
 $bad | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $badFile -Encoding UTF8
-try { & $script -Product atlassoc -Channel beta -FeedFile $badFile -ResolveOnly -AllowUnsignedFeed | Out-Null; Write-Host 'FAIL: accepted a foreign URL'; $failed++ } catch { }
-Remove-Item -LiteralPath $badFile -ErrorAction SilentlyContinue
+Assert-Refuses { & $script -Product atlassoc -Channel beta -FeedFile $badFile -ResolveOnly -AllowUnsignedFeed } 'outside the project' 'accepted a foreign URL'
+Assert-Refuses { & $script -Product atlassoc -Channel beta -FeedFile $dotsFile -ResolveOnly -AllowUnsignedFeed } 'outside the project' 'accepted a dot-dot URL'
+# -Kind installer must return an installer file.
+$r = & $script -Product atlassoc -Channel beta -Platform windows-x64 -Kind installer -FeedFile $feed -ResolveOnly -AllowUnsignedFeed | ConvertFrom-Json
+if ($r.name -notmatch 'Setup') { Write-Host "FAIL: -Kind installer returned $($r.name)"; $failed++ }
+Remove-Item -LiteralPath $badFile, $dotsFile -ErrorAction SilentlyContinue
 if ($failed) { throw "$failed get-latest.ps1 test(s) failed" }
-Write-Host "get-latest.ps1: $($cases.Count) resolution cases and 2 refusal cases passed."
+Write-Host "get-latest.ps1: $($cases.Count) resolution cases and 4 refusal cases passed."

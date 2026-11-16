@@ -135,15 +135,15 @@ def build_product(product, releases, withdrawn=()):
     return block
 
 
-def resolve(block, channel, platform=None):
-    """Highest non-withdrawn release the channel may offer; None if there is none."""
+def resolve(block, channel, platform=None, kind="auto"):
+    """Highest non-withdrawn release the channel may offer that has a file for platform/kind; None if none."""
     if channel not in ALLOWED:
         raise ValueError(f"unknown channel: {channel}")
     best = None
     for rel in block["releases"]:
         if rel["version"] in block.get("withdrawn", []) or rel["channel"] not in ALLOWED[channel]:
             continue
-        if platform and not any(a["platform"] == platform and a["kind"] != "checksums" for a in rel["assets"]):
+        if platform and pick_asset(rel, platform, kind) is None:
             continue
         if best is None or parse_version(rel["version"]) > parse_version(best["version"]):
             best = rel
@@ -326,7 +326,7 @@ def main(argv=None):
         print(json.dumps(rel, indent=2))
         return 0
     if args.cmd == "pick-asset":
-        rel = resolve(feed["products"][args.product], args.channel, args.platform)
+        rel = resolve(feed["products"][args.product], args.channel, args.platform, args.kind)
         asset = rel and pick_asset(rel, args.platform, args.kind)
         if asset is None:
             print("no release available", file=sys.stderr)

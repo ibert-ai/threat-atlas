@@ -88,6 +88,14 @@ class ResolutionTests(unittest.TestCase):
         self.assertEqual(ver(block, "rc", "macos-universal"), "0.8.0-rc.1")
 
 
+class KindFallbackTests(unittest.TestCase):
+    def test_kind_filter_falls_back_to_an_older_release_that_has_the_file(self):
+        releases = [rel("atlassoc-v0.7.0"), rel("atlassoc-v0.8.0-rc.1", pre=True, assets=("Windows-X.zip",))]
+        block = uf.build_feed(releases, now="x")["products"]["atlassoc"]
+        self.assertEqual(ver(block, "rc", "windows-x64"), "0.8.0-rc.1")
+        self.assertEqual(uf.resolve(block, "rc", "windows-x64", "installer")["version"], "0.7.0")
+
+
 class DownloadUrlTests(unittest.TestCase):
     TAGS = {"atlassoc-v0.7.0", "atlassoc-v0.7.0-linux"}
     GOOD = "https://github.com/ibert-ai/threat-atlas/releases/download/atlassoc-v0.7.0/AtlasSOC-Setup-0.7.0.exe"

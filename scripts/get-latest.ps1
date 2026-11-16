@@ -14,7 +14,7 @@
 .PARAMETER Kind        auto (installer, else portable), installer or portable.
 .PARAMETER FeedUrl     https URL of the feed (default: the project's update-feed branch).
 .PARAMETER FeedFile    Local feed file (tests and offline use).
-.PARAMETER OutDir      Download folder (default: %TEMP%\ThreatAtlas-Download).
+.PARAMETER OutDir      Download folder (default: %LOCALAPPDATA%\ThreatAtlas\Downloads, per user).
 .PARAMETER ResolveOnly Print the resolved version and file as JSON and stop.
 .PARAMETER Install     Start the downloaded installer (.exe/.msi) after verification.
 .PARAMETER AllowUnsignedFeed
@@ -32,12 +32,14 @@ param(
     [ValidateSet('auto', 'installer', 'portable')][string]$Kind = 'auto',
     [string]$FeedUrl = 'https://raw.githubusercontent.com/ibert-ai/threat-atlas/update-feed/feed.json',
     [string]$FeedFile,
-    [string]$OutDir = (Join-Path $env:TEMP 'ThreatAtlas-Download'),
+    [string]$OutDir = (Join-Path $env:LOCALAPPDATA 'ThreatAtlas\Downloads'),
     [switch]$ResolveOnly,
     [switch]$Install,
     [switch]$AllowUnsignedFeed
 )
 $ErrorActionPreference = 'Stop'
+# Windows PowerShell 5.1 may default to old TLS versions; GitHub needs TLS 1.2.
+try { [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12 } catch { }
 $DownloadPrefix = 'https://github.com/ibert-ai/threat-atlas/releases/download/'
 $Allowed = @{ stable = @('stable'); rc = @('stable', 'rc'); beta = @('stable', 'rc', 'beta') }
 
@@ -53,14 +55,26 @@ function Test-VersionNewer([string]$A, [string]$B) {
     for ($i = 0; $i -lt 5; $i++) { if ($ka[$i] -ne $kb[$i]) { return $ka[$i] -gt $kb[$i] } }
     return $false
 }
-function Resolve-Release($Block, [string]$Ch, [string]$Plat) {
+function Test-DownloadUrl([string]$Url, [string]$Name, $Release) {
+    # Exact https://github.com/ibert-ai/threat-atlas/releases/download/<tag>/<name>; no '..', '%', '\', '@', '?', '#'.
+    if ([string]::IsNullOrEmpty($Url) -or $Url -match '[\\%?#@\s]' -or $Url -match '(^|/)\.\.?(/|$)') { return $false }
+    $u = $null
+    if (-not [Uri]::TryCreate($Url, [UriKind]::Absolute, [ref]$u)) { return $false }
+    if ($u.Scheme -ne 'https' -or $u.Host -ne 'github.com' -or -not $u.IsDefaultPort) { return $false }
+    $parts = $u.AbsolutePath.Split('/')
+    if ($parts.Count -ne 7 -or $parts[0] -ne '') { return $false }
+    if ($parts[1] -cne 'ibert-ai' -or $parts[2] -cne 'threat-atlas' -or $parts[3] -cne 'releases' -or $parts[4] -cne 'download') { return $false }
+    if ($parts[5] -cne $Release.tag -and $parts[5] -cne "$($Release.tag)-linux") { return $false }
+    if ($parts[5] -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$' -or $parts[6] -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$') { return $false }
+    return ($parts[6] -ceq $Name)
+}
+function Resolve-Release($Block, [string]$Ch, [string]$Plat, [string]$WantedKind) {
     $best = $null
     $withdrawn = @($Block.withdrawn)
     foreach ($rel in $Block.releases) {
         if ($withdrawn -contains $rel.version) { continue }
         if ($Allowed[$Ch] -notcontains $rel.channel) { continue }
-        $hasPlatform = @($rel.assets | Where-Object { $_.platform -eq $Plat -and $_.kind -ne 'checksums' }).Count -gt 0
-        if (-not $hasPlatform) { continue }
+        if ($null -eq (Select-Asset $rel $Plat $WantedKind)) { continue }
         if ($null -eq $best -or (Test-VersionNewer $rel.version $best.version)) { $best = $rel }
     }
     return $best
@@ -90,11 +104,11 @@ if ($feed.schema_version -ne 1) { throw 'Unsupported feed schema.' }
 $block = $feed.products.$Product
 if ($null -eq $block) { throw "The feed has no product '$Product'." }
 
-$release = Resolve-Release $block $Channel $Platform
+$release = Resolve-Release $block $Channel $Platform $Kind
 if ($null -eq $release) { throw "No release available for $Product / $Channel / $Platform." }
 $asset = Select-Asset $release $Platform $Kind
 if ($null -eq $asset) { throw "No $Kind file for $Platform in $($release.version)." }
-if (-not $asset.url.StartsWith($DownloadPrefix)) { throw 'Refusing a download URL outside the project''s GitHub releases.' }
+if (-not (Test-DownloadUrl $asset.url $asset.name $release)) { throw 'Refusing a download URL outside the project''s GitHub releases.' }
 if ($asset.name -notmatch '^[A-Za-z0-9._-]+$') { throw 'Refusing an unsafe file name.' }
 if ($asset.sha256 -notmatch '^[0-9a-f]{64}$') { throw 'The feed has a bad SHA-256 for this file.' }
 
@@ -104,8 +118,10 @@ if ($ResolveOnly) { $result | ConvertTo-Json; return }
 
 Write-Host "Channel $Channel -> $Product $($release.version) ($($release.channel)), $($asset.name)"
 New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
+if ((Get-Item -LiteralPath $OutDir -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Refusing a download folder that is a link.' }
 $dest = Join-Path $OutDir $asset.name
-$part = "$dest.part"
+if (Test-Path -LiteralPath $dest) { if ((Get-Item -LiteralPath $dest -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Refusing to replace a link in the download folder.' } }
+$part = Join-Path $OutDir ('{0}.{1}.part' -f $asset.name, [guid]::NewGuid().ToString('N'))
 Invoke-WebRequest -Uri $asset.url -OutFile $part -UseBasicParsing -TimeoutSec 600
 if ((Get-Item -LiteralPath $part).Length -ne [int64]$asset.size) { Remove-Item -LiteralPath $part; throw 'Size differs from the feed; file removed.' }
 $got = (Get-FileHash -LiteralPath $part -Algorithm SHA256).Hash.ToLowerInvariant()
