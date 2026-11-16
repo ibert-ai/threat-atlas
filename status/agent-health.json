@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-16T06:00:23.801214Z",
+  "updated_at": "2026-11-16T06:08:04.129354Z",
   "monitoring_started_at": "2026-11-04T23:16:11.309183Z",
   "agents": [
     {
@@ -14,10 +14,10 @@
     {
       "id": "cl",
       "name": "Jean-Claude Van Damme (CBO \u2013 Chief Bot Officer)",
-      "last_reported_at": "2026-11-16T06:00:06Z",
-      "last_heartbeat_at": "2026-11-16T06:00:06Z",
+      "last_reported_at": "2026-11-16T06:07:47Z",
+      "last_heartbeat_at": "2026-11-16T06:07:47Z",
       "capacity": "available",
-      "capacity_reported_at": "2026-11-15T16:07:44Z"
+      "capacity_reported_at": "2026-11-16T06:07:47Z"
     },
     {
       "id": "billy",
