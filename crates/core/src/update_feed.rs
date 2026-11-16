@@ -12,6 +12,8 @@ pub const FEED_URL: &str =
 pub const OWNER: &str = "Ibert-Iam";
 pub const REPO: &str = "threat-atlas";
 pub const MAX_FEED_BYTES: usize = 1_000_000;
+/// Largest file the feed may announce; the downloader uses `size` as its cap, so a bad entry cannot ask for more.
+pub const MAX_ASSET_BYTES: u64 = 512 * 1024 * 1024;
 const SCHEMA: u32 = 1;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -107,11 +109,14 @@ impl SemVer {
     }
 }
 
-/// Digits only (no sign, no leading `+`, no empty string); `str::parse` alone would accept "+1".
+/// Digits only: no sign, no empty string and no leading zeros ("01" would tie with "1" in ordering but
+/// differ as text, which breaks the withdrawn-version match); `str::parse` alone would accept "+1".
 fn number(text: &str) -> Option<u32> {
-    (!text.is_empty() && text.bytes().all(|b| b.is_ascii_digit()))
-        .then(|| text.parse().ok())
-        .flatten()
+    (!text.is_empty()
+        && text.bytes().all(|b| b.is_ascii_digit())
+        && (text == "0" || !text.starts_with('0')))
+    .then(|| text.parse().ok())
+    .flatten()
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -244,7 +249,11 @@ pub fn parse_feed(bytes: &[u8]) -> Result<Feed, FeedError> {
                         .sha256
                         .bytes()
                         .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b));
-                if !sha_ok || asset.size == 0 || !download_url_ok(&asset.url, &tags, &asset.name) {
+                if !sha_ok
+                    || asset.size == 0
+                    || asset.size > MAX_ASSET_BYTES
+                    || !download_url_ok(&asset.url, &tags, &asset.name)
+                {
                     return Err(FeedError::Invalid(format!(
                         "{product} {}: bad asset {}",
                         release.version, asset.name
@@ -310,8 +319,10 @@ pub fn resolve(
     })
 }
 
-/// What to offer a user who has `installed`: only a strictly newer version is offered; there is never
-/// an automatic downgrade (switching to Stable from a pre-release is a separate, confirmed reinstall).
+/// What to offer a user who has `installed` (and, when known, its build number): a strictly newer version,
+/// or the same version with a higher build. There is never an automatic downgrade (switching to Stable
+/// from a pre-release is a separate, confirmed reinstall; a withdrawn installed version has
+/// [`safe_alternative`]).
 pub fn update_for(
     feed: &Feed,
     product: &str,
@@ -319,9 +330,29 @@ pub fn update_for(
     platform: &str,
     kind: Kind,
     installed: SemVer,
+    installed_build: Option<u32>,
 ) -> Option<Selected> {
     let selected = resolve(feed, product, channel, platform, kind)?;
-    (SemVer::parse(&selected.version)? > installed).then_some(selected)
+    let candidate = SemVer::parse(&selected.version)?;
+    let rebuilt = candidate == installed
+        && matches!((selected.build, installed_build), (Some(new), Some(old)) if new > old);
+    (candidate > installed || rebuilt).then_some(selected)
+}
+
+/// For a withdrawn installed version: what the banner offers instead (decision Q5). This may be an older
+/// version, so callers must show it as a user-approved move, never apply it silently. `None` when the
+/// installed version is not withdrawn or nothing else is available.
+pub fn safe_alternative(
+    feed: &Feed,
+    product: &str,
+    channel: Channel,
+    platform: &str,
+    kind: Kind,
+    installed_version: &str,
+) -> Option<Selected> {
+    installed_is_withdrawn(feed, product, installed_version)
+        .then(|| resolve(feed, product, channel, platform, kind))
+        .flatten()
 }
 
 /// True when the installed version has been withdrawn, so the app should show the banner (decision Q5).
@@ -335,11 +366,22 @@ pub fn installed_is_withdrawn(feed: &Feed, product: &str, installed_version: &st
 mod tests {
     use super::*;
 
-    const SAMPLE: &str = include_str!("../../../scripts/fixtures/update-feed-sample.json");
-    const CASES: &str = include_str!("../../../scripts/fixtures/update-feed-cases.json");
+    const SAMPLE: &str = include_str!("../testdata/update-feed-sample.json");
+    const CASES: &str = include_str!("../testdata/update-feed-cases.json");
 
     fn feed() -> Feed {
         parse_feed(SAMPLE.as_bytes()).expect("fixture feed is valid")
+    }
+
+    /// The sample feed as bytes after a mutation of its parsed JSON (robust against asset order).
+    fn mutated(change: impl FnOnce(&mut serde_json::Value)) -> Vec<u8> {
+        let mut value: serde_json::Value = serde_json::from_str(SAMPLE).unwrap();
+        change(&mut value);
+        serde_json::to_vec(&value).unwrap()
+    }
+
+    fn set(value: &mut serde_json::Value, pointer: &str, to: serde_json::Value) {
+        *value.pointer_mut(pointer).expect("pointer exists") = to;
     }
 
     fn v(text: &str) -> SemVer {
@@ -464,6 +506,7 @@ mod tests {
                 "windows-x64",
                 Kind::Auto,
                 v(installed),
+                None,
             )
         };
         assert_eq!(offer("0.6.0", Channel::Stable).unwrap().version, "0.7.0");
@@ -480,6 +523,58 @@ mod tests {
             offer("0.8.0-rc.1", Channel::Beta).unwrap().version,
             "0.9.0-beta.1"
         );
+    }
+
+    #[test]
+    fn a_higher_build_of_the_same_version_is_an_update_only_when_both_builds_are_known() {
+        let feed = feed();
+        let offer = |build| {
+            update_for(
+                &feed,
+                "atlassoc",
+                Channel::Beta,
+                "windows-x64",
+                Kind::Auto,
+                v("0.9.0-beta.1"),
+                build,
+            )
+        };
+        assert!(offer(Some(16)).is_some(), "fixture build is 17");
+        assert!(offer(Some(17)).is_none());
+        assert!(offer(Some(18)).is_none());
+        assert!(offer(None).is_none(), "unknown installed build: no guess");
+    }
+
+    #[test]
+    fn a_withdrawn_installed_version_gets_a_safe_alternative_and_others_do_not() {
+        let feed = feed();
+        let alt = |channel, installed| {
+            safe_alternative(
+                &feed,
+                "atlassoc",
+                channel,
+                "windows-x64",
+                Kind::Auto,
+                installed,
+            )
+        };
+        assert_eq!(
+            alt(Channel::Rc, "0.8.0-rc.2").unwrap().version,
+            "0.8.0-rc.1"
+        );
+        assert_eq!(alt(Channel::Stable, "0.8.0-rc.2").unwrap().version, "0.7.0");
+        assert!(
+            alt(Channel::Rc, "0.7.0").is_none(),
+            "not withdrawn: no alternative"
+        );
+    }
+
+    #[test]
+    fn leading_zeros_are_rejected_so_equal_versions_cannot_differ_as_text() {
+        for bad in ["01.0.0", "1.00.0", "1.0.01", "0.8.0-rc.01"] {
+            assert!(SemVer::parse(bad).is_none(), "{bad}");
+        }
+        assert!(SemVer::parse("0.0.0").is_some());
     }
 
     #[test]
@@ -518,25 +613,35 @@ mod tests {
 
     #[test]
     fn a_feed_with_one_bad_asset_is_rejected_whole() {
-        let broken = SAMPLE.replacen(
-            "https://github.com/Ibert-Iam/",
-            "https://github.com/ibert-ai/",
-            1,
-        );
-        assert!(matches!(
-            parse_feed(broken.as_bytes()),
-            Err(FeedError::Invalid(_))
-        ));
-        let bad_hash = SAMPLE.replacen(r#""sha256": ""#, r#""sha256": "Z"#, 1);
-        assert!(matches!(
-            parse_feed(bad_hash.as_bytes()),
-            Err(FeedError::Invalid(_))
-        ));
-        let zero_size = SAMPLE.replacen(r#""size": 1000"#, r#""size": 0"#, 1);
-        assert!(matches!(
-            parse_feed(zero_size.as_bytes()),
-            Err(FeedError::Invalid(_))
-        ));
+        let url = "/products/atlassoc/releases/0/assets/0/url";
+        let old_owner = mutated(|v| {
+            let text = v
+                .pointer(url)
+                .unwrap()
+                .as_str()
+                .unwrap()
+                .replace("Ibert-Iam", "ibert-ai");
+            set(v, url, text.into());
+        });
+        let bad_hash = mutated(|v| {
+            set(
+                v,
+                "/products/atlassoc/releases/0/assets/0/sha256",
+                "Z".into(),
+            )
+        });
+        let zero_size =
+            mutated(|v| set(v, "/products/atlassoc/releases/0/assets/0/size", 0.into()));
+        let huge = mutated(|v| {
+            set(
+                v,
+                "/products/atlassoc/releases/0/assets/0/size",
+                (MAX_ASSET_BYTES + 1).into(),
+            )
+        });
+        for bad in [old_owner, bad_hash, zero_size, huge] {
+            assert!(matches!(parse_feed(&bad), Err(FeedError::Invalid(_))));
+        }
         assert!(parse_feed(SAMPLE.as_bytes()).is_ok());
     }
 
@@ -556,11 +661,8 @@ mod tests {
 
     #[test]
     fn channel_and_version_must_agree() {
-        let bad = SAMPLE.replacen(r#""channel": "beta""#, r#""channel": "stable""#, 1);
-        assert!(matches!(
-            parse_feed(bad.as_bytes()),
-            Err(FeedError::Invalid(_))
-        ));
+        let bad = mutated(|v| set(v, "/products/atlassoc/releases/0/channel", "stable".into()));
+        assert!(matches!(parse_feed(&bad), Err(FeedError::Invalid(_))));
     }
 
     #[test]

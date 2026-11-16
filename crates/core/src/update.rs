@@ -1,4 +1,7 @@
 //! Picks the newest AtlasSOC installer from the public GitHub releases list. No network here.
+//!
+//! Legacy model (releases API, build-aware, no channels). The channel-aware feed model is in `update_feed`;
+//! WP3 replaces the callers of `newer` with it, so do not extend this module.
 use serde::Deserialize;
 
 pub const HOST: &str = "api.github.com";
