@@ -60,3 +60,24 @@ A screensaver has no mouse and no keyboard (any input ends it). Sorted by that r
 1. SP0 and D1-D4 first (a day). 2. SP1-SP3 in the core in one go; they are the only real new code and are testable in CI without any PC. 3. SP4 and SP5 in parallel once SP3 lands. 4. SP7 runs alongside from the start. 5. SP8, then SP9.
 
 Main risks: Radar licence answer (mitigated by D2), a saver that spends more CPU than 0.4.8 (mitigated by the SP1 budget), configuration split across two apps (mitigated by D4), two OS hosts drifting apart (mitigated by keeping all logic in the core and hosts thin).
+
+## 7. To-do: a proper Linux build of AtlasSOC (the SOC part)
+
+Requested by the owner on 16 November 2026, same reference `ATLAS-SAVER-PARITY-001`. The Linux SOC today is the 0.7.0 **preview** (`crates/linux`, 310 lines, `atlassoc` binary, CI-only): feed and renderer only. It has never run on a physical Linux desktop and lacks most of what Windows and macOS have. The core is shared, so the work is a host, not a rewrite.
+
+Missing today (from `docs/ATLAS-SOC-LINUX.md`): the 13 OSINT sources, Cloudflare Radar, saved settings and the Settings window, update check, a fullscreen toggle, menus and table view, packaging beyond a tar.gz, native Wayland, and any test on real hardware or a second distribution.
+
+| ID | Package | Owner | Depends on | Done when |
+|---|---|---|---|---|
+| LX0 | Gap list against Windows `soc_host.rs` and the macOS app: what the Linux host must call from the core (worker, settings reader, credential store, radar poll) | CL | none | list merged, each gap tagged host-only or core |
+| LX1 | Real-machine baseline: install the 0.7.0 preview on a physical Linux PC (Ubuntu 24.04 X11 first), record start, live feed, resize, multi-monitor, what breaks | Billy | none (can start now) | ✅/⚠️/🚨 per case with screenshots |
+| LX2 | Credential storage: Secret Service (libsecret) behind the same read/write interface as Keychain and Credential Manager; no plain-text fallback | CL | LX0 | tests; keys never in logs or config files |
+| LX3 | Host features: saved settings, fullscreen toggle, menu, table view, Settings window with the 13 sources, intervals and key guide | CL | LX0, LX2 | parity checklist for Linux in `docs/SOC-DESKTOP-PARITY.md` |
+| LX4 | Radar on Linux: consent identity and 15 minute floor as on Windows | CL | LX3, Cloudflare answer (D2) | only after the licence answer; otherwise stays out |
+| LX5 | Packaging: AppImage first, `.deb` later; desktop file and icon with the TA logo; checksums | MAC (review), CL (script) | LX3 | package starts on a clean Ubuntu 24.04 and Fedora |
+| LX6 | Update path: Linux uses the manual update flow of `docs/UPDATE-CHANNELS.md` (check and notice, no silent install) | CL | UPDATE-CHANNELS WP3 | notice works on the Beta channel |
+| LX7 | Wayland: test native Wayland vs XWayland, decide whether to add native support | CL, Billy (test) | LX3 | decision recorded with evidence |
+| LX8 | Tests and soak: 30 min soak, multi-monitor, two distributions; results as ✅/⚠️/🚨 | Billy | LX3, LX5 | one line per case in billy.json |
+| LX9 | Docs and release: Linux page, privacy section, release notes; Beta channel entry | Seek (texts), CL (release) | LX8 | optimisation gate passed |
+
+Linux stays a **separate pre-release** until LX1-LX8 are green; it never becomes `latest`. The Linux saver host (SP6 above) is a different task and follows later.
