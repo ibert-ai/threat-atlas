@@ -2,7 +2,7 @@
 the private Git handovers, without any agent's computer in the loop (owner request, 9 Nov 2026,
 ATLAS-STATUS-GIT-DIRECT-001).
 
-Reads handovers/<agent>.json from the private ibert-ai/project-status-dashboard repository with
+Reads handovers/<agent>.json from the private Ibert-Iam/project-status-dashboard repository with
 a read-only token, merges them into the existing public file and publishes only the reviewed
 fields: fixed agent ids and names, latest report and heartbeat times, and the capacity class with
 its time. No handover content, task text, sources, hosts, tokens or credit numbers are exported.
@@ -23,8 +23,8 @@ import urllib.request
 AGENTS = {"mac": "MacGyver (Crew)", "cl": "Jean-Claude Van Damme (CBO – Chief Bot Officer)", "billy": "BillyBadass (Crew)",
           "noris": "Seek Norris (CMO – Chief Marketing Officer)"}
 CAPACITY = {"available", "low", "exhausted", "unknown"}
-PRIVATE_REPO = "ibert-ai/project-status-dashboard"
-PUBLIC_REPO = "ibert-ai/threat-atlas"
+PRIVATE_REPO = "Ibert-Iam/project-status-dashboard"
+PUBLIC_REPO = "Ibert-Iam/threat-atlas"
 PUBLIC_BRANCH = "codex/release-status"
 PUBLIC_PATH = "status/agent-health.json"
 FUTURE_SKEW = 120
