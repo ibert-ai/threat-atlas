@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/threat-atlas-logo-dark.png" width="720" alt="Threat Atlas Project – Open Source"></p>
+
 > **AtlasSOC Desktop 0.7.0 stable (build 13):** separate standalone packages for Windows x64 and macOS 14+; Windows includes an installer and portable ZIP, and macOS is Developer ID signed and notarized. See [installation and limits](docs/ATLAS-SOC-BETA.md). A separate [Linux x86_64 preview](docs/ATLAS-SOC-LINUX.md) is available without Cloudflare Radar.
 
 # Threat Atlas SOC
