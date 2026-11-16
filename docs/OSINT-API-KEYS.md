@@ -146,7 +146,7 @@ FINISH: ask "Which source is it, and what exact words does its row in AtlasSOC s
 ```
 
 If the assistant and this guide disagree, the guide is correct. Report guide mistakes at
-https://github.com/ibert-ai/threat-atlas/issues (never include a key).
+https://github.com/Ibert-Iam/threat-atlas/issues (never include a key).
 
 ## abuse.ch Auth-Key
 
