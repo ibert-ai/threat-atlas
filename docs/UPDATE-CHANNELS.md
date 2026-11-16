@@ -1,6 +1,6 @@
 # Update channels, automatic upgrades and the update feed (plan for the next version)
 
-Status: **specification only. Nothing in this document is built yet.** It was requested by the owner on 16 November 2026 after AtlasSOC 0.8.0-rc.1, for the next version of every Threat Atlas project (screensaver and AtlasSOC Desktop). Each decision marked **Decision** needs the owner before work starts.
+Status: **specification only. Nothing in this document is built yet.** It was requested by the owner on 16 November 2026 after AtlasSOC 0.8.0-rc.1, for the next version of every Threat Atlas project (screensaver and AtlasSOC Desktop). The five owner decisions in section 10 were taken on 16 November 2026 (all recommendations accepted).
 
 ## 1. What the owner asked for
 
@@ -39,7 +39,7 @@ Rules:
 
 **Why a feed instead of calling the GitHub API directly:** one source for the apps and both scripts, no API rate limits for many users, explicit control over what each channel offers, and a way to withdraw a version without deleting a release.
 
-**Location (Decision):** a dedicated branch `update-feed` in the public repository, containing only `feed.json` and `history/`. Apps read `https://raw.githubusercontent.com/ibert-ai/threat-atlas/update-feed/feed.json`. A separate branch means a release does not need a merge to `main`. A copy of the feed is also uploaded as a release asset for offline mirrors.
+**Location (decided):** a dedicated branch `update-feed` in the public repository, containing only `feed.json` and `history/`. Apps read `https://raw.githubusercontent.com/ibert-ai/threat-atlas/update-feed/feed.json`. A separate branch means a release does not need a merge to `main`. A copy of the feed is also uploaded as a release asset for offline mirrors.
 
 **Shape (draft, `schema_version` 1):**
 
@@ -79,7 +79,7 @@ Rules:
 
 - The feed is only a **pointer**. It never authorises installation by itself. The client verifies the SHA-256 from the feed, then the OS signature where the artifact is signed (Authenticode, Developer ID plus Gatekeeper), and fails closed on a mismatch or on an unexpected publisher.
 - Downloads come only from `https://github.com/ibert-ai/threat-atlas/releases/download/…`; any other host in the feed is rejected.
-- **Decision:** sign `feed.json` with a detached Ed25519 signature (public key built into the apps) so a compromised branch cannot redirect users. The signing key must be held by the owner, not stored in the repository. Without it, anyone with push rights to the branch controls what users are offered.
+- **Decided:** sign `feed.json` with a detached Ed25519 signature (public key built into the apps) so a compromised branch cannot redirect users. The signing key must be held by the owner, not stored in the repository. Without it, anyone with push rights to the branch controls what users are offered.
 
 ## 5. Keeping the feed maintained
 
@@ -105,7 +105,7 @@ Rules:
 
 ## 8. Scope and order of work
 
-1. Feed schema, `scripts/update-feed.py`, CI checks, initial feed (stable, RC1, empty beta). **Decisions** in section 10.
+1. Feed schema, `scripts/update-feed.py`, CI checks, initial feed (stable, RC1, empty beta), decisions in section 10.
 2. Core resolver in `crates/core/src/update.rs` (channel resolution, withdrawn handling, unit tests including every fallback case) and Swift/PowerShell equivalents.
 3. Settings → Updates UI in the Windows host and the macOS app; automatic mode.
 4. `get-latest` scripts.
@@ -120,10 +120,10 @@ Rules:
 - **Bug to fix in the same version:** the macOS Settings text that says the beta is not Developer ID signed. The text must follow the build's real signing state.
 - A real signed N → N+1 test on Windows needs a signing certificate (Certum order pending). Until then Windows automatic update is "download, verify, ask".
 
-## 10. Open decisions for the owner
+## 10. Owner decisions (taken 16 November 2026: all recommendations accepted)
 
-1. Feed location: branch `update-feed` (recommended) or a file on `main`.
-2. Feed signature: sign `feed.json` with an owner-held Ed25519 key (recommended), or rely on branch permissions only.
-3. Default for "Automatic updates" on a fresh install: Notify me (recommended) or Download and ask.
-4. Should the screensaver and AtlasSOC share one Settings → Updates implementation and one feed (recommended), or keep separate products and feeds?
-5. Beta channel content: there is no beta build today. Offer the channel only when the feed lists one, or always show it with "no beta available"?
+1. **Feed location:** a dedicated branch `update-feed` in the public repository (not a file on `main`).
+2. **Feed signature:** `feed.json` is signed with a detached Ed25519 signature. The private key is held only by the owner and is never stored in the repository, in Git handovers or by an agent. Apps embed the public key and reject an unsigned or wrongly signed feed (they keep the installed version). Open detail for the implementation: how the owner signs each feed update without giving the key to an agent (for example, an agent prepares the unsigned feed and the owner signs it locally with a small script).
+3. **Default automatic mode on a fresh install:** *Notify me*. "Download and ask" and "Off" stay selectable. Nothing is downloaded in the background by default.
+4. **One implementation:** the screensaver and AtlasSOC share one Settings → Updates design and one feed.
+5. **Beta channel display:** shown only when the feed lists a beta for that product.
