@@ -8,6 +8,11 @@ Native Rust SOC screensaver for macOS 12+ and Windows 10/11 x64. It draws a worl
 map, animated routes, receipt counters and a recent-observations log from the
 GreyNoise public threat-map feed. The header shows both UTC and the computer's local time, including its current UTC offset, using the operating system's timezone and daylight-saving rules. No embedded website, cookies, login or API key.
 
+## About the name
+
+**Ibert-Iam** means **“Ibert — I am.”** It is not IAM (Identity and Access Management); it is a personal name,
+not an acronym. The old `ibert-ai` handle now redirects here. See [docs/NAMING.md](docs/NAMING.md).
+
 ## Maintainer
 
 Threat Atlas SOC and AtlasSOC Desktop are free and open source software under the [MIT licence](LICENSE), maintained by the Threat Atlas project. Ibert Consulting is the legal and administrative operator, in this repository, [github.com/Ibert-Iam/threat-atlas](https://github.com/Ibert-Iam/threat-atlas). Releases are published here and the software is free to use.
