@@ -27,7 +27,11 @@ CHANNELS = ("stable", "rc", "beta")
 # Channel -> channels it may be offered from, newest version wins (docs/UPDATE-CHANNELS.md section 3).
 ALLOWED = {"stable": ("stable",), "rc": ("stable", "rc"), "beta": ("stable", "rc", "beta")}
 MAX_FEED_BYTES = 1_000_000
-VERSION_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:-(beta|rc)\.(\d+))?$")
+# No leading zeros: "0.8.0-rc.01" would tie with "rc.1" in ordering but differ as text (withdrawn matching).
+NUM = r"(0|[1-9]\d*)"
+VERSION_RE = re.compile(rf"^{NUM}\.{NUM}\.{NUM}(?:-(beta|rc)\.{NUM})?$")
+# The downloader uses the announced size as its cap, so the feed may not announce more than this.
+MAX_ASSET_BYTES = 512 * 1024 * 1024
 TAGS = {  # product -> (tag regex with the version in group 1, linux-side tag suffix)
     "atlassoc": re.compile(r"^atlassoc-v(\d+\.\d+\.\d+(?:-(?:beta|rc)\.\d+)?)(-linux)?$"),
     "screensaver": re.compile(r"^v(\d+\.\d+\.\d+(?:-(?:beta|rc)\.\d+)?)$"),
@@ -184,7 +188,7 @@ def validate(feed):
             for a in rel.get("assets", []):
                 if not re.fullmatch(r"[0-9a-f]{64}", str(a.get("sha256", ""))):
                     errors.append(f"{pname} {v} {a.get('name')}: sha256 must be 64 lowercase hex digits")
-                if not isinstance(a.get("size"), int) or a["size"] <= 0:
+                if not isinstance(a.get("size"), int) or not 0 < a["size"] <= MAX_ASSET_BYTES:
                     errors.append(f"{pname} {v} {a.get('name')}: size must be a positive integer")
                 if not download_url_ok(a.get("url"), tags, a.get("name")):
                     errors.append(f"{pname} {v} {a.get('name')}: url must be a {REPO} release download of this tag and file")

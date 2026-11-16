@@ -45,7 +45,8 @@ $Allowed = @{ stable = @('stable'); rc = @('stable', 'rc'); beta = @('stable', '
 
 function Get-VersionKey([string]$Version) {
     # Pre-release sorts below its release: beta < rc < final.
-    if ($Version -notmatch '^(\d+)\.(\d+)\.(\d+)(?:-(beta|rc)\.(\d+))?$') { throw "Bad version: $Version" }
+    # No leading zeros (same rule as update_feed.py and the Rust core).
+    if ($Version -notmatch '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(beta|rc)\.(0|[1-9]\d*))?$') { throw "Bad version: $Version" }
     $rank = switch ($Matches[4]) { 'beta' { 0 } 'rc' { 1 } default { 2 } }
     $num = if ($Matches[5]) { [int]$Matches[5] } else { 0 }
     return @([int]$Matches[1], [int]$Matches[2], [int]$Matches[3], $rank, $num)
