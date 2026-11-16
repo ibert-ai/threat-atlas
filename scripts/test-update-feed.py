@@ -47,7 +47,7 @@ class VersionTests(unittest.TestCase):
         self.assertEqual(sorted(order, key=uf.parse_version), order)
 
     def test_rejects_bad_versions(self):
-        for bad in ("1.0", "v1.0.0", "1.0.0-alpha.1", "1.0.0-rc", "1.0.0+x"):
+        for bad in ("1.0", "v1.0.0", "1.0.0-alpha.1", "1.0.0-rc", "1.0.0+x", "01.0.0", "1.00.0", "1.0.01", "0.8.0-rc.01"):
             with self.assertRaises(ValueError):
                 uf.parse_version(bad)
 
@@ -173,6 +173,10 @@ class ValidationTests(unittest.TestCase):
             a["url"] = a["url"].replace(b["releases"][0]["tag"], "atlassoc-v9.9.9")
         self.assertTrue(self.problems(m1))
         self.assertTrue(self.problems(m2))
+
+    def test_rejects_an_asset_larger_than_the_cap(self):
+        def m(b): b["releases"][0]["assets"][0]["size"] = uf.MAX_ASSET_BYTES + 1
+        self.assertTrue(any("size" in p for p in self.problems(m)))
 
     def test_rejects_bad_hash_and_size(self):
         def m(b):
