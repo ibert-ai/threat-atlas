@@ -21,7 +21,7 @@ Navy: `#0A1828` and `#17334A`. Foreground: `#EAF4F8`. Cyan: `#40DBDC`. Amber: `#
 
 ## Asset provenance and verification
 
-Original editable artwork created for this project. `sentinel.svg` is the colour master; `sentinel-mono.svg` is its monochrome counterpart. `sentinel-1024.png`, `AtlasSOC.ico` and `AtlasSOC.icns` are draft exports of that master. `manifest.json` records SHA256 hashes. ICO has 15 sizes:16,20,24,30,32,36,40,48,60,64,72,80,96,128,256. ICNS was produced from the ten Apple iconset slots (16/32/128/256/512 points at1x/2x). Local export structure/dimensions and iconutil conversion passed. The current local Mac development bundle's matching icon/resource and strict ad-hoc signature were checked; native Windows/Linux shell acceptance remains pending. Draft asset acceptance must not be represented as release acceptance.
+Original editable artwork created for this project. `sentinel.svg` is the colour master; `sentinel-mono.svg` is its monochrome counterpart. `AtlasSOC.ico` and `AtlasSOC.icns` are draft exports of that master (a 1024-pixel PNG export was removed on 16 November 2026 because no build used it). `manifest.json` records SHA256 hashes. ICO has 15 sizes:16,20,24,30,32,36,40,48,60,64,72,80,96,128,256. ICNS was produced from the ten Apple iconset slots (16/32/128/256/512 points at1x/2x). Local export structure/dimensions and iconutil conversion passed. The current local Mac development bundle's matching icon/resource and strict ad-hoc signature were checked; native Windows/Linux shell acceptance remains pending. Draft asset acceptance must not be represented as release acceptance.
 
 ## Reference guidance
 

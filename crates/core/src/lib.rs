@@ -4,7 +4,6 @@ pub mod feed;
 pub mod osint;
 pub mod osint_abusech;
 pub mod osint_abuseipdb;
-pub mod osint_bgp;
 pub mod osint_certstream;
 pub mod osint_ffi;
 pub mod osint_geo;
