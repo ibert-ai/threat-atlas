@@ -8,7 +8,7 @@ GreyNoise public threat-map feed. The header shows both UTC and the computer's l
 
 ## Maintainer
 
-Threat Atlas SOC and AtlasSOC Desktop are free and open source software under the [MIT licence](LICENSE), maintained by Robert Ibert ([Ibert Consulting](https://ibert.se)) in this repository, [github.com/ibert-ai/threat-atlas](https://github.com/ibert-ai/threat-atlas). Releases are published here and the software is free to use.
+Threat Atlas SOC and AtlasSOC Desktop are free and open source software under the [MIT licence](LICENSE), maintained by the Threat Atlas project. Ibert Consulting is the legal and administrative operator, in this repository, [github.com/ibert-ai/threat-atlas](https://github.com/ibert-ai/threat-atlas). Releases are published here and the software is free to use.
 
 ## Release status
 

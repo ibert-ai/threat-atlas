@@ -8,7 +8,7 @@ Stable is a release decision. It is not trusted Windows signing and not a claim 
 
 - Windows 10/11 x64: all-users MSI and portable ZIP. Unsigned.
 - Linux x86_64: windowed preview archive (extract and run `AppRun`).
-- macOS 12+ (Apple silicon and Intel): `ThreatAtlas-macOS-signed.zip`, signed with Developer ID (Robert Ibert, team 7NXP86HMVH), notarized by Apple and stapled. It is built from the same commit on the maintainer's Mac and attached after the automated Windows/Linux publication, with its own SHA-256 file.
+- macOS 12+ (Apple silicon and Intel): `ThreatAtlas-macOS-signed.zip`, signed with Developer ID (team 7NXP86HMVH), notarized by Apple and stapled. It is built from the same commit on the maintainer's Mac and attached after the automated Windows/Linux publication, with its own SHA-256 file.
 
 ## Windows installation and updates
 
