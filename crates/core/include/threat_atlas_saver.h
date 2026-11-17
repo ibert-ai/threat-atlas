@@ -4,7 +4,8 @@
  * ta_saver_set_intel(session, ta_saver_worker_osint(worker)); ta_saver_frame; about 1/10 s ta_saver_worker_reload }
  * -> ta_saver_worker_stop -> ta_saver_drop.
  * Every call for one session and its worker must come from ONE thread and never overlap.
- * The frame pointer is invalidated by the next ta_saver_frame, ta_saver_fit or ta_saver_drop: copy it out first.
+ * The frame pointer is invalidated by the next ta_saver_frame, ta_saver_fit_window, ta_saver_fit or ta_saver_drop
+ * (a resize reallocates the buffer): copy it out first.
  * The saver only READS AtlasSOC's settings.json. A missing or broken file means every source is off. */
 #ifndef THREAT_ATLAS_SAVER_H
 #define THREAT_ATLAS_SAVER_H
@@ -25,7 +26,11 @@ typedef struct TaOsintHandle TaOsintHandle;
 typedef size_t (*TaKeyFn)(const char *id, uint8_t *out, size_t cap, void *user);
 
 TaSaverSession *ta_saver_new(void);
-uint32_t ta_saver_fit(TaSaverSession *session, uint32_t window_width); /* frame width; height is always 900 */
+/* Lay the frame out for a window of width x height physical pixels; returns the frame width (height is always
+ * 900). Use this one. */
+uint32_t ta_saver_fit_window(TaSaverSession *session, uint32_t width, uint32_t height);
+/* Sets the frame width directly (1440..4320). Not a window width: prefer ta_saver_fit_window. */
+uint32_t ta_saver_fit(TaSaverSession *session, uint32_t frame_width);
 void ta_saver_set_intel(TaSaverSession *session, TaOsintHandle *osint);
 const uint8_t *ta_saver_frame(TaSaverSession *session); /* RGBA, width*900*4 bytes; NULL on failure */
 void ta_saver_drop(TaSaverSession *session);
