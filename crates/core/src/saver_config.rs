@@ -138,11 +138,12 @@ impl Applier {
         if self.last.as_ref() == Some(&(settings.clone(), resolved.clone())) {
             return false;
         }
-        for (source, key) in &resolved {
-            osint.set_key(*source, key.clone());
-        }
-        osint.set_watch(settings.watch_domains.clone());
-        osint.set_enabled(settings.enabled_sources.clone());
+        // One call: the worker never sees new keys with old switches or the reverse (see `apply_config`).
+        osint.apply_config(
+            settings.enabled_sources.clone(),
+            resolved.clone(),
+            settings.watch_domains.clone(),
+        );
         self.last = Some((settings, resolved));
         true
     }
@@ -251,5 +252,29 @@ mod tests {
             watch_domains: Vec::new(),
         };
         assert!(applier.apply(&worker, s2, &Other));
+    }
+
+    #[test]
+    fn a_reload_that_turns_a_source_off_and_drops_a_domain_takes_effect() {
+        let dir = std::env::temp_dir().join("atlas-saver-config-reload");
+        let _ = fs::create_dir_all(&dir);
+        let worker = Osint::start(dir, Vec::new(), |_, _, _, _| None);
+        let mut applier = Applier::default();
+        let on = SaverSettings {
+            enabled_sources: vec!["cisa-kev".into(), "abuseipdb".into()],
+            watch_domains: vec!["example.org".into(), "example.net".into()],
+        };
+        assert!(applier.apply(&worker, on.clone(), &NoKeys));
+        assert_eq!(worker.enabled(), on.enabled_sources);
+        assert_eq!(worker.watch().len(), 2);
+        let off = SaverSettings {
+            enabled_sources: vec!["cisa-kev".into()],
+            watch_domains: vec!["example.org".into()],
+        };
+        assert!(applier.apply(&worker, off, &NoKeys));
+        assert_eq!(worker.enabled(), vec!["cisa-kev".to_string()]);
+        assert_eq!(worker.watch(), vec!["example.org".to_string()]);
+        assert!(applier.apply(&worker, SaverSettings::off(), &NoKeys));
+        assert!(worker.enabled().is_empty() && worker.watch().is_empty());
     }
 }

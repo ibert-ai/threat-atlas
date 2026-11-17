@@ -17,7 +17,8 @@ use std::{
 };
 
 /// Host callback that looks one API key up in the system credential store. It writes the key (UTF-8, no NUL) into
-/// `out` (capacity `cap`) and returns its length, or 0 when there is no key. The core never logs or stores it.
+/// `out` (capacity `cap`) and returns its length, or 0 when there is no key. The core never logs it or writes it to
+/// disk; it clears its scratch buffer after the call, but the resolved keys stay in worker memory until stop.
 pub type KeyFn =
     unsafe extern "C" fn(id: *const c_char, out: *mut u8, cap: usize, user: *mut c_void) -> usize;
 
@@ -42,17 +43,44 @@ impl KeyStore for CallbackKeys {
     }
 }
 
+/// The OSINT worker of a screensaver host plus the settings it follows. Rust hosts (Windows) use this directly;
+/// C hosts go through the `ta_saver_worker_*` functions.
 pub struct SaverWorker {
     handle: OsintHandle,
     settings_path: PathBuf,
-    keys: CallbackKeys,
+    keys: Box<dyn KeyStore>,
     applier: Applier,
 }
 impl SaverWorker {
-    fn reload(&mut self) {
+    /// Starts with everything OFF and reads the settings file once. `fetch` and `post` are the host's HTTPS
+    /// functions (WinHTTP on Windows); `None` uses the core's own client.
+    pub fn start(
+        data_dir: PathBuf,
+        settings_path: PathBuf,
+        keys: Box<dyn KeyStore>,
+        fetch: Option<osint_net::Fetch>,
+    ) -> Self {
+        if fetch.is_none() {
+            crate::osint_worker::set_post(osint_net::https_post);
+        }
+        let osint = Osint::start(data_dir, Vec::new(), fetch.unwrap_or(osint_net::https_get));
+        let mut worker = Self {
+            handle: OsintHandle::new(osint),
+            settings_path,
+            keys,
+            applier: Applier::default(),
+        };
+        worker.reload();
+        worker
+    }
+    /// Re-reads the settings file and the keys; applies only what changed.
+    pub fn reload(&mut self) {
         let settings = SaverSettings::load(&self.settings_path);
         self.applier
-            .apply(self.handle.osint(), settings, &self.keys);
+            .apply(self.handle.osint(), settings, self.keys.as_ref());
+    }
+    pub fn osint(&self) -> &Osint {
+        self.handle.osint()
     }
 }
 
@@ -81,16 +109,8 @@ pub unsafe extern "C" fn ta_saver_worker_start(
     };
     let (dir, path) = (PathBuf::from(dir), PathBuf::from(path));
     std::panic::catch_unwind(move || {
-        crate::osint_worker::set_post(osint_net::https_post);
-        let osint = Osint::start(dir, Vec::new(), osint_net::https_get);
-        let mut worker = SaverWorker {
-            handle: OsintHandle::new(osint),
-            settings_path: path,
-            keys: CallbackKeys { f: key_fn, user },
-            applier: Applier::default(),
-        };
-        worker.reload();
-        Box::into_raw(Box::new(worker))
+        let keys = Box::new(CallbackKeys { f: key_fn, user });
+        Box::into_raw(Box::new(SaverWorker::start(dir, path, keys, None)))
     })
     .unwrap_or(std::ptr::null_mut())
 }

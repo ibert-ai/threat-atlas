@@ -19,7 +19,9 @@ typedef struct TaSaverWorker TaSaverWorker;
 typedef struct TaOsintHandle TaOsintHandle;
 
 /* Looks one API key up in the system credential store. Write the key (no NUL) into out (capacity cap) and return
- * its length, or 0 for no key. id is a source id such as "abuseipdb". Never log the value. */
+ * its length, or 0 for no key. id is a source id such as "abuseipdb". Never log the value.
+ * The core clears its own scratch buffer after each call, but the keys it resolves stay in the worker's memory
+ * (never on disk) until ta_saver_worker_stop. */
 typedef size_t (*TaKeyFn)(const char *id, uint8_t *out, size_t cap, void *user);
 
 TaSaverSession *ta_saver_new(void);

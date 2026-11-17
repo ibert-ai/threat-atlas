@@ -88,6 +88,14 @@ impl SaverSession {
     pub fn set_cards(&mut self, cards: Vec<IntelCard>) {
         self.view.intel = cards;
     }
+    /// Pulls the current cards from a running OSINT worker. Call about once a second.
+    pub fn set_intel(&mut self, osint: &crate::osint_worker::Osint) {
+        self.set_cards(osint_text::cards(
+            &osint.view(),
+            &osint.enabled(),
+            feed::now_ms(),
+        ));
+    }
     /// Draw one frame, `elapsed_ms` after the session started (monotonic). Hosts call `frame`; this exists so the
     /// drawing and the rotation can be tested without a live feed or a real clock.
     pub fn draw_at(
@@ -137,11 +145,7 @@ pub extern "C" fn ta_saver_new() -> *mut SaverSession {
 #[no_mangle]
 pub unsafe extern "C" fn ta_saver_set_intel(session: *mut SaverSession, osint: *mut OsintHandle) {
     if let (Some(s), Some(o)) = (session.as_mut(), osint.as_ref()) {
-        s.set_cards(osint_text::cards(
-            &o.osint().view(),
-            &o.osint().enabled(),
-            feed::now_ms(),
-        ));
+        s.set_intel(o.osint());
     }
 }
 /// Frame width in pixels for a window of `window_width` pixels; height is always 900.
