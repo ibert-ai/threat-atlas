@@ -338,6 +338,57 @@ impl Osint {
         count
     }
 
+    /// Applies switches, keys and watch list together and wakes the worker once. The worker reads each of them
+    /// separately, so this writes in two phases and never lets it see a mix that grants more than the old or the
+    /// new settings allow: first everything that is being taken away (sources, changed or removed keys, dropped
+    /// domains), then what is being added. A source that is turned off or a domain that is removed is therefore
+    /// off before any new key or domain is written.
+    pub fn apply_config(
+        &self,
+        enabled: Vec<String>,
+        keys: Vec<(Source, Option<String>)>,
+        watch: Vec<String>,
+    ) {
+        let mut list = osint_certstream::WatchList::default();
+        for d in &watch {
+            let _ = list.add(d);
+        }
+        let watch = list.domains().to_vec();
+        let wanted: BTreeMap<String, String> = keys
+            .into_iter()
+            .filter_map(|(source, key)| {
+                let key = key?.trim().to_owned();
+                (!key.is_empty()).then(|| (osint::source_spec(source).id.to_owned(), key))
+            })
+            .collect();
+        {
+            let mut e = self.enabled.lock().unwrap();
+            e.retain(|id| enabled.contains(id));
+        }
+        {
+            let mut w = self.watch.lock().unwrap();
+            w.retain(|d| watch.contains(d));
+        }
+        {
+            let mut k = self.keys.lock().unwrap();
+            k.retain(|id, key| wanted.get(id) == Some(key));
+        }
+        {
+            let mut k = self.keys.lock().unwrap();
+            for (id, key) in wanted {
+                k.insert(id, key);
+            }
+        }
+        *self.watch.lock().unwrap() = watch;
+        *self.enabled.lock().unwrap() = enabled;
+        let _ = self.wake.send(Command::Refresh);
+    }
+
+    /// The certificate watch list in use.
+    pub fn watch(&self) -> Vec<String> {
+        self.watch.lock().unwrap().clone()
+    }
+
     pub fn view(&self) -> View {
         self.shared.lock().unwrap().clone()
     }

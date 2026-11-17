@@ -107,18 +107,24 @@ impl SaverSettings {
     /// Hands the settings to a running worker: switches, watch list and, for sources that are on and need one,
     /// the key from the credential store. A source that is off gets no key and makes no request.
     pub fn apply(&self, osint: &Osint, keys: &dyn KeyStore) {
-        for source in osint::SOURCES {
-            let spec = osint::source_spec(*source);
-            let on = crate::osint_worker::is_enabled(&self.enabled_sources, *source);
-            let key = if on && spec.requires_key {
-                keys.key(*source)
-            } else {
-                None
-            };
-            osint.set_key(*source, key);
-        }
-        osint.set_watch(self.watch_domains.clone());
-        osint.set_enabled(self.enabled_sources.clone());
+        let resolved = osint::SOURCES
+            .iter()
+            .map(|source| {
+                let on = crate::osint_worker::is_enabled(&self.enabled_sources, *source);
+                let key = if on && osint::source_spec(*source).requires_key {
+                    keys.key(*source)
+                } else {
+                    None
+                };
+                (*source, key)
+            })
+            .collect();
+        // One call: the worker never sees new keys with old switches or the reverse (see `apply_config`).
+        osint.apply_config(
+            self.enabled_sources.clone(),
+            resolved,
+            self.watch_domains.clone(),
+        );
     }
 }
 
@@ -210,5 +216,28 @@ mod tests {
         };
         s.apply(&worker, &spy);
         assert_eq!(*spy.0.borrow(), vec![Source::AbuseIpdb]);
+    }
+
+    #[test]
+    fn a_reload_that_turns_a_source_off_and_drops_a_domain_takes_effect() {
+        let dir = std::env::temp_dir().join("atlas-saver-config-reload");
+        let _ = fs::create_dir_all(&dir);
+        let worker = Osint::start(dir, Vec::new(), |_, _, _, _| None);
+        let on = SaverSettings {
+            enabled_sources: vec!["cisa-kev".into(), "abuseipdb".into()],
+            watch_domains: vec!["example.org".into(), "example.net".into()],
+        };
+        on.apply(&worker, &NoKeys);
+        assert_eq!(worker.enabled(), on.enabled_sources);
+        assert_eq!(worker.watch().len(), 2);
+        let off = SaverSettings {
+            enabled_sources: vec!["cisa-kev".into()],
+            watch_domains: vec!["example.org".into()],
+        };
+        off.apply(&worker, &NoKeys);
+        assert_eq!(worker.enabled(), vec!["cisa-kev".to_string()]);
+        assert_eq!(worker.watch(), vec!["example.org".to_string()]);
+        SaverSettings::off().apply(&worker, &NoKeys);
+        assert!(worker.enabled().is_empty() && worker.watch().is_empty());
     }
 }
