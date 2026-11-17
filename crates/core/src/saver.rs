@@ -54,6 +54,7 @@ fn apply_saver_options(view: &mut SocView) {
     view.options.theme = Theme::Classic;
     view.options.radar_layer = false;
     view.options.focus = None;
+    view.options.saver_identity = true;
 }
 
 /// Frame width for a window's shape (the frame is always 900 high): at least the standard 1440, at most 2160
@@ -270,6 +271,7 @@ mod tests {
         assert_eq!(view.options.motion, Motion::Realtime);
         assert_eq!(view.options.theme, Theme::Classic);
         assert!(!view.options.radar_layer);
+        assert!(view.options.saver_identity);
         assert_eq!(view.options.focus, None);
     }
 
@@ -355,6 +357,43 @@ mod tests {
         println!(
             "classic saver: {a:.2} ms/frame, saver view: {b:.2} ms/frame, ratio {:.2}",
             b / a
+        );
+    }
+
+    /// Memory measurement: `cargo test -p threat-atlas-core --release saver_memory -- --ignored --nocapture`.
+    #[test]
+    #[ignore]
+    fn saver_memory_against_the_classic_saver() {
+        fn rss_mb() -> f64 {
+            let out = std::process::Command::new("ps")
+                .args(["-o", "rss=", "-p", &std::process::id().to_string()])
+                .output()
+                .unwrap();
+            String::from_utf8_lossy(&out.stdout)
+                .trim()
+                .parse::<f64>()
+                .unwrap_or(0.0)
+                / 1024.0
+        }
+        let counts = (vec![(2, [50, 9, 1]), (6, [30, 4, 2])], [100, 14, 3]);
+        let snap = feed::State::default().snapshot(1000);
+        let base = rss_mb();
+        let mut classic =
+            crate::render::Renderer::new_with_theme(crate::render::SaverTheme::Classic);
+        for i in 0..20 {
+            classic.draw(&feed::State::default().snapshot(1000 + i * 100));
+        }
+        let after_classic = rss_mb();
+        let mut saver = SaverSession::new();
+        saver.fit_window(1920, 1080);
+        for i in 0..20 {
+            saver.draw_at(i * 100, &snap, counts.clone());
+        }
+        let after_saver = rss_mb();
+        println!(
+            "rss MB: start {base:.1}, classic renderer +{:.1}, saver view +{:.1}",
+            after_classic - base,
+            after_saver - after_classic
         );
     }
 }
