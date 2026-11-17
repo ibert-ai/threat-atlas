@@ -18,6 +18,7 @@ pub mod osint_worker;
 pub mod radar;
 pub mod radar_poll;
 pub mod render;
+pub mod saver;
 pub mod update;
 use feed::{Feed, Snapshot};
 use std::sync::Arc;
