@@ -15,6 +15,9 @@ pub const MAX_SETTINGS_BYTES: u64 = 16 * 1024;
 pub const MAX_WATCH_DOMAINS: usize = 10;
 const MAX_DOMAIN_BYTES: usize = 253;
 
+/// One key (or none) per source, in registry order.
+pub type ResolvedKeys = Vec<(Source, Option<String>)>;
+
 /// What the saver took from the file.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct SaverSettings {
@@ -104,27 +107,45 @@ impl SaverSettings {
         Self::parse(&bytes)
     }
 
-    /// Hands the settings to a running worker: switches, watch list and, for sources that are on and need one,
-    /// the key from the credential store. A source that is off gets no key and makes no request.
-    pub fn apply(&self, osint: &Osint, keys: &dyn KeyStore) {
-        let resolved = osint::SOURCES
+    /// The key for every source that is on and needs one, from the credential store. A source that is off gets
+    /// none, so it can never make an authenticated request.
+    pub fn resolve_keys(&self, keys: &dyn KeyStore) -> ResolvedKeys {
+        osint::SOURCES
             .iter()
             .map(|source| {
                 let on = crate::osint_worker::is_enabled(&self.enabled_sources, *source);
                 let key = if on && osint::source_spec(*source).requires_key {
-                    keys.key(*source)
+                    keys.key(*source).filter(|k| !k.trim().is_empty())
                 } else {
                     None
                 };
                 (*source, key)
             })
-            .collect();
+            .collect()
+    }
+}
+
+/// Applies settings to a running worker, and only when something changed, so a host can call it every few
+/// seconds without waking the worker each time.
+#[derive(Default)]
+pub struct Applier {
+    last: Option<(SaverSettings, ResolvedKeys)>,
+}
+impl Applier {
+    /// Returns true when the worker was updated.
+    pub fn apply(&mut self, osint: &Osint, settings: SaverSettings, keys: &dyn KeyStore) -> bool {
+        let resolved = settings.resolve_keys(keys);
+        if self.last.as_ref() == Some(&(settings.clone(), resolved.clone())) {
+            return false;
+        }
         // One call: the worker never sees new keys with old switches or the reverse (see `apply_config`).
         osint.apply_config(
-            self.enabled_sources.clone(),
-            resolved,
-            self.watch_domains.clone(),
+            settings.enabled_sources.clone(),
+            resolved.clone(),
+            settings.watch_domains.clone(),
         );
+        self.last = Some((settings, resolved));
+        true
     }
 }
 
@@ -214,8 +235,23 @@ mod tests {
             enabled_sources: vec!["cisa-kev".into(), "abuseipdb".into()],
             watch_domains: Vec::new(),
         };
-        s.apply(&worker, &spy);
+        let mut applier = Applier::default();
+        assert!(applier.apply(&worker, s.clone(), &spy));
         assert_eq!(*spy.0.borrow(), vec![Source::AbuseIpdb]);
+        // Nothing changed: the worker is not touched again.
+        assert!(!applier.apply(&worker, s, &spy));
+        // A changed key is applied.
+        struct Other;
+        impl KeyStore for Other {
+            fn key(&self, _s: Source) -> Option<String> {
+                Some("k2".into())
+            }
+        }
+        let s2 = SaverSettings {
+            enabled_sources: vec!["abuseipdb".into()],
+            watch_domains: Vec::new(),
+        };
+        assert!(applier.apply(&worker, s2, &Other));
     }
 
     #[test]
@@ -223,21 +259,22 @@ mod tests {
         let dir = std::env::temp_dir().join("atlas-saver-config-reload");
         let _ = fs::create_dir_all(&dir);
         let worker = Osint::start(dir, Vec::new(), |_, _, _, _| None);
+        let mut applier = Applier::default();
         let on = SaverSettings {
             enabled_sources: vec!["cisa-kev".into(), "abuseipdb".into()],
             watch_domains: vec!["example.org".into(), "example.net".into()],
         };
-        on.apply(&worker, &NoKeys);
+        assert!(applier.apply(&worker, on.clone(), &NoKeys));
         assert_eq!(worker.enabled(), on.enabled_sources);
         assert_eq!(worker.watch().len(), 2);
         let off = SaverSettings {
             enabled_sources: vec!["cisa-kev".into()],
             watch_domains: vec!["example.org".into()],
         };
-        off.apply(&worker, &NoKeys);
+        assert!(applier.apply(&worker, off, &NoKeys));
         assert_eq!(worker.enabled(), vec!["cisa-kev".to_string()]);
         assert_eq!(worker.watch(), vec!["example.org".to_string()]);
-        SaverSettings::off().apply(&worker, &NoKeys);
+        assert!(applier.apply(&worker, SaverSettings::off(), &NoKeys));
         assert!(worker.enabled().is_empty() && worker.watch().is_empty());
     }
 }

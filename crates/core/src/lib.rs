@@ -20,6 +20,7 @@ pub mod radar_poll;
 pub mod render;
 pub mod saver;
 pub mod saver_config;
+pub mod saver_ffi;
 pub mod update;
 use feed::{Feed, Snapshot};
 use std::sync::Arc;
