@@ -36,36 +36,43 @@ Windows x64 (installer with "Just me" or "Everyone", and portable ZIP, unsigned)
 Windowed X11/XWayland application with the shared SOC view, keyboard controls, country focus and the wide layout.
 No Cloudflare Radar, update check, saved settings or fullscreen toggle. Tested by CI under a virtual display only.
 
+### AtlasSOC Desktop 0.8.0-rc.1 (build 15, release candidate, pre-release, 16 November 2026)
+
+Windows x64 (installer and portable ZIP, unsigned) and macOS 14+ (see the release page for signing). Not the latest
+stable; 0.7.0 stays stable.
+
+- 13 optional OSINT sources with a switch each (off = no request): CISA KEV + FIRST EPSS, Tor exits, SANS ISC /
+  DShield top ports, ransomware.live, Spamhaus DROP, abuse.ch SSLBL, Phishing.Database, Shodan InternetDB
+  (click-only); AlienVault OTX, abuse.ch URLhaus, abuse.ch ThreatFox, AbuseIPDB (click-only), SSLMate certificate
+  watch (own key, up to ten own domains).
+- Keys in the macOS Keychain or Windows Credential Manager; memory-only in the data worker; sent only to their own
+  provider. Settings window with licences, intervals, key guide and a "Last problem" line per source.
+- Most-attacked-ports block under the top countries; rotating cards for the other sources.
+- Optional AI help prompt for getting the free keys, with a plain list of what it does and does not do.
+- Voluntary Ko-fi support link and a page on where the money goes (`SUPPORT.md`).
+- Hardening round with evidence (QUALITY.md); parser robustness tests; `rc.1` stamp in the app and in the ZIP name.
+
+| Item | Source | Needs a key | State in 0.8.0-rc.1 |
+|---|---|---|---|
+| 001 | CISA KEV + FIRST EPSS | no | included (card, dialog, Settings) |
+| 002 | Tor exit nodes | no | included (count and dialog; map layer open) |
+| 003 | SANS ISC / DShield top ports | no | included (standing block and card) |
+| 004 | Team Cymru ASN, optional GeoLite2 file | no | not included |
+| 005 | abuse.ch SSLBL, URLhaus, ThreatFox | SSLBL none; URLhaus and ThreatFox own key | included |
+| 006 | AlienVault OTX | own key | included |
+| 007 | ransomware.live | no | included |
+| 008 | Shodan InternetDB | no | included (click-only) |
+| 009 | AbuseIPDB | own key | included (click-only) |
+| 010 | RIPE RIS Live (BGP) | no | not included (research) |
+| 011 | Certificate watch (SSLMate CT Search) | own key | included (re-scoped from CertStream) |
+| 012 | Spamhaus DROP | no | included |
+| 013 | Phishing.Database (replaces PhishTank) | no | included |
+
 ## Next version (not yet assigned a number, not released)
 
-The numeric version must advance when the Windows installer payload changes (see `RELEASING.md`). Nothing here
-may be published before the release gates below are met.
-
-### OSINT sources (ATLAS-OSINT-001 to 013)
-
-All non-commercial sources, each with its own licence, attribution and minimum interval in one registry. Status
-on 14 November 2026: "module" means the tested, pure parsing code is merged into the OSINT branch; "integration"
-means the host (worker, dialog, panel, settings) still has to use it.
-
-| Item | Source | Needs a key | State |
-|---|---|---|---|
-| 001 | CISA KEV + FIRST EPSS | no | data, worker and dialog done; panel open |
-| 002 | Tor exit nodes | no | count and dialog done; map layer open |
-| 003 | SANS ISC / DShield top ports | no | parser, worker and dialog done; panel open |
-| 004 | Team Cymru ASN (default), optional GeoLite2 file | no (GeoLite2: the user's own MaxMind account) | module in review; reading the file needs a new dependency |
-| 005 | abuse.ch ThreatFox, URLhaus, SSLBL | ThreatFox and URLhaus: the user's own key; SSLBL: none (CC0) | module merged; integration open |
-| 006 | AlienVault OTX | the user's own key | module merged; integration open |
-| 007 | ransomware.live | no | open |
-| 008 | Shodan InternetDB | no | module merged; integration open |
-| 009 | AbuseIPDB | the user's own key | module merged; integration open |
-| 010 | RIPE RIS Live (BGP) | no | research done; opt-in, narrowly filtered design |
-| 011 | Certificate Transparency | no | the public CertStream service is not operating; re-scope to a crt.sh watch-list proposed |
-| 012 | Spamhaus DROP/EDROP | no | open |
-| 013 | PhishTank | the user's own key | open; check that new keys are still issued |
-
-Rules that apply to every source: a user's own key only (never shipped or shared), click-only lookups for
-per-address services, third-party recipients named in the privacy text, provider rate limits as a floor, no
-fetching of anything the data points to.
+The numeric version must advance when the Windows installer payload changes (see `RELEASING.md`). Planned, not built:
+the 1920x1080 base scaling (SOC-RESOLUTIONS.md), a multi-screen option, a ransomware-by-country map layer, Tor map
+layer, trusted Windows code signing (Certum order of 14 November 2026), and the wishlist items below.
 
 ### Other planned changes
 

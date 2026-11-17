@@ -11,6 +11,9 @@ for target in ['aarch64-apple-darwin', 'x86_64-apple-darwin', 'x86_64-pc-windows
         if package['id'] in resolved and package['source']:
             packages[(package['name'], package['version'])] = package
 text = ['# Third-party Rust dependency notices', 'Generated for macOS arm64/x64, Windows x64 and the Linux x64 preview. Bundled font/map notices are in assets/.\n']
+data_sources = root / 'docs' / 'OSINT-ATTRIBUTION.md'
+if data_sources.exists():
+    text.append('\n' + data_sources.read_text(errors='replace').rstrip() + '\n')
 for (name, version), package in sorted(packages.items()):
     text.append(f'\n## {name} {version}\nLicense: {package["license"] or "See crate license"}\n')
     directory = Path(package['manifest_path']).parent

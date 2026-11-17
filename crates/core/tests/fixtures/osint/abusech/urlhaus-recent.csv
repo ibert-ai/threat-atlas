@@ -1,0 +1,8 @@
+################################################################
+# abuse.ch URLhaus Database Dump (CSV - recent URLs only)      #
+# SYNTHETIC TEST FIXTURE: example.invalid hosts, not real data #
+################################################################
+# id,dateadded,url,url_status,last_online,threat,tags,urlhaus_link,reporter
+"1000001","2026-11-14 08:00:00","http://malware-host.example.invalid/bin/x86","online","2026-11-14 08:05:00","malware_download","elf,Mozi","https://urlhaus.abuse.ch/url/1000001/","tester"
+"1000002","2026-11-14 07:00:00","https://dropper.example.invalid/a.exe?x=1,2","offline","2026-11-14 07:30:00","malware_download","exe,Emotet","https://urlhaus.abuse.ch/url/1000002/","tester"
+"1000003","2026-11-13 23:00:00","ftp://old.example.invalid/f","online","","malware_download","","https://urlhaus.abuse.ch/url/1000003/","tester"

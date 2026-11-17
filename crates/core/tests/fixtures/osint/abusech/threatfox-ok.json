@@ -1,0 +1,47 @@
+{
+ "query_status": "ok",
+ "data": [
+  {
+   "id": "41",
+   "ioc": "gaga.com",
+   "threat_type": "botnet_cc",
+   "threat_type_desc": "Indicator that identifies a botnet command&control server (C&C)",
+   "ioc_type": "domain",
+   "ioc_type_desc": "Domain that is used for botnet Command&control (C&C)",
+   "malware": "win.dridex",
+   "malware_printable": "Dridex",
+   "malware_alias": null,
+   "malware_malpedia": "https://malpedia.caad.fkie.fraunhofer.de/details/win.dridex",
+   "confidence_level": 50,
+   "first_seen": "2020-12-08 13:36:27 UTC",
+   "last_seen": null,
+   "reporter": "abuse_ch",
+   "reference": "https://twitter.com/JAMESWT_MHT/status/1336229725082177536",
+   "tags": [
+    "exe",
+    "test"
+   ]
+  },
+  {
+   "id": "40",
+   "ioc": "susu.com",
+   "threat_type": "botnet_cc",
+   "threat_type_desc": "Indicator that identifies a botnet command&control server (C&C)",
+   "ioc_type": "domain",
+   "ioc_type_desc": "Domain that is used for botnet Command&control (C&C)",
+   "malware": "win.dridex",
+   "malware_printable": "Dridex",
+   "malware_alias": null,
+   "malware_malpedia": "https://malpedia.caad.fkie.fraunhofer.de/details/win.dridex",
+   "confidence_level": 50,
+   "first_seen": "2020-12-08 13:36:27 UTC",
+   "last_seen": null,
+   "reporter": "abuse_ch",
+   "reference": null,
+   "tags": [
+    "exe",
+    "test"
+   ]
+  }
+ ]
+}

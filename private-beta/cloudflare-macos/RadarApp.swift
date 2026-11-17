@@ -57,6 +57,7 @@ struct RadarView: View {
             if !fullScreen { attribution }
         }
         .padding(fullScreen ? 0 : 24)
+        .navigationTitle("AtlasSOC Desktop \(radarReleaseStamp.isEmpty ? "" : String(radarReleaseStamp.prefix(while: { $0 != " " })))")
         .frame(minWidth: 1000, minHeight: 760)
         .background(fullScreen ? Color.black : Color.clear)
         .ignoresSafeArea(edges: fullScreen ? .all : [])
@@ -100,8 +101,8 @@ struct RadarView: View {
     /// First run, or the token is missing or no longer accepted: the full setup and explanation.
     private var setupHeader: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Threat Atlas SOC").font(.largeTitle.bold())
-            Text("AtlasSOC BETA \(radarLicenseTerms.version) · build \(radarLicenseTerms.build) · Ibert Consulting").foregroundStyle(.orange)
+            Text("Threat Atlas SOC Desktop").font(.largeTitle.bold())
+            Text("AtlasSOC \(radarReleaseStamp) · Ibert Consulting").foregroundStyle(.orange)
             Text("Live: GreyNoise public threat-map records as received (not unique attacks), classified by the provider. Cloudflare Radar: past-day aggregate shares; never turned into routes or individual events.")
             HStack {
                 SecureField(model.hasToken ? "Token saved in Keychain · paste a new one to replace it"
@@ -135,8 +136,9 @@ struct RadarView: View {
     /// Title, beta label and Radar state; details (received time, last message) in the tooltip.
     private var statusItems: some View {
         HStack(spacing: 8) {
-            Text("Threat Atlas SOC").font(.headline)
-            Text("BETA \(radarLicenseTerms.version) · \(radarLicenseTerms.build)").font(.caption).foregroundStyle(.orange)
+            Text("Threat Atlas SOC DESKTOP").font(.headline)
+            Text(radarReleaseStamp).font(.caption.bold()).foregroundStyle(.black)
+                .padding(.horizontal, 6).padding(.vertical, 1).background(Color.orange, in: Capsule())
             Circle().fill(model.enabled ? Color.green : Color.secondary).frame(width: 8, height: 8)
             Text(model.busy ? "Radar…" : model.enabled ? "Radar on" : "Radar paused").font(.callout)
         }
@@ -266,14 +268,21 @@ struct TokenSettings: View {
     }
 }
 @main struct PrivateRadarApp: App {
+    init() { ta_soc_set_beta(radarReleaseStamp) }
     // The licence gate wraps everything: no feed, worker or Keychain access before acceptance.
     var body: some Scene {
-        WindowGroup { ConsentGate(terms: radarLicenseTerms) { RadarView() } }
+        WindowGroup { ConsentGate(terms: radarLicenseTerms) { RadarView().onAppear { OsintController.shared.start() } } }
             .commands {
                 CommandGroup(after: .appSettings) {
                     Button("Cloudflare Token…") { NotificationCenter.default.post(name: .showTokenSettings, object: nil) }
-                        .keyboardShortcut(",", modifiers: [.command])
+                }
+                // Help menu: voluntary tip page (optional, gives nothing extra).
+                CommandGroup(after: .help) {
+                    Divider()
+                    Button("Support the project (opens Ko-fi)…") { NSWorkspace.shared.open(supportURL) }
                 }
             }
+        // One Settings window (⌘,): data sources on/off, key guide, updates, Radar token.
+        Settings { OsintSettingsView() }
     }
 }

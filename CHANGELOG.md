@@ -1,3 +1,21 @@
+## AtlasSOC Desktop 0.8.0-rc.1 — release candidate 1, 16 November 2026, build 15
+
+- Pre-release (not the latest stable) for Windows x64 (installer and portable ZIP, unsigned) and macOS 14+. No Linux build.
+- Adds 13 optional, non-commercial OSINT sources with a switch each (off = no request): CISA KEV + FIRST EPSS, Tor exits,
+  SANS ISC top ports, ransomware.live, Spamhaus DROP, abuse.ch SSLBL, Phishing.Database and Shodan InternetDB (click-only)
+  without an account; AlienVault OTX, abuse.ch URLhaus and ThreatFox, AbuseIPDB (click-only) and SSLMate certificate watch
+  with the user's own free key.
+- Keys are stored in the macOS Keychain or Windows Credential Manager, held in memory by the data worker and sent only to
+  their own provider. A "Last problem" line per source; a most-attacked-ports block under the top countries.
+- Adds an optional AI help prompt for getting the free keys (the customer does every step), the key guide, the privacy
+  and attribution texts, and a voluntary Ko-fi support link with a page on where the money goes.
+- Fixes: the most-attacked-ports bar no longer runs under its number on narrow columns; the portable ZIP and on-screen
+  stamp carry `rc.1`; the installer file name is unchanged because the update check parses it.
+- Hardening: parser robustness tests for every network-facing OSINT parser (random, mutated and pathological input),
+  frame-time measurements and a dependency audit in CI; evidence in docs/QUALITY.md.
+- Not in this release: Team Cymru ASN, MaxMind GeoLite2, RIPE RIS, the 1920x1080 base scaling, the multi-screen option and
+  Windows code signing.
+
 ## AtlasSOC Desktop 0.7.0 — Linux x86_64 preview, published 12 November 2026
 
 - First AtlasSOC Desktop build for Linux: the shared SOC view in a resizable X11/XWayland window, with keyboard controls, country focus by click and the wide layout. See docs/ATLAS-SOC-LINUX.md.

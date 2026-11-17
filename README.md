@@ -1,4 +1,4 @@
-> **AtlasSOC Desktop 0.7.0 stable (build 13):** separate standalone packages for Windows x64 and macOS 14+; Windows includes an installer and portable ZIP, and macOS is Developer ID signed and notarized. See [installation and limits](docs/ATLAS-SOC-BETA.md). A separate [Linux x86_64 preview](docs/ATLAS-SOC-LINUX.md) is available without Cloudflare Radar.
+> **AtlasSOC Desktop:** Windows x64 and universal macOS 14+ packages are documented in [docs/ATLAS-SOC-BETA.md](docs/ATLAS-SOC-BETA.md); the 0.8.0 release candidate is described below. This is separate from the screensaver; Windows is unsigned and both platforms have hardware limits. A separate [Linux x86_64 preview](docs/ATLAS-SOC-LINUX.md) (0.7.0) is available without Cloudflare Radar.
 
 # Threat Atlas SOC
 
@@ -37,6 +37,21 @@ screenshot thumbnails. Automatic updates remain unavailable without trusted sign
 [Downloads](https://github.com/ibert-ai/threat-atlas/releases/tag/v0.4.0).
 Manual platform acceptance remains incomplete; see docs/QUALITY.md.
 See [release/version handling](docs/RELEASING.md) and [change history](CHANGELOG.md).
+
+## AtlasSOC Desktop 0.8.0 release candidate 1
+
+**AtlasSOC Desktop 0.8.0-rc.1** (build 15) is a pre-release for Windows x64 (unsigned) and macOS 14+. It adds 13
+optional OSINT sources next to the live map: known-exploited vulnerabilities (CISA KEV + FIRST EPSS), Tor exits,
+SANS ISC / DShield most attacked ports, ransomware.live, Spamhaus DROP, abuse.ch SSLBL, Phishing.Database and Shodan
+InternetDB (click-only) without an account; AlienVault OTX, abuse.ch URLhaus and ThreatFox, AbuseIPDB (click-only) and
+SSLMate certificate watch with your own free key. Every source has a switch (off = no request); keys stay in the
+macOS Keychain or Windows Credential Manager. All sources are non-commercial; click lookups send only the public
+address you click.
+
+[Release notes](docs/RELEASE-0.8.0-rc.1.md), [downloads](https://github.com/ibert-ai/threat-atlas/releases/tag/atlassoc-v0.8.0-rc.1),
+[source guide](docs/OSINT-SOURCES.md), [privacy policy](PRIVACY.md) and [what is still limited](docs/KNOWN-BUGS.md).
+It is not the latest stable: AtlasSOC Desktop 0.7.0 remains stable. Team Cymru ASN, MaxMind GeoLite2, RIPE RIS and
+Windows code signing are not in this release.
 
 ## Known bugs
 
@@ -107,6 +122,12 @@ This viewer cannot verify provider event age or authenticity. Availability and
 schema may change. Review the provider's terms before redistributing or using
 its feed commercially; the MIT license covers this project's code, not telemetry.
 
+**Your own API keys (optional).** Some data sources need a free key of your own. The
+[key guide](docs/OSINT-API-KEYS.md) shows how to get and add one. If you want help
+with the steps, it also contains a [copy-and-paste prompt for any AI assistant](docs/OSINT-API-KEYS.md#ai-guide),
+with a plain list of [what the prompt does and does not do](docs/OSINT-API-KEYS.md#ai-guide-limits).
+Never paste a key into a chat.
+
 ## Build and check
 
 Install Python 3.9+ and current stable Rust. macOS requires Xcode Command Line Tools; Windows
@@ -147,6 +168,14 @@ checks the external feed for increasing records and changed payloads, producing
 frames and JSON. It needs network access and is not an offline CI test.
 
 [Quality review and limitations](docs/QUALITY.md) · [Security policy](SECURITY.md)
+
+## Support the project
+
+Threat Atlas is free and runs without profit. If you want to help cover
+code-signing certificates and licences, you can leave a voluntary tip on
+[Ko-fi](https://ko-fi.com/threatatlas). Tips give no extra features, support or
+rights, and are not required to use the software. All money goes back into the
+project; see [where the money goes](docs/SUPPORT.md).
 
 ## License
 

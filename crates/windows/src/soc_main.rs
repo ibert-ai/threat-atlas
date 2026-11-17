@@ -3,6 +3,8 @@ mod soc_config;
 #[cfg(windows)]
 mod soc_host;
 #[cfg(windows)]
+mod soc_osint;
+#[cfg(windows)]
 mod soc_radar;
 #[cfg(windows)]
 mod soc_update;

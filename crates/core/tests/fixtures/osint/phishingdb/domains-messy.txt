@@ -1,0 +1,12 @@
+ padded.example 
+
+not a domain
+-bad-start.example
+bad_underscore.example
+ünicode.example
+xn--punycode-ok.example
+http://has-scheme.example/path
+192.0.2.7
+single
+trailing-dot.example.
+good.example

@@ -1,0 +1,9 @@
+[
+	{"id": "", "dns_names": ["no-id.example.com"]},
+	{"dns_names": ["missing-id.example.com"]},
+	{"id": "900", "dns_names": ["ok.example.com", "bad name.example.com", "\u0007bell.example.com", 42, null], "issuer": {"friendly_name": "Let's Encrypt\u0000"}, "not_before": "not a date", "not_after": "2027-01-01T00:00:00Z", "revoked": null},
+	"a string, not an object",
+	{"id": "901", "dns_names": "not-an-array"},
+	{"id": "902/../x", "dns_names": ["slash.example.com"]},
+	{"id": "903", "dns_names": [], "revoked": "yes"}
+]

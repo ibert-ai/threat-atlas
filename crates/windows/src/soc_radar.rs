@@ -129,6 +129,156 @@ fn prompt_token(owner: HWND) -> Option<String> {
     }
 }
 
+/// A user-supplied API key for one OSINT provider, kept in Windows Credential Manager under
+/// `AtlasSOC/OSINT/<account>`. The core holds it in memory only.
+pub(crate) mod osint_keys {
+    use super::*;
+
+    fn target(account: &str) -> Vec<u16> {
+        wide(&format!("AtlasSOC/OSINT/{account}"))
+    }
+
+    pub(crate) fn read(account: &str) -> Option<String> {
+        let target = target(account);
+        let mut out = std::mem::MaybeUninit::<*mut CREDENTIALW>::uninit();
+        // SAFETY: same contract as `read_token`: the pointer is checked, the blob copied before
+        // CredFree, and the credential released once.
+        unsafe {
+            if CredReadW(target.as_ptr(), CRED_TYPE_GENERIC, 0, out.as_mut_ptr()) == 0 {
+                return None;
+            }
+            let found = out.assume_init();
+            let credential = found.as_ref()?;
+            let (data, size) = (
+                credential.CredentialBlob,
+                credential.CredentialBlobSize as usize,
+            );
+            let key = if data.is_null() || size == 0 {
+                None
+            } else {
+                String::from_utf8(std::slice::from_raw_parts(data, size).to_vec()).ok()
+            };
+            CredFree(found.cast());
+            key.map(|k| k.trim().to_owned()).filter(|k| valid_token(k))
+        }
+    }
+
+    pub(crate) fn write(account: &str, key: &str) -> bool {
+        let mut target = target(account);
+        let mut user = wide(account);
+        let mut blob = key.as_bytes().to_vec();
+        // SAFETY: all pointers stay valid for the call; a zeroed CREDENTIALW is the documented base.
+        unsafe {
+            let mut credential: CREDENTIALW = std::mem::zeroed();
+            credential.Type = CRED_TYPE_GENERIC;
+            credential.TargetName = target.as_mut_ptr();
+            credential.UserName = user.as_mut_ptr();
+            credential.CredentialBlob = blob.as_mut_ptr();
+            credential.CredentialBlobSize = blob.len() as u32;
+            credential.Persist = CRED_PERSIST_LOCAL_MACHINE;
+            CredWriteW(&credential, 0) != 0
+        }
+    }
+
+    pub(crate) fn delete(account: &str) {
+        let target = target(account);
+        // SAFETY: `target` is a valid NUL-terminated string. A missing item is fine.
+        unsafe { CredDeleteW(target.as_ptr(), CRED_TYPE_GENERIC, 0) };
+    }
+
+    /// Asks for a line of text in the User name box of the credential prompt (nothing is stored by Windows).
+    pub(crate) fn prompt_text(
+        owner: HWND,
+        caption: &str,
+        message: &str,
+        initial: &str,
+    ) -> Option<String> {
+        let caption = wide(caption);
+        let message = wide(message);
+        let target = wide("AtlasSOC/OSINT/text");
+        let mut user = wide(initial);
+        user.resize(CREDUI_MAX_USERNAME_LENGTH as usize + 1, 0);
+        let mut secret = vec![0u16; MAX_SECRET_LENGTH as usize + 1];
+        // SAFETY: buffers are sized as declared and outlive the call; a zeroed info struct is valid.
+        let result = unsafe {
+            let mut info: CREDUI_INFOW = std::mem::zeroed();
+            info.cbSize = std::mem::size_of::<CREDUI_INFOW>() as u32;
+            info.hwndParent = owner;
+            info.pszMessageText = message.as_ptr();
+            info.pszCaptionText = caption.as_ptr();
+            CredUIPromptForCredentialsW(
+                &info,
+                target.as_ptr(),
+                std::ptr::null_mut(),
+                0,
+                user.as_mut_ptr(),
+                CREDUI_MAX_USERNAME_LENGTH + 1,
+                secret.as_mut_ptr(),
+                MAX_SECRET_LENGTH + 1,
+                std::ptr::null_mut(),
+                CREDUI_FLAGS_GENERIC_CREDENTIALS
+                    | CREDUI_FLAGS_DO_NOT_PERSIST
+                    | CREDUI_FLAGS_ALWAYS_SHOW_UI
+                    | CREDUI_FLAGS_EXCLUDE_CERTIFICATES
+                    | CREDUI_FLAGS_KEEP_USERNAME,
+            )
+        };
+        secret.fill(0);
+        let end = user.iter().position(|&c| c == 0).unwrap_or(user.len());
+        if result == 0 {
+            String::from_utf16(&user[..end])
+                .ok()
+                .map(|t| t.trim().to_owned())
+        } else {
+            None
+        }
+    }
+
+    /// Asks with the Windows credential prompt (the key goes into the password box, never into app text).
+    pub(crate) fn prompt(owner: HWND, provider: &str, account: &str) -> Option<String> {
+        let caption = wide(&format!("AtlasSOC - {provider} API key"));
+        let message = wide(&format!(
+            "Paste your own {provider} API key as the password. It is stored in Windows Credential Manager for this user and sent only to {provider}."
+        ));
+        let target = target(account);
+        let mut user = wide(account);
+        user.resize(CREDUI_MAX_USERNAME_LENGTH as usize + 1, 0);
+        let mut secret = vec![0u16; MAX_SECRET_LENGTH as usize + 1];
+        // SAFETY: buffers are sized as declared and outlive the call; a zeroed info struct is valid.
+        let result = unsafe {
+            let mut info: CREDUI_INFOW = std::mem::zeroed();
+            info.cbSize = std::mem::size_of::<CREDUI_INFOW>() as u32;
+            info.hwndParent = owner;
+            info.pszMessageText = message.as_ptr();
+            info.pszCaptionText = caption.as_ptr();
+            CredUIPromptForCredentialsW(
+                &info,
+                target.as_ptr(),
+                std::ptr::null_mut(),
+                0,
+                user.as_mut_ptr(),
+                CREDUI_MAX_USERNAME_LENGTH + 1,
+                secret.as_mut_ptr(),
+                MAX_SECRET_LENGTH + 1,
+                std::ptr::null_mut(),
+                CREDUI_FLAGS_GENERIC_CREDENTIALS
+                    | CREDUI_FLAGS_DO_NOT_PERSIST
+                    | CREDUI_FLAGS_ALWAYS_SHOW_UI
+                    | CREDUI_FLAGS_EXCLUDE_CERTIFICATES
+                    | CREDUI_FLAGS_KEEP_USERNAME,
+            )
+        };
+        let end = secret.iter().position(|&c| c == 0).unwrap_or(secret.len());
+        let key = String::from_utf16(&secret[..end]).ok();
+        secret.fill(0);
+        if result == 0 {
+            key.map(|k| k.trim().to_owned())
+        } else {
+            None
+        }
+    }
+}
+
 struct Handle(*mut core::ffi::c_void);
 impl Drop for Handle {
     fn drop(&mut self) {
@@ -141,8 +291,10 @@ impl Drop for Handle {
 
 pub(crate) struct Reply {
     pub(crate) status: u16,
-    retry_after_s: Option<u64>,
+    pub(crate) retry_after_s: Option<u64>,
     quota_reset_s: Option<u64>,
+    pub(crate) etag: Option<String>,
+    pub(crate) last_modified: Option<String>,
     pub(crate) body: Vec<u8>,
 }
 
@@ -175,12 +327,48 @@ fn fetch(token: &str) -> Option<Reply> {
     )
 }
 
-/// HTTPS GET with redirects and cookies off. A failed option stops before anything is sent.
+/// HTTPS GET without redirects, for requests that may carry a token.
 pub(crate) fn https_get(host: &str, path: &str, headers: &str, max_bytes: usize) -> Option<Reply> {
+    https_get_policy(host, path, headers, max_bytes, false, None)
+}
+
+/// HTTPS GET for public, keyless data. Redirects are followed; cookies stay disabled.
+pub(crate) fn https_get_public(
+    host: &str,
+    path: &str,
+    headers: &str,
+    max_bytes: usize,
+) -> Option<Reply> {
+    https_get_policy(host, path, headers, max_bytes, true, None)
+}
+
+/// HTTPS POST of a small body (for example JSON). Redirects are never followed, so a body is never
+/// re-sent elsewhere; cookies stay disabled.
+pub(crate) fn https_post_public(
+    host: &str,
+    path: &str,
+    headers: &str,
+    body: &[u8],
+    max_bytes: usize,
+) -> Option<Reply> {
+    if body.len() > 64 * 1024 {
+        return None;
+    }
+    https_get_policy(host, path, headers, max_bytes, false, Some(body))
+}
+
+fn https_get_policy(
+    host: &str,
+    path: &str,
+    headers: &str,
+    max_bytes: usize,
+    follow: bool,
+    post_body: Option<&[u8]>,
+) -> Option<Reply> {
     let agent = wide("AtlasSOC/Windows");
     let host = wide(host);
     let path = wide(path);
-    let verb = wide("GET");
+    let verb = wide(if post_body.is_some() { "POST" } else { "GET" });
     let headers = wide(headers);
     // SAFETY: strings outlive the calls; handles are closed by `Handle` in reverse order.
     unsafe {
@@ -211,13 +399,17 @@ pub(crate) fn https_get(host: &str, path: &str, headers: &str, max_bytes: usize)
         if request.0.is_null() {
             return None;
         }
-        let never: u32 = WINHTTP_OPTION_REDIRECT_POLICY_NEVER;
+        let policy: u32 = if follow {
+            WINHTTP_OPTION_REDIRECT_POLICY_ALWAYS
+        } else {
+            WINHTTP_OPTION_REDIRECT_POLICY_NEVER
+        };
         let no_cookies: u32 = WINHTTP_DISABLE_COOKIES;
-        // A token must never follow a redirect or sit in a cookie store, so a failed option stops here.
+        // Token-bearing requests never follow a redirect or sit in a cookie store.
         if WinHttpSetOption(
             request.0,
             WINHTTP_OPTION_REDIRECT_POLICY,
-            (&never as *const u32).cast(),
+            (&policy as *const u32).cast(),
             4,
         ) == 0
             || WinHttpSetOption(
@@ -235,7 +427,15 @@ pub(crate) fn https_get(host: &str, path: &str, headers: &str, max_bytes: usize)
             u32::MAX,
             WINHTTP_ADDREQ_FLAG_ADD,
         ) == 0
-            || WinHttpSendRequest(request.0, std::ptr::null(), 0, std::ptr::null(), 0, 0, 0) == 0
+            || WinHttpSendRequest(
+                request.0,
+                std::ptr::null(),
+                0,
+                post_body.map_or(std::ptr::null(), |b| b.as_ptr().cast()),
+                post_body.map_or(0, |b| b.len() as u32),
+                post_body.map_or(0, |b| b.len() as u32),
+                0,
+            ) == 0
             || WinHttpReceiveResponse(request.0, std::ptr::null_mut()) == 0
         {
             return None;
@@ -280,6 +480,12 @@ pub(crate) fn https_get(host: &str, path: &str, headers: &str, max_bytes: usize)
             retry_after_s: header(&request, "Retry-After").and_then(|v| v.trim().parse().ok()),
             quota_reset_s: header(&request, "Ratelimit")
                 .and_then(|v| radar_poll::quota_reset_s(&v)),
+            etag: header(&request, "ETag")
+                .map(|v| v.trim().to_owned())
+                .filter(|v| !v.is_empty()),
+            last_modified: header(&request, "Last-Modified")
+                .map(|v| v.trim().to_owned())
+                .filter(|v| !v.is_empty()),
             body,
         })
     }

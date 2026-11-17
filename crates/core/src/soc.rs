@@ -11,6 +11,64 @@ use tiny_skia::*;
 pub const RED: [u8; 3] = [235, 87, 87];
 pub const YELLOW: [u8; 3] = [242, 201, 76];
 pub const GREEN: [u8; 3] = [72, 199, 142];
+static BETA_STAMP: std::sync::Mutex<String> = std::sync::Mutex::new(String::new());
+
+/// The heading stamp for a release identity (`atlassoc-beta-version.json`): `"BETA 0.8.0 B14"` for
+/// `beta.N`, `"RC1 0.8.0 B15"` for `rc.N`, the upper-cased kind for any other prerelease, and an
+/// empty text (no stamp) for a stable release.
+pub fn release_stamp(identity: &str) -> String {
+    let value: serde_json::Value = serde_json::from_str(identity).unwrap_or_default();
+    let (Some(version), Some(build)) = (value["version"].as_str(), value["build"].as_u64()) else {
+        return String::new();
+    };
+    let Some(pre) = value["prerelease"].as_str() else {
+        return String::new();
+    };
+    let (kind, n) = pre.split_once('.').unwrap_or((pre, ""));
+    let kind = match (kind, n) {
+        ("rc", n) if !n.is_empty() => format!("RC{n}"),
+        (kind, _) => kind.to_ascii_uppercase(),
+    };
+    format!("{kind} {version} B{build}")
+}
+
+/// Hosts of beta builds call this before the first frame with the text of the stamp, for example
+/// `"BETA 0.8.0-beta.1 B14"`. An empty text means no stamp (a stable build).
+pub fn set_beta_stamp(label: &str) {
+    if let Ok(mut stamp) = BETA_STAMP.lock() {
+        *stamp = label
+            .chars()
+            .filter(|c| c.is_ascii_graphic() || *c == ' ')
+            .map(|c| c.to_ascii_uppercase())
+            .take(28)
+            .collect();
+    }
+}
+
+fn beta_stamp() -> String {
+    BETA_STAMP.lock().map(|s| s.clone()).unwrap_or_default()
+}
+
+/// One panel of live intelligence from the OSINT sources, shown in the right-hand column.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct IntelCard {
+    pub title: String,
+    pub headline: String,
+    pub caption: String,
+    pub rows: Vec<IntelRow>,
+}
+
+/// One line of a card: a label, an optional bar (0.0 to 1.0) and a value.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct IntelRow {
+    pub label: String,
+    pub fraction: Option<f32>,
+    pub value: String,
+}
+
+/// How long one card stays before the next one is shown.
+const CARD_MS: u64 = 8_000;
+
 /// Informational layers (Radar aggregates, status) must never read as severity.
 pub const INFO: [u8; 3] = [116, 151, 189];
 const TEXT: [u8; 3] = [203, 222, 235];
@@ -210,6 +268,8 @@ pub struct SocView {
     counts: (Vec<(usize, [u64; 3])>, [u64; 3]),
     /// Theme the renderer's static base was painted for; repainted when `options.theme` changes.
     base_theme: Theme,
+    /// Live OSINT cards; empty keeps the original layout exactly.
+    pub intel: Vec<IntelCard>,
 }
 impl Default for SocView {
     fn default() -> Self {
@@ -255,6 +315,7 @@ impl Renderer {
                 }
                 self.wide_raw = false;
                 self.text(35, 28, 30, "THREAT ATLAS", [223, 241, 249]);
+                self.desktop_badge(275, 31, 22);
                 self.text(
                     36,
                     70,
@@ -276,6 +337,28 @@ impl Renderer {
         );
         self.desktop_version_label();
         self.base = self.pix.clone();
+    }
+    /// "SOC DESKTOP" after the title, so this window is never mistaken for the screensaver, and an
+    /// orange BETA stamp while the host says this is a beta build.
+    fn desktop_badge(&mut self, x: i32, y: i32, size: u16) {
+        self.text(x, y, size, "SOC DESKTOP", [150, 190, 210]);
+        let stamp = beta_stamp();
+        if !stamp.is_empty() {
+            let bx = x + (size as i32 * 7) + 18;
+            let text_size = size - 4;
+            let w = stamp.len() as f32 * text_size as f32 * 0.62 + 16.;
+            let h = size as f32 * 1.35;
+            self.rect(bx as f32, y as f32 - 3., w, h, [255, 159, 10], 255);
+            self.rect(
+                bx as f32 + 2.,
+                y as f32 - 1.,
+                w - 4.,
+                h - 4.,
+                [8, 18, 28],
+                255,
+            );
+            self.text(bx + 8, y, text_size, &stamp, [255, 159, 10]);
+        }
     }
     fn dashboard_base(&mut self) {
         let (w, h) = (self.pix.width(), self.pix.height());
@@ -315,6 +398,7 @@ impl Renderer {
             self.text(x as i32 + 10, y as i32 + 8, 11, label, ACCENT);
         }
         self.text(35, 22, 26, "THREAT ATLAS", [223, 241, 249]);
+        self.desktop_badge(255, 27, 20);
         self.text(
             37,
             60,
@@ -360,6 +444,7 @@ impl SocView {
             icons: Vec::new(),
             counts: (Vec::new(), [0; 3]),
             base_theme: Theme::Classic,
+            intel: Vec::new(),
         }
     }
     /// Frame width in pixels (height is always 900).
@@ -688,6 +773,7 @@ impl SocView {
                 counts: &self.counts,
                 radar_data,
                 radar_label,
+                intel: &self.intel,
             };
             panel.draw(r);
             return r.pix.data();
@@ -747,7 +833,19 @@ impl SocView {
             );
         }
         if let (_, Some(column)) = wide_split(r.wide_dx) {
-            top_countries(r, &self.counts.0, selected, column, 252, TEXT);
+            // A standing "most attacked ports" block under the countries when that source is on.
+            let ports = self
+                .intel
+                .iter()
+                .find(|c| c.title.starts_with("TOP ATTACKED PORTS"));
+            let mut area = column;
+            if ports.is_some() && column.3 > 420. {
+                area.3 -= 150.;
+            }
+            top_countries(r, &self.counts.0, selected, area, 252, TEXT);
+            if let Some(card) = ports.filter(|_| column.3 > 420.) {
+                draw_port_block(r, card, column);
+            }
         }
         r.wide_raw = false;
 
@@ -783,7 +881,12 @@ impl SocView {
         );
         match radar_data {
             Some(data) => {
-                for (i, row) in data.rows.iter().take(8).enumerate() {
+                for (i, row) in data
+                    .rows
+                    .iter()
+                    .take(if self.intel.is_empty() { 8 } else { 3 })
+                    .enumerate()
+                {
                     let y = 590 + i as i32 * 26;
                     let origin: String = row.origin_country_alpha2.trim().chars().take(8).collect();
                     let target: String = row
@@ -828,6 +931,12 @@ impl SocView {
                     .unwrap_or("NO RADAR DATA YET (SEE STATUS IN THE APP)"),
                 MUTED,
             ),
+        }
+
+        // Live intelligence cards below the Radar rows: one at a time, rotating every few seconds.
+        if !self.intel.is_empty() {
+            let index = (now / CARD_MS) as usize % self.intel.len();
+            draw_intel_card(r, &self.intel[index], index, self.intel.len(), 1044., 662);
         }
 
         // Bottom panel: quiet volume bars and a legend.
@@ -939,6 +1048,7 @@ struct Dashboard<'a> {
     counts: &'a (Vec<(usize, [u64; 3])>, [u64; 3]),
     radar_data: Option<&'a Aggregate>,
     radar_label: &'a str,
+    intel: &'a [IntelCard],
 }
 impl Dashboard<'_> {
     fn draw(&self, r: &mut Renderer) {
@@ -1049,7 +1159,12 @@ impl Dashboard<'_> {
         }
         match self.radar_data {
             Some(data) => {
-                for (i, row) in data.rows.iter().take(8).enumerate() {
+                for (i, row) in data
+                    .rows
+                    .iter()
+                    .take(if self.intel.is_empty() { 8 } else { 3 })
+                    .enumerate()
+                {
                     let y = 576 + i as i32 * 26;
                     let origin: String = row.origin_country_alpha2.trim().chars().take(8).collect();
                     let target: String = row
@@ -1089,6 +1204,12 @@ impl Dashboard<'_> {
                 "NO RADAR DATA (PRESS START IN THE APP)",
                 MUTED,
             ),
+        }
+
+        // Live OSINT card under the Radar rows, rotating every few seconds.
+        if !self.intel.is_empty() {
+            let index = (now / CARD_MS) as usize % self.intel.len();
+            draw_intel_card(r, &self.intel[index], index, self.intel.len(), 1037., 650);
         }
 
         // 09: receipt-rate bars across the tile.
@@ -1210,6 +1331,103 @@ impl Dashboard<'_> {
 }
 
 /// Common short form of a formal country name for narrow lists ("Kingdom of Spain" -> "SPAIN").
+/// Draws one card in the lower right panel. `x` is the left edge of the text column and `y0` the top of
+/// the card; the card is about 130 px tall and 350 px wide.
+fn draw_intel_card(
+    r: &mut Renderer,
+    card: &IntelCard,
+    index: usize,
+    total: usize,
+    x: f32,
+    y0: i32,
+) {
+    let cut = |s: &str, n: usize| -> String { s.chars().take(n).collect() };
+    let xi = x as i32;
+    r.rect(x, y0 as f32, 350., 1., INFO, 70);
+    r.text(xi, y0 + 8, 13, &cut(&card.title, 34), INFO);
+    // Page dots: which card of how many.
+    for i in 0..total.min(12) {
+        let dx = x + 350. - (total.min(12) - i) as f32 * 11.;
+        r.rect(
+            dx,
+            y0 as f32 + 12.,
+            6.,
+            6.,
+            INFO,
+            if i == index { 230 } else { 70 },
+        );
+    }
+    r.text(xi, y0 + 28, 22, &cut(&card.headline, 22), TEXT);
+    r.text(xi, y0 + 56, 11, &cut(&card.caption, 54), MUTED);
+    for (i, row) in card.rows.iter().take(3).enumerate() {
+        let y = y0 + 76 + i as i32 * 17;
+        r.text(xi, y, 11, &cut(&row.label, 16), TEXT);
+        if let Some(f) = row.fraction {
+            let w = 150. * f.clamp(0., 1.);
+            r.rect(x + 116., y as f32 + 3., 150., 6., INFO, 40);
+            r.rect(x + 116., y as f32 + 3., w.max(1.), 6., INFO, 170);
+        }
+        r.text(xi + 278, y, 11, &cut(&row.value, 10), INFO);
+    }
+}
+
+/// The ports block heading, shortened to fit the column (13 px text is about 7.8 px per character) so it
+/// never runs into the next column on narrow windows.
+fn port_block_title(room: f32) -> &'static str {
+    const TITLES: [&str; 3] = [
+        "MOST ATTACKED PORTS / DSHIELD",
+        "TOP PORTS / DSHIELD",
+        "TOP PORTS",
+    ];
+    TITLES
+        .into_iter()
+        .find(|title| title.len() as f32 * 7.8 <= room)
+        .unwrap_or("PORTS")
+}
+
+/// The standing ports block at the foot of the wide column: up to five rows with bars.
+fn draw_port_block(r: &mut Renderer, card: &IntelCard, area: (f32, f32, f32, f32)) {
+    let (x, y, w, h) = area;
+    let left = x as i32 + 19;
+    let top = (y + h) as i32 - 138;
+    r.rect(x + 19., top as f32 - 8., w - 38., 1., INFO, 70);
+    r.text(left, top, 13, port_block_title(w - 38.), INFO);
+    let chars = ((w - 38.) / 7.5).max(4.) as usize;
+    for (i, row) in card.rows.iter().take(5).enumerate() {
+        let yy = top + 22 + i as i32 * 22;
+        r.text(
+            left,
+            yy,
+            11,
+            &row.label.chars().take(12).collect::<String>(),
+            TEXT,
+        );
+        // The bar sits BEHIND the value: it runs the whole row width, is drawn first and dimmer,
+        // and the number is drawn on top in the bright text colour, so even the top port (a full
+        // length bar) never hides its own count, however narrow the column is.
+        if let Some(f) = row.fraction {
+            let bar = (w - 38.) - 78.;
+            r.rect(left as f32 + 78., yy as f32 - 1., bar, 12., INFO, 22);
+            r.rect(
+                left as f32 + 78.,
+                yy as f32 - 1.,
+                (bar * f.clamp(0., 1.)).max(1.),
+                12.,
+                INFO,
+                95,
+            );
+        }
+        let v: String = row.value.chars().take(10).collect();
+        r.text(
+            left + (chars.saturating_sub(v.len()) as f32 * 7.5) as i32,
+            yy,
+            11,
+            &v,
+            TEXT,
+        );
+    }
+}
+
 fn short_name(name: &str) -> String {
     const PREFIXES: [&str; 12] = [
         "FEDERAL REPUBLIC OF ",
@@ -1484,6 +1702,37 @@ fn draw_icon(pixmap: &mut Pixmap, icon: &Icon, alpha: f32) {
 }
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn release_stamp_names_beta_rc_and_stable() {
+        let id = |pre: &str, build: u32| {
+            format!(r#"{{"version":"0.8.0","build":{build},"prerelease":{pre}}}"#)
+        };
+        assert_eq!(
+            super::release_stamp(&id("\"beta.1\"", 14)),
+            "BETA 0.8.0 B14"
+        );
+        assert_eq!(super::release_stamp(&id("\"rc.1\"", 15)), "RC1 0.8.0 B15");
+        assert_eq!(super::release_stamp(&id("\"rc.2\"", 16)), "RC2 0.8.0 B16");
+        assert_eq!(super::release_stamp(&id("null", 17)), "");
+        assert_eq!(super::release_stamp("not json"), "");
+    }
+
+    #[test]
+    fn port_block_title_always_fits_its_column() {
+        for room in [60.0_f32, 90., 120., 150., 180., 230., 260., 400.] {
+            let title = super::port_block_title(room);
+            assert!(
+                title.len() as f32 * 7.8 <= room || title == "PORTS",
+                "room {room}: {title:?} would run past the column"
+            );
+        }
+        assert_eq!(
+            super::port_block_title(400.),
+            "MOST ATTACKED PORTS / DSHIELD"
+        );
+        assert_eq!(super::port_block_title(160.), "TOP PORTS / DSHIELD");
+    }
+
     #[test]
     fn desktop_footer_shows_the_desktop_identity_not_the_screensaver() {
         let read = |file: &str| -> serde_json::Value {

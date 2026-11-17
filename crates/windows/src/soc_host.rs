@@ -1,4 +1,5 @@
 use crate::soc_config::{self, Motion, Settings, Terms, Theme, BUILD, VERSION};
+use crate::soc_osint::{Osint, View as OsintView};
 use crate::soc_radar::Radar;
 use crate::soc_update::{self, Status as UpdateStatus, Updater};
 use std::{
@@ -18,12 +19,17 @@ use tao::{
 };
 use threat_atlas_core::{
     feed::{self, Feed, State},
+    osint_internetdb,
     render::soc::{Motion as CoreMotion, SocView, Theme as CoreTheme},
     HEIGHT,
 };
 use windows_sys::Win32::{
     Foundation::{HWND, POINT},
-    System::LibraryLoader::GetModuleHandleW,
+    System::{
+        DataExchange::{CloseClipboard, GetClipboardData, OpenClipboard},
+        LibraryLoader::GetModuleHandleW,
+        Memory::{GlobalLock, GlobalUnlock},
+    },
     UI::{Shell::ShellExecuteW, WindowsAndMessaging::*},
 };
 
@@ -131,7 +137,11 @@ fn displays(
 }
 
 fn help(window: &Window) {
-    let text = "Right-click anywhere for settings.\n\nF11: fullscreen/windowed\nSpace: freeze/resume display (the shared feed continues)\nR / C / S: Realtime / Calm / Still animation\nL: Classic / Dashboard layout\n1 / 2 / 3: malicious / suspicious / benign visibility\nM: mirror all detected displays (one shared feed)\nT: always on top\nF1: this help\nEscape: leave fullscreen/mirroring, otherwise close\n\nLeft-click a country to focus; hover shows country details in the title.\nSettings save under LocalAppData/ThreatAtlasSOC. Reset settings never resets licence acceptance.\n\nCloudflare Radar (optional): right-click > Set Cloudflare Radar token (collection starts when it is saved); Collect Cloudflare Radar data pauses or resumes it. Past-day aggregate shares, at most one request every 15 minutes; the token stays in Windows Credential Manager. Right-click > How to get a Cloudflare token opens the step-by-step guide.\n\nGreyNoise live receipts, not unique attacks.\nMirroring is implemented; independent display roles/spanning and physical multimonitor acceptance remain pending. No sleep or lock settings are changed.";
+    let text = "Right-click anywhere for settings.\n\nF11: fullscreen/windowed\nSpace: freeze/resume display (the shared feed continues)\nR / C / S: Realtime / Calm / Still animation\nL: Classic / Dashboard layout\n1 / 2 / 3: malicious / suspicious / benign visibility\nM: mirror all detected displays (one shared feed)\nT: always on top\nF1: this help\nEscape: leave fullscreen/mirroring, otherwise close\n\nLeft-click a country to focus; hover shows country details in the title.\nSettings save under LocalAppData/ThreatAtlasSOC. Reset settings never resets licence acceptance.\n\nOSINT: right-click > Known exploited (KEV + EPSS), Tor exit nodes, SANS ISC top ports, Refresh OSINT, OSINT sources / licences, or Look up IP from clipboard (Shodan InternetDB; click-only, asks first).
+
+Cloudflare Radar (optional): right-click > Set Cloudflare Radar token (collection starts when it is saved); Collect Cloudflare Radar data pauses or resumes it. Past-day aggregate shares, at most one request every 15 minutes; the token stays in Windows Credential Manager. Right-click > How to get a Cloudflare token opens the step-by-step guide.\n\nGreyNoise live receipts, not unique attacks.\nMirroring is implemented; independent display roles/spanning and physical multimonitor acceptance remain pending. No sleep or lock settings are changed.
+
+Support: Threat Atlas is free. Right-click > Support the project opens a voluntary tip page (Ko-fi). Tips give no extra features, support or rights, and are not required. All money goes back into the project (details: docs/SUPPORT.md on GitHub).";
     unsafe {
         MessageBoxW(
             window.hwnd() as HWND,
@@ -142,12 +152,585 @@ fn help(window: &Window) {
     }
 }
 
+fn age(ms: u64) -> String {
+    if ms == 0 {
+        return "never".into();
+    }
+    let secs = feed::now_ms().saturating_sub(ms) / 1000;
+    if secs < 120 {
+        format!("{secs}s ago")
+    } else if secs < 7200 {
+        format!("{} min ago", secs / 60)
+    } else {
+        format!("{} h ago", secs / 3600)
+    }
+}
+
+fn show_kev(window: &Window, view: Option<&OsintView>) {
+    let Some(view) = view else {
+        unsafe {
+            MessageBoxW(
+                window.hwnd() as HWND,
+                wide("OSINT worker is not running in this mode.").as_ptr(),
+                wide("Threat Atlas SOC").as_ptr(),
+                MB_OK | MB_ICONINFORMATION,
+            )
+        };
+        return;
+    };
+    let mut text = format!(
+        "CISA Known Exploited Vulnerabilities + FIRST EPSS\nKEV updated: {}\nEPSS updated: {}\n",
+        age(view.kev_updated_ms),
+        age(view.epss_updated_ms)
+    );
+    if !view.note.is_empty() {
+        text.push_str(&format!("Last note: {}\n", view.note));
+    }
+    text.push('\n');
+    if view.kev.is_empty() {
+        text.push_str("No data yet. The first refresh is scheduled within 24 hours.\n");
+    }
+    for item in view.kev.iter().take(12) {
+        let epss = item
+            .epss
+            .as_ref()
+            .map_or_else(|| "n/a".to_string(), |s| format!("{:.2}", s.epss));
+        text.push_str(&format!(
+            "{}  EPSS {}  due {}\n  {} — {}: {}\n",
+            item.kev.cve, epss, item.kev.due_date, item.kev.vendor, item.kev.product, item.kev.name
+        ));
+    }
+    text.push_str("\nSource: CISA KEV + FIRST EPSS. Context only; not confirmation that your assets are affected. Non-commercial use with attribution.");
+    unsafe {
+        MessageBoxW(
+            window.hwnd() as HWND,
+            wide(&text).as_ptr(),
+            wide("Threat Atlas SOC - known exploited").as_ptr(),
+            MB_OK | MB_ICONINFORMATION,
+        )
+    };
+}
+
+fn show_tor(window: &Window, view: Option<&OsintView>) {
+    let Some(view) = view else {
+        unsafe {
+            MessageBoxW(
+                window.hwnd() as HWND,
+                wide("OSINT worker is not running in this mode.").as_ptr(),
+                wide("Threat Atlas SOC").as_ptr(),
+                MB_OK | MB_ICONINFORMATION,
+            )
+        };
+        return;
+    };
+    let mut text = format!(
+        "Tor exit nodes: {}\nUpdated: {}\n\nSource: Tor Project bulk exit list. Exit nodes are public Tor infrastructure, not malicious hosts. Non-commercial use with attribution.",
+        view.tor_count,
+        age(view.tor_updated_ms)
+    );
+    if !view.note.is_empty() {
+        text.push_str(&format!("\nLast note: {}", view.note));
+    }
+    unsafe {
+        MessageBoxW(
+            window.hwnd() as HWND,
+            wide(&text).as_ptr(),
+            wide("Threat Atlas SOC - Tor exits").as_ptr(),
+            MB_OK | MB_ICONINFORMATION,
+        )
+    };
+}
+
+fn show_sans(window: &Window, view: Option<&OsintView>) {
+    let Some(view) = view else {
+        unsafe {
+            MessageBoxW(
+                window.hwnd() as HWND,
+                wide("OSINT worker is not running in this mode.").as_ptr(),
+                wide("Threat Atlas SOC").as_ptr(),
+                MB_OK | MB_ICONINFORMATION,
+            )
+        };
+        return;
+    };
+    let Some(report) = &view.sans else {
+        let text = format!(
+            "No SANS ISC data yet. Updated: {}.",
+            age(view.sans_updated_ms)
+        );
+        unsafe {
+            MessageBoxW(
+                window.hwnd() as HWND,
+                wide(&text).as_ptr(),
+                wide("Threat Atlas SOC - SANS ISC").as_ptr(),
+                MB_OK | MB_ICONINFORMATION,
+            )
+        };
+        return;
+    };
+    let mut text = format!(
+        "SANS ISC / DShield top target ports\nDate: {}\nUpdated: {}\n\n",
+        report.date,
+        age(view.sans_updated_ms)
+    );
+    for port in &report.ports {
+        text.push_str(&format!(
+            "#{}  port {:>5}  records {}  targets {}  sources {}\n",
+            port.rank, port.target_port, port.records, port.targets, port.sources
+        ));
+    }
+    text.push_str("\nSource: isc.sans.edu API, CC BY-NC-SA 4.0. Honeypot observations, not unique attacks. Non-commercial use with attribution.");
+    unsafe {
+        MessageBoxW(
+            window.hwnd() as HWND,
+            wide(&text).as_ptr(),
+            wide("Threat Atlas SOC - SANS ISC").as_ptr(),
+            MB_OK | MB_ICONINFORMATION,
+        )
+    };
+}
+
+/// Text on the clipboard, at most 256 characters. `None` when empty or not text.
+fn clipboard_text(window: &Window) -> Option<String> {
+    const CF_UNICODETEXT: u32 = 13;
+    // SAFETY: the clipboard is closed on every path; the locked block is read only up to the first
+    // NUL or 256 UTF-16 units and unlocked before returning.
+    unsafe {
+        if OpenClipboard(window.hwnd() as HWND) == 0 {
+            return None;
+        }
+        let mut text = None;
+        let handle = GetClipboardData(CF_UNICODETEXT);
+        if !handle.is_null() {
+            let ptr = GlobalLock(handle) as *const u16;
+            if !ptr.is_null() {
+                let mut units = Vec::new();
+                for i in 0..256 {
+                    let unit = *ptr.add(i);
+                    if unit == 0 {
+                        break;
+                    }
+                    units.push(unit);
+                }
+                text = String::from_utf16(&units).ok();
+                GlobalUnlock(handle);
+            }
+        }
+        CloseClipboard();
+        text
+    }
+}
+
+fn info_box(window: &Window, title: &str, text: &str) {
+    unsafe {
+        MessageBoxW(
+            window.hwnd() as HWND,
+            wide(text).as_ptr(),
+            wide(title).as_ptr(),
+            MB_OK | MB_ICONINFORMATION,
+        )
+    };
+}
+
+/// Click-only InternetDB lookup of the address on the clipboard, after an explicit confirmation.
+fn start_internetdb_lookup(window: &Window, osint: Option<&Osint>) {
+    const TITLE: &str = "Threat Atlas SOC - Shodan InternetDB";
+    let Some(osint) = osint else {
+        info_box(window, TITLE, "OSINT worker is not running in this mode.");
+        return;
+    };
+    let Some(ip) = clipboard_text(window)
+        .as_deref()
+        .and_then(osint_internetdb::parse_ip_text)
+    else {
+        info_box(window, TITLE, "Copy one IP address first (for example 8.8.8.8), then choose this item again. Nothing was sent.");
+        return;
+    };
+    if !osint_internetdb::is_lookup_allowed(ip) {
+        info_box(window, TITLE, "That is not a public internet address (private, loopback, reserved or documentation range). Nothing was sent.");
+        return;
+    }
+    let ask = format!(
+        "Send {ip} to internetdb.shodan.io?\n\nShodan receives this address and your public IP address. Free for non-commercial use only. Answers are kept for 24 hours; the address is not looked up again before that.\n\nYES: look it up.  NO: cancel."
+    );
+    let answer = unsafe {
+        MessageBoxW(
+            window.hwnd() as HWND,
+            wide(&ask).as_ptr(),
+            wide(TITLE).as_ptr(),
+            MB_YESNO | MB_DEFBUTTON2 | MB_ICONQUESTION,
+        )
+    };
+    if answer == IDYES {
+        osint.lookup(ip);
+        info_box(
+            window,
+            TITLE,
+            "Lookup started. Choose \"Show last InternetDB result\" in a few seconds.",
+        );
+    }
+}
+
+/// Shows the shared text page of one source (the same text as the macOS Settings window).
+fn show_source_page(
+    window: &Window,
+    osint: Option<&Osint>,
+    source: threat_atlas_core::osint::Source,
+) {
+    let spec = threat_atlas_core::osint::source_spec(source);
+    let title = format!("Threat Atlas SOC - {}", spec.name);
+    let Some(osint) = osint else {
+        info_box(window, &title, "OSINT worker is not running in this mode.");
+        return;
+    };
+    let text = threat_atlas_core::osint_text::page(source, &osint.view(), "", feed::now_ms());
+    info_box(window, &title, &text);
+}
+
+/// Click-only AbuseIPDB check of the address on the clipboard, after an explicit confirmation.
+fn start_abuseipdb_check(window: &Window, osint: Option<&Osint>) {
+    const TITLE: &str = "Threat Atlas SOC - AbuseIPDB";
+    let Some(osint) = osint else {
+        info_box(window, TITLE, "OSINT worker is not running in this mode.");
+        return;
+    };
+    let Some(ip) = clipboard_text(window)
+        .as_deref()
+        .and_then(osint_internetdb::parse_ip_text)
+    else {
+        info_box(window, TITLE, "Copy one public IP address first (for example 8.8.8.8), then choose this item again. Nothing was sent.");
+        return;
+    };
+    if !threat_atlas_core::osint_abuseipdb::is_lookup_allowed(ip) {
+        info_box(
+            window,
+            TITLE,
+            "That is not a public internet address. Nothing was sent.",
+        );
+        return;
+    }
+    let ask = format!(
+        "Send {ip} and your AbuseIPDB key to api.abuseipdb.com?\n\nAbuseIPDB also sees your public IP address. Free Individual plan, non-commercial; at most 800 checks a day, answers kept 24 hours.\n\nYES: check it.  NO: cancel."
+    );
+    let answer = unsafe {
+        MessageBoxW(
+            window.hwnd() as HWND,
+            wide(&ask).as_ptr(),
+            wide(TITLE).as_ptr(),
+            MB_YESNO | MB_DEFBUTTON2 | MB_ICONQUESTION,
+        )
+    };
+    if answer == IDYES {
+        osint.lookup_abuse(ip);
+        info_box(
+            window,
+            TITLE,
+            "Check started. Choose \"Show last AbuseIPDB result\" in a few seconds.",
+        );
+    }
+}
+
+fn show_internetdb(window: &Window, view: Option<&OsintView>) {
+    const TITLE: &str = "Threat Atlas SOC - Shodan InternetDB";
+    let Some(view) = view else {
+        info_box(window, TITLE, "OSINT worker is not running in this mode.");
+        return;
+    };
+    let mut text = String::new();
+    match &view.lookup {
+        None if view.lookup_pending => {
+            text.push_str("Lookup in progress. Try again in a few seconds.")
+        }
+        None => text.push_str(
+            "No lookup yet. Copy an IP address and choose \"Look up IP from clipboard\".",
+        ),
+        Some(found) => {
+            match &found.outcome {
+                Ok(Some(host)) => text.push_str(&osint_internetdb::describe(host)),
+                Ok(None) => text.push_str(&format!("{}\nShodan has no information about this address. That does not mean it is safe.\n", found.ip)),
+                Err(error) => text.push_str(&format!("{}\n{error}\n", found.ip)),
+            }
+            text.push_str(&format!(
+                "\nFetched: {}{}\n",
+                age(found.at_ms),
+                if found.from_cache {
+                    " (stored answer)"
+                } else {
+                    ""
+                }
+            ));
+            if view.lookup_pending {
+                text.push_str("A newer lookup is in progress.\n");
+            }
+        }
+    }
+    text.push_str("\nSource: Shodan InternetDB, https://internetdb.shodan.io/ . Context only; open ports and CVEs are what Shodan observed, not confirmation of a compromise. Non-commercial use with attribution.");
+    info_box(window, TITLE, &text);
+}
+
+fn show_ransomware(window: &Window, view: Option<&OsintView>) {
+    const TITLE: &str = "Threat Atlas SOC - ransomware.live";
+    let Some(view) = view else {
+        info_box(window, TITLE, "OSINT worker is not running in this mode.");
+        return;
+    };
+    let Some(sum) = &view.ransom else {
+        info_box(window, TITLE, "No data yet. The first request is made shortly after start, then at most every 15 minutes.");
+        return;
+    };
+    let list = |items: &[(String, u32)]| -> String {
+        if items.is_empty() {
+            "none".to_string()
+        } else {
+            items
+                .iter()
+                .map(|(k, n)| format!("{k} {n}"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        }
+    };
+    let mut text = format!(
+        "Disclosed ransomware incidents, last {} days: {}\nUpdated: {}\n\nCountries: {}\nGroups: {}\nSectors: {}\n",
+        sum.window_days, sum.total, age(view.ransom_updated_ms),
+        list(&sum.by_country), list(&sum.by_group), list(&sum.by_sector)
+    );
+    if !view.note.is_empty() {
+        text.push_str(&format!("Last note: {}\n", view.note));
+    }
+    text.push_str("\nSource: ransomware.live (https://www.ransomware.live/api). Counts of what attackers published on leak sites, not confirmed incidents. No victim names are kept or shown. Personal, non-commercial use only; not for corporate or business use.");
+    info_box(window, TITLE, &text);
+}
+
+/// Checks the address on the clipboard against the stored Spamhaus DROP lists. No request is made.
+fn show_spamhaus(window: &Window, view: Option<&OsintView>) {
+    const TITLE: &str = "Threat Atlas SOC - Spamhaus DROP";
+    let Some(data) = view.and_then(|v| v.spamhaus.as_ref()) else {
+        info_box(window, TITLE, "The Spamhaus DROP lists have not been downloaded yet. They are fetched once a day after start.");
+        return;
+    };
+    let now_s = threat_atlas_core::feed::now_ms() / 1000;
+    let mut text = format!(
+        "Spamhaus DROP: {} IPv4 and {} IPv6 netblocks, {} listed AS numbers.\nDownloaded: {}\n",
+        data.v4.entries.len(),
+        data.v6.entries.len(),
+        data.asn.entries.len(),
+        age(data.updated_ms)
+    );
+    for meta in [data.v4.meta.as_ref(), data.v6.meta.as_ref()]
+        .into_iter()
+        .flatten()
+    {
+        if threat_atlas_core::osint_spamhaus::is_stale(meta, now_s) {
+            text.push_str("Warning: a list is more than 7 days old; do not rely on it.\n");
+            break;
+        }
+    }
+    match clipboard_text(window).as_deref().and_then(osint_internetdb::parse_ip_text) {
+        Some(ip) if osint_internetdb::is_lookup_allowed(ip) => {
+            match threat_atlas_core::osint_spamhaus::lookup(&[&data.v4, &data.v6], ip) {
+                Some(entry) => text.push_str(&format!("\n{ip} is inside a netblock listed by Spamhaus DROP: {}/{} (record {}, registry {}).\nA listing is advice not to route that space, not proof that this machine is malicious.\n", entry.cidr.network, entry.cidr.len, entry.sbl, entry.rir)),
+                None => text.push_str(&format!("\n{ip} is not inside any listed DROP netblock. That does not mean it is safe.\n")),
+            }
+        }
+        Some(_) => text.push_str("\nThe copied address is not a public address; it was not checked.\n"),
+        None => text.push_str("\nTo check an address, copy it and choose this item again.\n"),
+    }
+    text.push_str("\nSource: Spamhaus DROP, https://www.spamhaus.org/drop/ . Free under the DROP Terms of Use; the data is stored locally and the checked address is not sent anywhere.");
+    info_box(window, TITLE, &text);
+}
+
+/// Checks the domain or URL on the clipboard against the stored Phishing.Database list. No request.
+fn show_phishing(window: &Window, view: Option<&OsintView>) {
+    use threat_atlas_core::osint_phishtank::{self as phish, FeedStatus};
+    const TITLE: &str = "Threat Atlas SOC - Phishing.Database";
+    let Some(view) = view else {
+        info_box(window, TITLE, "OSINT worker is not running in this mode.");
+        return;
+    };
+    let Some(set) = &view.phish else {
+        info_box(window, TITLE, "The phishing domain list has not been downloaded yet. It is fetched once a day after start (about 11 MB).");
+        return;
+    };
+    let now = threat_atlas_core::feed::now_ms();
+    let mut text = format!("Phishing.Database: {} listed domains.\n", set.len());
+    let stale = view.phish_state.status(now) == FeedStatus::Stale;
+    if stale {
+        text.push_str("Warning: the list has not changed for 7 days or more; the feed may have stopped. It is not used for answers.\n");
+    }
+    match clipboard_text(window).as_deref().and_then(phish::host_from_text) {
+        Some(host) if !stale => match set.lookup(&host) {
+            Some(listed) => text.push_str(&format!("\n{} is on the list (matched {}). Do not open it; the list can contain errors and old entries.\n", phish::defang(&host), phish::defang(&listed))),
+            None => text.push_str(&format!("\n{} is not on the list. That does not mean it is safe.\n", phish::defang(&host))),
+        },
+        Some(_) => {}
+        None => text.push_str("\nTo check a domain or link, copy it and choose this item again. Nothing is opened or sent.\n"),
+    }
+    text.push_str("\nSource: Phishing.Database by Mitchell Krog (MIT licence), https://github.com/mitchellkrogza/Phishing.Database . The list is downloaded from raw.githubusercontent.com; the checked name stays on this computer.");
+    info_box(window, TITLE, &text);
+}
+
+fn show_sslbl(window: &Window, view: Option<&OsintView>) {
+    const TITLE: &str = "Threat Atlas SOC - abuse.ch SSLBL";
+    let Some(view) = view.filter(|v| v.sslbl_updated_ms != 0) else {
+        info_box(
+            window,
+            TITLE,
+            "No data yet. The list is fetched shortly after start, then at most every 15 minutes.",
+        );
+        return;
+    };
+    let top = view
+        .sslbl_top
+        .iter()
+        .map(|(k, n)| format!("{k} {n}"))
+        .collect::<Vec<_>>()
+        .join("\n  ");
+    let text = format!(
+        "SSL certificates blacklisted by abuse.ch: {}\nNewest listing: {}\nUpdated: {}\n\nMost common reasons:\n  {}\n\nSource: abuse.ch SSLBL, https://sslbl.abuse.ch/ (CC0). Certificates linked to botnet command servers; context only.",
+        view.sslbl_total, age(view.sslbl_newest_ms), age(view.sslbl_updated_ms), top
+    );
+    info_box(window, TITLE, &text);
+}
+
+/// Sources that have a working integration in this build, in the order of the Settings menu.
+const LIVE_SOURCES: [threat_atlas_core::osint::Source; 14] = {
+    use threat_atlas_core::osint::Source::*;
+    [
+        CisaKev,
+        Epss,
+        TorExit,
+        SansIsc,
+        RansomwareLive,
+        ShodanInternetDb,
+        SpamhausDrop,
+        PhishTank,
+        Sslbl,
+        Otx,
+        Urlhaus,
+        ThreatFox,
+        AbuseIpdb,
+        CertStream,
+    ]
+};
+/// Menu ids of the API key entries: set at KEY_BASE_ID + 2 * n, remove at KEY_BASE_ID + 2 * n + 1.
+const KEY_BASE_ID: u32 = 200;
+/// Providers that need a key: (menu label, Credential Manager account, sources that share the key).
+const KEY_PROVIDERS: [(&str, &str, &[threat_atlas_core::osint::Source]); 4] = {
+    use threat_atlas_core::osint::Source::*;
+    [
+        ("AlienVault OTX", "otx", &[Otx]),
+        (
+            "abuse.ch (ThreatFox + URLhaus)",
+            "abusech",
+            &[Urlhaus, ThreatFox],
+        ),
+        ("AbuseIPDB", "abuseipdb", &[AbuseIpdb]),
+        ("SSLMate (certificate watch)", "certspotter", &[CertStream]),
+    ]
+};
+
+/// Hands every stored key to the worker (memory only there).
+fn push_keys(osint: &Osint) {
+    for (_, account, sources) in KEY_PROVIDERS {
+        let key = crate::soc_radar::osint_keys::read(account);
+        for source in sources {
+            osint.set_key(*source, key.clone());
+        }
+    }
+}
+const SOURCE_BASE_ID: u32 = 100;
+
+fn source_on(settings: &Settings, source: threat_atlas_core::osint::Source) -> bool {
+    crate::soc_osint::is_enabled(&settings.enabled_sources, source)
+}
+
+/// Shows a notice and returns false when the source is off, so the caller does nothing.
+fn require_source(
+    window: &Window,
+    settings: &Settings,
+    source: threat_atlas_core::osint::Source,
+) -> bool {
+    if source_on(settings, source) {
+        return true;
+    }
+    let name = threat_atlas_core::osint::source_spec(source).name;
+    info_box(window, "Threat Atlas SOC", &format!("{name} is turned off, so it makes no requests. Turn it on under Settings > Data sources."));
+    false
+}
+
+/// Opens the key and setup guide in the browser; the guide lives on GitHub to keep the install small.
+fn open_key_guide(window: &Window) {
+    open_url(
+        window,
+        "https://github.com/ibert-ai/threat-atlas/blob/atlassoc-v0.8.0-rc.1/docs/OSINT-API-KEYS.md",
+    );
+}
+
+/// Voluntary tip page. Tips are optional, give nothing extra and never unlock features.
+const SUPPORT_URL: &str = "https://ko-fi.com/threatatlas";
+
+fn open_ai_guide(window: &Window) {
+    open_url(
+        window,
+        "https://github.com/ibert-ai/threat-atlas/blob/atlassoc-v0.8.0-rc.1/docs/OSINT-API-KEYS.md#ai-guide",
+    );
+}
+
+fn open_support_page(window: &Window) {
+    open_url(window, SUPPORT_URL);
+}
+
+fn open_support_info(window: &Window) {
+    open_url(
+        window,
+        "https://github.com/ibert-ai/threat-atlas/blob/atlassoc-v0.8.0-rc.1/docs/SUPPORT.md",
+    );
+}
+
+fn open_url(window: &Window, link: &str) {
+    let url = wide(link);
+    unsafe {
+        ShellExecuteW(
+            window.hwnd() as HWND,
+            wide("open").as_ptr(),
+            url.as_ptr(),
+            std::ptr::null(),
+            std::ptr::null(),
+            SW_SHOWNORMAL,
+        )
+    };
+}
+
+fn show_osint_sources(window: &Window) {
+    let mut text = String::from("Threat Atlas SOC - OSINT sources\nNon-commercial use only. Provider terms, attribution and minimum intervals are part of the contract.\n\n");
+    for source in threat_atlas_core::osint::SOURCES {
+        let spec = threat_atlas_core::osint::source_spec(*source);
+        text.push_str(&format!(
+            "{}\n  Licence: {}\n  Attribution: {}\n  Minimum interval: {} min\n  Key required: {}\n\n",
+            spec.name,
+            spec.licence,
+            spec.attribution,
+            spec.min_interval_ms / 60_000,
+            if spec.requires_key { "yes" } else { "no" }
+        ));
+    }
+    unsafe {
+        MessageBoxW(
+            window.hwnd() as HWND,
+            wide(&text).as_ptr(),
+            wide("Threat Atlas SOC - OSINT sources").as_ptr(),
+            MB_OK | MB_ICONINFORMATION,
+        )
+    };
+}
+
 fn menu(
     window: &Window,
     settings: &Settings,
     paused: bool,
     radar: Option<&Radar>,
     update: Option<&UpdateStatus>,
+    _osint: Option<&OsintView>,
 ) -> u32 {
     unsafe {
         let menu = CreatePopupMenu();
@@ -185,6 +768,8 @@ fn menu(
             (27, "How to get a Cloudflare token...", false),
             (14, "Reset display settings", false),
             (15, "Controls and limitations (F1)", false),
+            (57, "Support the project (voluntary tip on Ko-fi)...", false),
+            (58, "Where the money goes (opens GitHub)...", false),
         ];
         for (id, text, checked) in options {
             AppendMenuW(
@@ -194,13 +779,143 @@ fn menu(
                 wide(text).as_ptr(),
             );
         }
-        if let Some(update) = update {
-            let enabled = matches!(update, UpdateStatus::Available(_));
+        let settings_menu = CreatePopupMenu();
+        let sources_menu = CreatePopupMenu();
+        let view_menu = CreatePopupMenu();
+        if !settings_menu.is_null() && !sources_menu.is_null() && !view_menu.is_null() {
+            for (i, source) in LIVE_SOURCES.iter().enumerate() {
+                let spec = threat_atlas_core::osint::source_spec(*source);
+                let flags = MF_STRING
+                    | if source_on(settings, *source) {
+                        MF_CHECKED
+                    } else {
+                        0
+                    };
+                let label = if spec.requires_key {
+                    format!("{} (needs your key)", spec.name)
+                } else {
+                    spec.name.to_owned()
+                };
+                AppendMenuW(
+                    sources_menu,
+                    flags,
+                    SOURCE_BASE_ID as usize + i,
+                    wide(&label).as_ptr(),
+                );
+            }
+            let viewing = [
+                (35, "Known exploited (KEV + EPSS)"),
+                (36, "Tor exit nodes"),
+                (39, "SANS ISC top ports"),
+                (42, "Ransomware incidents (ransomware.live)"),
+                (43, "Spamhaus DROP: check IP from clipboard"),
+                (44, "Phishing.Database: check domain from clipboard"),
+                (45, "Blacklisted SSL certificates (abuse.ch SSLBL)"),
+                (40, "Look up IP from clipboard (Shodan InternetDB)..."),
+                (41, "Show last InternetDB result"),
+                (52, "AlienVault OTX pulses"),
+                (53, "abuse.ch URLhaus"),
+                (54, "abuse.ch ThreatFox"),
+                (55, "Certificate watch (your domains)"),
+                (50, "Check IP from clipboard (AbuseIPDB)..."),
+                (51, "Show last AbuseIPDB result"),
+            ];
+            for (id, text) in viewing {
+                AppendMenuW(view_menu, MF_STRING, id, wide(text).as_ptr());
+            }
+            AppendMenuW(
+                settings_menu,
+                MF_POPUP,
+                sources_menu as usize,
+                wide("Data sources (on = may make requests)").as_ptr(),
+            );
+            AppendMenuW(
+                settings_menu,
+                MF_POPUP,
+                view_menu as usize,
+                wide("View data").as_ptr(),
+            );
+            let keys_menu = CreatePopupMenu();
+            if !keys_menu.is_null() {
+                for (n, (label, account, _)) in KEY_PROVIDERS.iter().enumerate() {
+                    let have = crate::soc_radar::osint_keys::read(account).is_some();
+                    let set = format!(
+                        "{} key: {}",
+                        label,
+                        if have { "replace..." } else { "add..." }
+                    );
+                    AppendMenuW(
+                        keys_menu,
+                        MF_STRING,
+                        KEY_BASE_ID as usize + 2 * n,
+                        wide(&set).as_ptr(),
+                    );
+                    if have {
+                        AppendMenuW(
+                            keys_menu,
+                            MF_STRING,
+                            KEY_BASE_ID as usize + 2 * n + 1,
+                            wide(&format!("Remove {label} key")).as_ptr(),
+                        );
+                    }
+                }
+                AppendMenuW(
+                    keys_menu,
+                    MF_STRING,
+                    56,
+                    wide("Certificate watch: set domains...").as_ptr(),
+                );
+                AppendMenuW(
+                    settings_menu,
+                    MF_POPUP,
+                    keys_menu as usize,
+                    wide("API keys (your own, stored in Credential Manager)").as_ptr(),
+                );
+            }
+            AppendMenuW(
+                settings_menu,
+                MF_STRING,
+                37,
+                wide("Refresh data now").as_ptr(),
+            );
+            AppendMenuW(
+                settings_menu,
+                MF_STRING,
+                38,
+                wide("Sources, licences and attribution").as_ptr(),
+            );
+            AppendMenuW(
+                settings_menu,
+                MF_STRING,
+                46,
+                wide("API keys: how to add them (opens GitHub)...").as_ptr(),
+            );
+            AppendMenuW(
+                settings_menu,
+                MF_STRING,
+                59,
+                wide("API keys: AI help prompt and what it does (opens GitHub)...").as_ptr(),
+            );
+            AppendMenuW(
+                settings_menu,
+                MF_STRING,
+                57,
+                wide("Support the project (voluntary tip on Ko-fi)...").as_ptr(),
+            );
+            if let Some(update) = update {
+                let enabled = matches!(update, UpdateStatus::Available(_));
+                AppendMenuW(
+                    settings_menu,
+                    MF_STRING | if enabled { 0 } else { MF_GRAYED },
+                    21,
+                    wide(&update.label()).as_ptr(),
+                );
+            }
             AppendMenuW(
                 menu,
-                MF_STRING | if enabled { 0 } else { MF_GRAYED },
-                21,
-                wide(&update.label()).as_ptr(),
+                MF_POPUP,
+                settings_menu as usize,
+                wide("Settings").as_ptr(),
             );
         }
         AppendMenuW(menu, MF_STRING, 16, wide("Exit").as_ptr());
@@ -256,7 +971,7 @@ fn open_token_guide(window: &Window) {
         })
         .filter(|path| path.is_file());
     let target = local.map_or_else(
-        || "https://github.com/ibert-ai/threat-atlas/blob/main/docs/CLOUDFLARE-RADAR-TOKEN-GUIDE.md".to_string(),
+        || "https://github.com/ibert-ai/threat-atlas/blob/atlassoc-v0.8.0-rc.1/docs/CLOUDFLARE-RADAR-TOKEN-GUIDE.md".to_string(),
         |path| path.display().to_string(),
     );
     unsafe {
@@ -357,12 +1072,28 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     } else {
         Settings::load(&path)
     };
+    let osint = (!smoke).then(|| {
+        crate::soc_osint::set_post(crate::soc_osint::winhttp_post);
+        let worker = Osint::start(
+            state_dir.clone(),
+            settings.enabled_sources.clone(),
+            crate::soc_osint::winhttp_fetch,
+        );
+        push_keys(&worker);
+        worker.set_watch(settings.watch_domains.clone());
+        worker
+    });
     if let Some(warning) = warning {
         show_error(&warning);
     }
     let event_loop = EventLoop::new();
     let mut windows = displays(&event_loop, &settings)?;
+    // Beta builds carry a BETA stamp next to "SOC DESKTOP" in the heading. Switch off for a stable release.
+    threat_atlas_core::render::soc::set_beta_stamp(&threat_atlas_core::render::soc::release_stamp(
+        include_str!("../../../atlassoc-beta-version.json"),
+    ));
     let mut view = SocView::new();
+    let mut intel_ms = 0u64;
     let offline = State::default();
     let mut paused = false;
     let mut rgba = Vec::new();
@@ -388,7 +1119,10 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                         let detail = frame_point(&display.window, position, view.width()).and_then(|(x, y)| view.inspect(x, y, hover_radar.as_deref())).and_then(|json| soc_config::inspection_label(&json));
                         display.window.set_title(&format!("AtlasSOC {VERSION}/{BUILD} by Ibert Consulting · {} · {}", if smoke { "OFFLINE TEST - NO NETWORK" } else if paused { "DISPLAY FROZEN - FEED CONTINUES" } else { "right-click or F1: controls" }, detail.unwrap_or_default()));
                     }
-                    WindowEvent::MouseInput { state: ElementState::Released, button: MouseButton::Right, .. } => action = menu(&display.window, &settings, paused, radar.as_ref(), updater.as_ref().map(Updater::status).as_ref()),
+                    WindowEvent::MouseInput { state: ElementState::Released, button: MouseButton::Right, .. } => {
+                        let osint_view = osint.as_ref().map(Osint::view);
+                        action = menu(&display.window, &settings, paused, radar.as_ref(), updater.as_ref().map(Updater::status).as_ref(), osint_view.as_ref());
+                    }
                     WindowEvent::MouseInput { state: ElementState::Released, button: MouseButton::Left, .. } => {
                         if let Some((x, y)) = frame_point(&display.window, cursor, view.width()) {
                             let hit = view.country_at(x, y);
@@ -422,6 +1156,49 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                     11 => settings.fps = 5, 12 => settings.fps = 10, 13 => settings.fps = 20,
                     25 => settings.theme = Theme::Classic, 26 => settings.theme = Theme::Dashboard,
                     27 => open_token_guide(&display.window),
+                    n if (SOURCE_BASE_ID..SOURCE_BASE_ID + LIVE_SOURCES.len() as u32).contains(&n) => {
+                        let source = LIVE_SOURCES[(action - SOURCE_BASE_ID) as usize];
+                        let id = threat_atlas_core::osint::source_spec(source).id.to_owned();
+                        if source_on(&settings, source) { settings.enabled_sources.retain(|e| *e != id); } else { settings.enabled_sources.push(id); }
+                        if let Some(osint) = &osint { osint.set_enabled(settings.enabled_sources.clone()); }
+                    }
+                    46 => open_key_guide(&display.window),
+                    57 => open_support_page(&display.window),
+                    58 => open_support_info(&display.window),
+                    59 => open_ai_guide(&display.window),
+                    n if (KEY_BASE_ID..KEY_BASE_ID + 2 * KEY_PROVIDERS.len() as u32).contains(&n) => {
+                        let (label, account, _) = KEY_PROVIDERS[((n - KEY_BASE_ID) / 2) as usize];
+                        if (n - KEY_BASE_ID) % 2 == 1 {
+                            crate::soc_radar::osint_keys::delete(account);
+                        } else if let Some(key) = crate::soc_radar::osint_keys::prompt(display.window.hwnd() as HWND, label, account) {
+                            if key.len() < 16 || !key.bytes().all(|b| b.is_ascii_graphic()) || !crate::soc_radar::osint_keys::write(account, &key) {
+                                info_box(&display.window, "Threat Atlas SOC", "That key could not be saved. Nothing was sent anywhere.");
+                            }
+                        }
+                        if let Some(osint) = &osint { push_keys(osint); }
+                    }
+                    56 => {
+                        if let Some(text) = crate::soc_radar::osint_keys::prompt_text(display.window.hwnd() as HWND, "Certificate watch", "Type up to 10 of YOUR OWN domains, separated by commas, in the User name box (for example example.com, example.org). Leave the password empty.", &settings.watch_domains.join(", ")) {
+                            settings.watch_domains = text.split(|c: char| c == ',' || c.is_whitespace()).filter(|d| !d.is_empty()).take(10).map(str::to_ascii_lowercase).collect();
+                            if let Some(osint) = &osint { osint.set_watch(settings.watch_domains.clone()); }
+                        }
+                    }
+                    50 => if require_source(&display.window, &settings, threat_atlas_core::osint::Source::AbuseIpdb) { start_abuseipdb_check(&display.window, osint.as_ref()) },
+                    51..=55 => {
+                        let source = match action { 51 => threat_atlas_core::osint::Source::AbuseIpdb, 52 => threat_atlas_core::osint::Source::Otx, 53 => threat_atlas_core::osint::Source::Urlhaus, 54 => threat_atlas_core::osint::Source::ThreatFox, _ => threat_atlas_core::osint::Source::CertStream };
+                        if require_source(&display.window, &settings, source) { show_source_page(&display.window, osint.as_ref(), source); }
+                    }
+                    35 => if require_source(&display.window, &settings, threat_atlas_core::osint::Source::CisaKev) { { let view = osint.as_ref().map(Osint::view); show_kev(&display.window, view.as_ref()); } }
+                    36 => if require_source(&display.window, &settings, threat_atlas_core::osint::Source::TorExit) { { let view = osint.as_ref().map(Osint::view); show_tor(&display.window, view.as_ref()); } }
+                    37 => { if let Some(osint) = &osint { osint.refresh(); } }
+                    38 => show_osint_sources(&display.window),
+                    39 => if require_source(&display.window, &settings, threat_atlas_core::osint::Source::SansIsc) { { let view = osint.as_ref().map(Osint::view); show_sans(&display.window, view.as_ref()); } }
+                    40 => if require_source(&display.window, &settings, threat_atlas_core::osint::Source::ShodanInternetDb) { start_internetdb_lookup(&display.window, osint.as_ref()) },
+                    42 => if require_source(&display.window, &settings, threat_atlas_core::osint::Source::RansomwareLive) { { let view = osint.as_ref().map(Osint::view); show_ransomware(&display.window, view.as_ref()); } }
+                    43 => if require_source(&display.window, &settings, threat_atlas_core::osint::Source::SpamhausDrop) { { let view = osint.as_ref().map(Osint::view); show_spamhaus(&display.window, view.as_ref()); } }
+                    44 => if require_source(&display.window, &settings, threat_atlas_core::osint::Source::PhishTank) { { let view = osint.as_ref().map(Osint::view); show_phishing(&display.window, view.as_ref()); } }
+                    45 => if require_source(&display.window, &settings, threat_atlas_core::osint::Source::Sslbl) { { let view = osint.as_ref().map(Osint::view); show_sslbl(&display.window, view.as_ref()); } }
+                    41 => if require_source(&display.window, &settings, threat_atlas_core::osint::Source::ShodanInternetDb) { { let view = osint.as_ref().map(Osint::view); show_internetdb(&display.window, view.as_ref()); } }
                     14 => { settings = Settings::default(); rebuild = true; }
                     15 => help(&display.window),
                     17 => { if let Some(radar) = &radar { radar.toggle_collecting(); } }
@@ -473,6 +1250,12 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                         view.options.radar_layer = settings.radar_layer;
                         let (radar_data, radar_received) = radar.as_ref().map_or((None, 0), Radar::data);
                         view.options.radar_note = radar.as_ref().map(Radar::note);
+                        // Live OSINT cards: refreshed once a second, only for sources that are switched on.
+                        let now = feed::now_ms();
+                        if now.saturating_sub(intel_ms) >= 1000 {
+                            intel_ms = now;
+                            view.intel = osint.as_ref().map_or_else(Vec::new, |o| threat_atlas_core::osint_text::cards(&o.view(), &o.enabled(), now));
+                        }
                         rgba = view.draw(&snapshot, counts, radar_data.as_deref(), radar_received).to_vec();
                     }
                     for window in &mut windows {

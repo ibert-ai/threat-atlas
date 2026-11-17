@@ -32,9 +32,11 @@ $socVersion = Get-Content -Raw -LiteralPath 'windows-soc-version.json' | Convert
 $iconHash = (Get-FileHash -Algorithm SHA256 -LiteralPath 'assets/atlassoc/sentinel/AtlasSOC.ico').Hash.ToLowerInvariant()
 $expectedIconHash = (Get-Content -Raw -LiteralPath 'assets/atlassoc/sentinel/manifest.json' | ConvertFrom-Json).files.'AtlasSOC.ico'
 if ($iconHash -ne $expectedIconHash) { throw 'Sentinel asset hash mismatch' }
-$manifest = [ordered]@{product='AtlasSOC';publisher='Ibert Consulting';version=$socVersion.version;build=$socVersion.build;platform='windows-x64';source_commit=$sourceCommit;source_dirty=$sourceDirty;signature=$signature;package='portable standalone beta; not a screensaver or MSI';radar_network='optional; user token in Windows Credential Manager; api.cloudflare.com at most every 15 minutes';sentinel_ico_sha256=$iconHash;sha256=(Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $package 'AtlasSOC.exe')).Hash.ToLowerInvariant()}
+$release = Get-Content -Raw -LiteralPath 'atlassoc-beta-version.json' | ConvertFrom-Json
+$prerelease = if ($release.prerelease) { "-$($release.prerelease)" } else { '' }
+$manifest = [ordered]@{product='AtlasSOC';publisher='Ibert Consulting';version=$socVersion.version;prerelease=$release.prerelease;build=$socVersion.build;platform='windows-x64';source_commit=$sourceCommit;source_dirty=$sourceDirty;signature=$signature;package="portable standalone$(if ($release.prerelease) { ' ' + $release.prerelease }); not a screensaver or MSI";radar_network='optional; user token in Windows Credential Manager; api.cloudflare.com at most every 15 minutes';sentinel_ico_sha256=$iconHash;sha256=(Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $package 'AtlasSOC.exe')).Hash.ToLowerInvariant()}
 $manifest | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $package 'manifest.json') -Encoding utf8
-$zip = Join-Path $PWD "dist/AtlasSOC-Windows-x64-v$($socVersion.version)-build$($socVersion.build).zip"
+$zip = Join-Path $PWD "dist/AtlasSOC-Windows-x64-v$($socVersion.version)$prerelease-build$($socVersion.build).zip"
 Compress-Archive -Path (Join-Path $package '*') -DestinationPath $zip -Force
 Get-FileHash -Algorithm SHA256 -LiteralPath $zip,(Join-Path $package 'AtlasSOC.exe')
 Write-Output 'Built standalone Windows SOC portable package. No installation, consent acceptance or release publication performed.'

@@ -9,7 +9,7 @@ for folder in ['crates', 'macos', 'scripts', 'installer', '.github', 'docs']:
         if p.is_file() and p.suffix in {'.rs', '.m', '.py', '.md', '.sh', '.ps1', '.wxs', '.yml', '.txt'}:
             if p.name == 'check-source.py':
                 continue
-            text = p.read_text()
+            text = p.read_text(encoding="utf-8")
             if any(re.search(pattern, text) for pattern in patterns):
                 errors.append(str(p.relative_to(root)))
 if errors:
