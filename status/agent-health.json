@@ -1,29 +1,29 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-17T21:03:30.649522Z",
+  "updated_at": "2026-11-17T22:02:29.172602Z",
   "monitoring_started_at": "2026-11-04T23:16:11.309183Z",
   "agents": [
     {
       "id": "mac",
       "name": "MacGyver (Crew)",
-      "last_reported_at": "2026-11-17T21:03:00.410681Z",
-      "last_heartbeat_at": "2026-11-17T21:03:00.410681Z",
+      "last_reported_at": "2026-11-17T22:02:03.510455Z",
+      "last_heartbeat_at": "2026-11-17T22:02:03.510455Z",
       "capacity": "unknown",
       "capacity_reported_at": "2026-11-17T17:35:55.720794Z"
     },
     {
       "id": "cl",
       "name": "Jean-Claude Van Damme (CBO \u2013 Chief Bot Officer)",
-      "last_reported_at": "2026-11-17T21:03:05Z",
-      "last_heartbeat_at": "2026-11-17T21:03:05Z",
+      "last_reported_at": "2026-11-17T22:02:08Z",
+      "last_heartbeat_at": "2026-11-17T22:02:08Z",
       "capacity": "available",
       "capacity_reported_at": "2026-11-17T16:08:46Z"
     },
     {
       "id": "billy",
       "name": "BillyBadass (Crew)",
-      "last_reported_at": "2026-11-17T21:00:02.419094Z",
-      "last_heartbeat_at": "2026-11-17T21:00:02.419094Z",
+      "last_reported_at": "2026-11-17T22:00:02.439393Z",
+      "last_heartbeat_at": "2026-11-17T22:00:02.439393Z",
       "capacity": "available",
       "capacity_reported_at": "2026-11-10T10:05:45.336000Z"
     },
