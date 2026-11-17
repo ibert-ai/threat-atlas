@@ -59,8 +59,13 @@ fn apply_saver_options(view: &mut SocView) {
 pub struct SaverSession {
     feed: Arc<Feed>,
     view: SocView,
-    /// Time of the first drawn frame; the focus rotation counts from here so it always opens on the overview.
-    started_ms: Option<u64>,
+    /// Monotonic start of the session; the focus rotation counts from here so it always opens on the overview
+    /// and a system clock change cannot move it.
+    started: std::time::Instant,
+    /// The rotation slot the held focus was chosen for, and that focus. The ranking is read only when a new
+    /// slot starts, so the focus never changes in the middle of a slot.
+    slot: Option<u64>,
+    held_focus: Option<usize>,
 }
 impl Default for SaverSession {
     fn default() -> Self {
@@ -74,29 +79,37 @@ impl SaverSession {
         Self {
             feed: Feed::shared(),
             view,
-            started_ms: None,
+            started: std::time::Instant::now(),
+            slot: None,
+            held_focus: None,
         }
     }
     /// Replace the OSINT cards (an empty list keeps the plain layout).
     pub fn set_cards(&mut self, cards: Vec<IntelCard>) {
         self.view.intel = cards;
     }
-    /// Draw one frame from a snapshot and the country counts. Hosts call `frame`; this exists so the
-    /// drawing can be tested without a live feed.
-    pub fn draw(
+    /// Draw one frame, `elapsed_ms` after the session started (monotonic). Hosts call `frame`; this exists so the
+    /// drawing and the rotation can be tested without a live feed or a real clock.
+    pub fn draw_at(
         &mut self,
+        elapsed_ms: u64,
         snapshot: &Snapshot,
         counts: (Vec<(usize, [u64; 3])>, [u64; 3]),
     ) -> &[u8] {
-        let ranked = ranked_countries(&counts.0);
-        let start = *self.started_ms.get_or_insert(snapshot.now_ms);
-        self.view.options.focus = focus_for(snapshot.now_ms.saturating_sub(start), &ranked);
+        let slot = elapsed_ms / FOCUS_HOLD_MS;
+        if self.slot != Some(slot) {
+            let ranked = ranked_countries(&counts.0);
+            self.held_focus = focus_for(slot * FOCUS_HOLD_MS, &ranked);
+            self.slot = Some(slot);
+        }
+        self.view.options.focus = self.held_focus;
         self.view.draw(snapshot, counts, None, 0)
     }
     pub fn frame(&mut self) -> &[u8] {
         let snapshot = self.feed.snapshot();
         let counts = self.feed.counts();
-        self.draw(&snapshot, counts)
+        let elapsed = self.started.elapsed().as_millis() as u64;
+        self.draw_at(elapsed, &snapshot, counts)
     }
     /// Frame width in pixels (height is always 900).
     pub fn width(&self) -> u32 {
@@ -119,7 +132,8 @@ pub extern "C" fn ta_saver_new() -> *mut SaverSession {
 }
 /// Pulls the current OSINT cards from the worker into the view. Call about once a second.
 /// # Safety
-/// `session` and `osint` must be live pointers (or null, then nothing happens).
+/// `session` and `osint` must be live pointers (or null, then nothing happens). Same thread as every other
+/// `ta_saver_*` call on this session, never concurrently.
 #[no_mangle]
 pub unsafe extern "C" fn ta_saver_set_intel(session: *mut SaverSession, osint: *mut OsintHandle) {
     if let (Some(s), Some(o)) = (session.as_mut(), osint.as_ref()) {
@@ -132,7 +146,8 @@ pub unsafe extern "C" fn ta_saver_set_intel(session: *mut SaverSession, osint: *
 }
 /// Frame width in pixels for a window of `window_width` pixels; height is always 900.
 /// # Safety
-/// `session` must be null or a live pointer from `ta_saver_new`.
+/// `session` must be null or a live pointer from `ta_saver_new`. Same thread as every other `ta_saver_*` call on
+/// this session, never concurrently.
 #[no_mangle]
 pub unsafe extern "C" fn ta_saver_fit(session: *mut SaverSession, window_width: u32) -> u32 {
     match session.as_mut() {
@@ -141,7 +156,8 @@ pub unsafe extern "C" fn ta_saver_fit(session: *mut SaverSession, window_width: 
     }
 }
 /// # Safety
-/// `session` must be a live pointer from `ta_saver_new`, used only on its owning UI thread.
+/// `session` must be a live pointer from `ta_saver_new`. All `ta_saver_*` calls on one session (`set_intel`, `fit`,
+/// `frame`, `drop`) must come from a single thread, never concurrently.
 /// The returned RGBA buffer stays valid only until the next `ta_saver_frame`, `ta_saver_fit` (a resize can
 /// reallocate the buffer and invalidate the pointer) or `ta_saver_drop`. Copy it out before calling any of them.
 #[no_mangle]
@@ -155,7 +171,8 @@ pub unsafe extern "C" fn ta_saver_frame(session: *mut SaverSession) -> *const u8
     .unwrap_or(std::ptr::null())
 }
 /// # Safety
-/// `session` must be null or a pointer from `ta_saver_new`, dropped exactly once.
+/// `session` must be null or a pointer from `ta_saver_new`, dropped exactly once, on the same thread as every other
+/// `ta_saver_*` call on this session and not concurrently with one.
 #[no_mangle]
 pub unsafe extern "C" fn ta_saver_drop(session: *mut SaverSession) {
     if !session.is_null() {
@@ -221,24 +238,28 @@ mod tests {
     }
 
     #[test]
-    fn a_frame_is_drawn_from_a_snapshot_and_the_focus_follows_the_clock() {
+    fn a_frame_is_drawn_and_the_focus_is_held_for_the_whole_slot() {
         let mut session = SaverSession::new();
-        let counts = (vec![(2, [5, 0, 0]), (6, [3, 0, 0])], [8, 0, 0]);
-        let at = |now| {
-            let state = feed::State::default();
-            state.snapshot(now)
-        };
-        let t0 = 7 * FOCUS_HOLD_MS + 123; // any clock value: the rotation counts from the first frame
-        let snap = at(t0);
-        let len = session.draw(&snap, counts.clone()).len();
+        let a_first = (vec![(2, [5, 0, 0]), (6, [3, 0, 0])], [8, 0, 0]);
+        let b_first = (vec![(2, [3, 0, 0]), (6, [5, 0, 0])], [8, 0, 0]);
+        let snap = feed::State::default().snapshot(0);
+        let len = session.draw_at(0, &snap, a_first.clone()).len();
         assert_eq!(len, session.width() as usize * 900 * 4);
-        assert_eq!(session.options().focus, None, "starts on the world overview");
-        let snap = at(t0 + FOCUS_HOLD_MS);
-        session.draw(&snap, counts.clone());
+        assert_eq!(
+            session.options().focus,
+            None,
+            "starts on the world overview"
+        );
+        session.draw_at(FOCUS_HOLD_MS, &snap, a_first.clone());
         assert_eq!(session.options().focus, Some(2));
-        let snap = at(t0 + 2 * FOCUS_HOLD_MS);
-        session.draw(&snap, counts);
-        assert_eq!(session.options().focus, Some(6));
+        // The ranking flips mid-slot: the focus stays until the slot ends.
+        session.draw_at(FOCUS_HOLD_MS + FOCUS_HOLD_MS - 1, &snap, b_first.clone());
+        assert_eq!(session.options().focus, Some(2));
+        // Next slot: re-ranked with the new order, so the next ranked country (A > B flipped) is chosen.
+        session.draw_at(2 * FOCUS_HOLD_MS, &snap, b_first);
+        assert_eq!(session.options().focus, Some(2));
+        session.draw_at(3 * FOCUS_HOLD_MS, &snap, a_first);
+        assert_eq!(session.options().focus, None);
     }
 
     #[test]
@@ -277,7 +298,7 @@ mod tests {
             classic.draw(&snap(now));
         });
         let b = time(&mut |now| {
-            saver.draw(&snap(now), counts.clone());
+            saver.draw_at(now, &snap(now), counts.clone());
         });
         println!(
             "classic saver: {a:.2} ms/frame, saver view: {b:.2} ms/frame, ratio {:.2}",
