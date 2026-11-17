@@ -1,0 +1,110 @@
+{
+  "comment": "Expected results shared by scripts/test-update-feed.py (Python resolver) and scripts/test-get-latest.ps1 (PowerShell resolver). 0.8.0-rc.2 is withdrawn in the sample.",
+  "cases": [
+    {
+      "product": "atlassoc",
+      "channel": "stable",
+      "platform": "windows-x64",
+      "version": "0.7.0",
+      "asset": "AtlasSOC-Setup-0.7.0-build13.exe"
+    },
+    {
+      "product": "atlassoc",
+      "channel": "stable",
+      "platform": "macos-universal",
+      "version": "0.7.0",
+      "asset": "AtlasSOC-macOS-universal-v0.7.0-build13-signed.zip"
+    },
+    {
+      "product": "atlassoc",
+      "channel": "stable",
+      "platform": "linux-x64",
+      "version": "0.7.0",
+      "asset": "AtlasSOC-Linux-x86_64-v0.7.0-build13-preview.tar.gz"
+    },
+    {
+      "product": "atlassoc",
+      "channel": "rc",
+      "platform": "windows-x64",
+      "version": "0.8.0-rc.1",
+      "asset": "AtlasSOC-Setup-0.8.0-build15.exe"
+    },
+    {
+      "product": "atlassoc",
+      "channel": "rc",
+      "platform": "macos-universal",
+      "version": "0.8.0-rc.1",
+      "asset": "AtlasSOC-macOS-universal-v0.8.0-rc.1-build15.zip"
+    },
+    {
+      "product": "atlassoc",
+      "channel": "rc",
+      "platform": "linux-x64",
+      "version": "0.7.0",
+      "asset": "AtlasSOC-Linux-x86_64-v0.7.0-build13-preview.tar.gz"
+    },
+    {
+      "product": "atlassoc",
+      "channel": "beta",
+      "platform": "windows-x64",
+      "version": "0.9.0-beta.1",
+      "asset": "AtlasSOC-Setup-0.9.0-build17.exe"
+    },
+    {
+      "product": "atlassoc",
+      "channel": "beta",
+      "platform": "macos-universal",
+      "version": "0.9.0-beta.1",
+      "asset": "AtlasSOC-macOS-universal-v0.9.0-beta.1-build17.zip"
+    },
+    {
+      "product": "atlassoc",
+      "channel": "beta",
+      "platform": "linux-x64",
+      "version": "0.7.0",
+      "asset": "AtlasSOC-Linux-x86_64-v0.7.0-build13-preview.tar.gz"
+    },
+    {
+      "product": "screensaver",
+      "channel": "stable",
+      "platform": "windows-x64",
+      "version": "0.4.8",
+      "asset": "ThreatAtlas-0.4.8-x64.msi"
+    },
+    {
+      "product": "screensaver",
+      "channel": "stable",
+      "platform": "macos-universal",
+      "version": "0.4.8",
+      "asset": "ThreatAtlas-macOS-signed.zip"
+    },
+    {
+      "product": "screensaver",
+      "channel": "rc",
+      "platform": "windows-x64",
+      "version": "0.4.9-rc.1",
+      "asset": "ThreatAtlas-0.4.9-x64.msi"
+    },
+    {
+      "product": "screensaver",
+      "channel": "rc",
+      "platform": "macos-universal",
+      "version": "0.4.8",
+      "asset": "ThreatAtlas-macOS-signed.zip"
+    },
+    {
+      "product": "screensaver",
+      "channel": "beta",
+      "platform": "windows-x64",
+      "version": "0.4.9-rc.1",
+      "asset": "ThreatAtlas-0.4.9-x64.msi"
+    },
+    {
+      "product": "screensaver",
+      "channel": "beta",
+      "platform": "macos-universal",
+      "version": "0.4.8",
+      "asset": "ThreatAtlas-macOS-signed.zip"
+    }
+  ]
+}
