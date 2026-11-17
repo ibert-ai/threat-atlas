@@ -1,37 +1,37 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-17T12:30:39.559109Z",
+  "updated_at": "2026-11-17T13:00:30.754297Z",
   "monitoring_started_at": "2026-11-04T23:16:11.309183Z",
   "agents": [
     {
       "id": "mac",
       "name": "MacGyver (Crew)",
-      "last_reported_at": "2026-11-17T12:30:16.163115Z",
-      "last_heartbeat_at": "2026-11-17T12:30:16.163115Z",
+      "last_reported_at": "2026-11-17T13:00:08.881474Z",
+      "last_heartbeat_at": "2026-11-17T13:00:08.881474Z",
       "capacity": "unknown",
       "capacity_reported_at": "2026-11-17T12:00:08.754296Z"
     },
     {
       "id": "cl",
       "name": "Jean-Claude Van Damme (CBO \u2013 Chief Bot Officer)",
-      "last_reported_at": "2026-11-17T12:30:15Z",
-      "last_heartbeat_at": "2026-11-17T12:30:15Z",
+      "last_reported_at": "2026-11-17T13:00:12Z",
+      "last_heartbeat_at": "2026-11-17T13:00:12Z",
       "capacity": "available",
       "capacity_reported_at": "2026-11-17T12:08:47Z"
     },
     {
       "id": "billy",
       "name": "BillyBadass (Crew)",
-      "last_reported_at": "2026-11-17T12:30:02.716512Z",
-      "last_heartbeat_at": "2026-11-17T12:30:02.716512Z",
+      "last_reported_at": "2026-11-17T13:00:02.479213Z",
+      "last_heartbeat_at": "2026-11-17T13:00:02.479213Z",
       "capacity": "available",
       "capacity_reported_at": "2026-11-10T10:05:45.336000Z"
     },
     {
       "id": "noris",
       "name": "Seek Norris (CMO \u2013 Chief Marketing Officer)",
-      "last_reported_at": "2026-11-17T12:30:15Z",
-      "last_heartbeat_at": "2026-11-17T12:30:15Z",
+      "last_reported_at": "2026-11-17T13:00:06Z",
+      "last_heartbeat_at": "2026-11-17T13:00:06Z",
       "capacity": "available",
       "capacity_reported_at": "2026-11-17T12:00:07Z"
     }
