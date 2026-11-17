@@ -62,8 +62,9 @@ pub fn frame_width_for_window(width: u32, height: u32) -> u32 {
     if width == 0 || height == 0 {
         return 1440;
     }
-    let wanted = (u64::from(width) * 900 / u64::from(height) / 8 * 8) as u32;
-    wanted.clamp(1440, 2160)
+    // Clamp in u64 before narrowing, so an extreme window shape cannot wrap.
+    let wanted = u64::from(width) * 900 / u64::from(height) / 8 * 8;
+    wanted.clamp(1440, 2160) as u32
 }
 
 pub struct SaverSession {
@@ -192,7 +193,8 @@ pub unsafe extern "C" fn ta_saver_fit(session: *mut SaverSession, window_width: 
 /// # Safety
 /// `session` must be a live pointer from `ta_saver_new`. All `ta_saver_*` calls on one session (`set_intel`, `fit`,
 /// `frame`, `drop`) must come from a single thread, never concurrently.
-/// The returned RGBA buffer stays valid only until the next `ta_saver_frame`, `ta_saver_fit` (a resize can
+/// The returned RGBA buffer stays valid only until the next `ta_saver_frame`, `ta_saver_fit_window` or
+/// `ta_saver_fit` (a resize can
 /// reallocate the buffer and invalidate the pointer) or `ta_saver_drop`. Copy it out before calling any of them.
 #[no_mangle]
 pub unsafe extern "C" fn ta_saver_frame(session: *mut SaverSession) -> *const u8 {
@@ -303,6 +305,13 @@ mod tests {
         assert_eq!(frame_width_for_window(1920, 1080), 1600);
         assert_eq!(frame_width_for_window(3440, 1440), 2144);
         assert_eq!(frame_width_for_window(7680, 1080), 2160);
+    }
+
+    #[test]
+    fn extreme_window_shapes_do_not_wrap() {
+        assert_eq!(frame_width_for_window(u32::MAX, 1), 2160);
+        assert_eq!(frame_width_for_window(1, u32::MAX), 1440);
+        assert_eq!(frame_width_for_window(u32::MAX, u32::MAX), 1440);
     }
 
     #[test]

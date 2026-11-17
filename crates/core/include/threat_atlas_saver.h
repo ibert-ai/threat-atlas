@@ -4,7 +4,8 @@
  * ta_saver_set_intel(session, ta_saver_worker_osint(worker)); ta_saver_frame; about 1/10 s ta_saver_worker_reload }
  * -> ta_saver_worker_stop -> ta_saver_drop.
  * Every call for one session and its worker must come from ONE thread and never overlap.
- * The frame pointer is invalidated by the next ta_saver_frame, ta_saver_fit or ta_saver_drop: copy it out first.
+ * The frame pointer is invalidated by the next ta_saver_frame, ta_saver_fit_window, ta_saver_fit or ta_saver_drop
+ * (a resize reallocates the buffer): copy it out first.
  * The saver only READS AtlasSOC's settings.json. A missing or broken file means every source is off. */
 #ifndef THREAT_ATLAS_SAVER_H
 #define THREAT_ATLAS_SAVER_H
