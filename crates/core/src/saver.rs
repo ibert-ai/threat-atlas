@@ -59,6 +59,8 @@ fn apply_saver_options(view: &mut SocView) {
 pub struct SaverSession {
     feed: Arc<Feed>,
     view: SocView,
+    /// Time of the first drawn frame; the focus rotation counts from here so it always opens on the overview.
+    started_ms: Option<u64>,
 }
 impl Default for SaverSession {
     fn default() -> Self {
@@ -72,6 +74,7 @@ impl SaverSession {
         Self {
             feed: Feed::shared(),
             view,
+            started_ms: None,
         }
     }
     /// Replace the OSINT cards (an empty list keeps the plain layout).
@@ -86,7 +89,8 @@ impl SaverSession {
         counts: (Vec<(usize, [u64; 3])>, [u64; 3]),
     ) -> &[u8] {
         let ranked = ranked_countries(&counts.0);
-        self.view.options.focus = focus_for(snapshot.now_ms, &ranked);
+        let start = *self.started_ms.get_or_insert(snapshot.now_ms);
+        self.view.options.focus = focus_for(snapshot.now_ms.saturating_sub(start), &ranked);
         self.view.draw(snapshot, counts, None, 0)
     }
     pub fn frame(&mut self) -> &[u8] {
@@ -138,7 +142,8 @@ pub unsafe extern "C" fn ta_saver_fit(session: *mut SaverSession, window_width: 
 }
 /// # Safety
 /// `session` must be a live pointer from `ta_saver_new`, used only on its owning UI thread.
-/// The returned RGBA buffer stays valid until the next frame or `ta_saver_drop`.
+/// The returned RGBA buffer stays valid only until the next `ta_saver_frame`, `ta_saver_fit` (a resize can
+/// reallocate the buffer and invalidate the pointer) or `ta_saver_drop`. Copy it out before calling any of them.
 #[no_mangle]
 pub unsafe extern "C" fn ta_saver_frame(session: *mut SaverSession) -> *const u8 {
     if session.is_null() {
@@ -223,11 +228,15 @@ mod tests {
             let state = feed::State::default();
             state.snapshot(now)
         };
-        let snap = at(FOCUS_HOLD_MS);
+        let t0 = 7 * FOCUS_HOLD_MS + 123; // any clock value: the rotation counts from the first frame
+        let snap = at(t0);
         let len = session.draw(&snap, counts.clone()).len();
         assert_eq!(len, session.width() as usize * 900 * 4);
+        assert_eq!(session.options().focus, None, "starts on the world overview");
+        let snap = at(t0 + FOCUS_HOLD_MS);
+        session.draw(&snap, counts.clone());
         assert_eq!(session.options().focus, Some(2));
-        let snap = at(2 * FOCUS_HOLD_MS);
+        let snap = at(t0 + 2 * FOCUS_HOLD_MS);
         session.draw(&snap, counts);
         assert_eq!(session.options().focus, Some(6));
     }
