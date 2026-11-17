@@ -25,7 +25,11 @@ typedef struct TaOsintHandle TaOsintHandle;
 typedef size_t (*TaKeyFn)(const char *id, uint8_t *out, size_t cap, void *user);
 
 TaSaverSession *ta_saver_new(void);
-uint32_t ta_saver_fit(TaSaverSession *session, uint32_t window_width); /* frame width; height is always 900 */
+/* Lay the frame out for a window of width x height physical pixels; returns the frame width (height is always
+ * 900). Use this one. */
+uint32_t ta_saver_fit_window(TaSaverSession *session, uint32_t width, uint32_t height);
+/* Sets the frame width directly (1440..4320). Not a window width: prefer ta_saver_fit_window. */
+uint32_t ta_saver_fit(TaSaverSession *session, uint32_t frame_width);
 void ta_saver_set_intel(TaSaverSession *session, TaOsintHandle *osint);
 const uint8_t *ta_saver_frame(TaSaverSession *session); /* RGBA, width*900*4 bytes; NULL on failure */
 void ta_saver_drop(TaSaverSession *session);

@@ -56,6 +56,16 @@ fn apply_saver_options(view: &mut SocView) {
     view.options.focus = None;
 }
 
+/// Frame width for a window's shape (the frame is always 900 high): at least the standard 1440, at most 2160
+/// (2.4:1, covers 21:9 ultrawide), in steps of 8 px. This is the same rule AtlasSOC on Windows uses.
+pub fn frame_width_for_window(width: u32, height: u32) -> u32 {
+    if width == 0 || height == 0 {
+        return 1440;
+    }
+    let wanted = (u64::from(width) * 900 / u64::from(height) / 8 * 8) as u32;
+    wanted.clamp(1440, 2160)
+}
+
 pub struct SaverSession {
     feed: Arc<Feed>,
     view: SocView,
@@ -123,7 +133,11 @@ impl SaverSession {
     pub fn width(&self) -> u32 {
         self.view.width()
     }
-    /// Lay the frame out for a window of this physical size, like the SOC view.
+    /// Lay the frame out for a window of this physical size (width and height in pixels). Returns the frame width.
+    pub fn fit_window(&mut self, width: u32, height: u32) -> u32 {
+        self.view.set_width(frame_width_for_window(width, height))
+    }
+    /// Set the frame width directly (1440 to 4320). Hosts that know the window shape use `fit_window`.
     pub fn fit(&mut self, width: u32) -> u32 {
         self.view.set_width(width)
     }
@@ -148,7 +162,23 @@ pub unsafe extern "C" fn ta_saver_set_intel(session: *mut SaverSession, osint: *
         s.set_intel(o.osint());
     }
 }
-/// Frame width in pixels for a window of `window_width` pixels; height is always 900.
+/// Lays the frame out for a window of `width` x `height` physical pixels; returns the frame width (height is always
+/// 900). Prefer this to `ta_saver_fit`.
+/// # Safety
+/// `session` must be null or a live pointer from `ta_saver_new`. Same thread as every other `ta_saver_*` call on
+/// this session, never concurrently.
+#[no_mangle]
+pub unsafe extern "C" fn ta_saver_fit_window(
+    session: *mut SaverSession,
+    width: u32,
+    height: u32,
+) -> u32 {
+    match session.as_mut() {
+        Some(s) => s.fit_window(width, height),
+        None => 0,
+    }
+}
+/// Sets the frame width directly (clamped to 1440..4320); returns it. The height is always 900.
 /// # Safety
 /// `session` must be null or a live pointer from `ta_saver_new`. Same thread as every other `ta_saver_*` call on
 /// this session, never concurrently.
@@ -264,6 +294,15 @@ mod tests {
         assert_eq!(session.options().focus, Some(2));
         session.draw_at(3 * FOCUS_HOLD_MS, &snap, a_first);
         assert_eq!(session.options().focus, None);
+    }
+
+    #[test]
+    fn frame_width_follows_the_window_shape() {
+        assert_eq!(frame_width_for_window(0, 0), 1440);
+        assert_eq!(frame_width_for_window(1280, 800), 1440);
+        assert_eq!(frame_width_for_window(1920, 1080), 1600);
+        assert_eq!(frame_width_for_window(3440, 1440), 2144);
+        assert_eq!(frame_width_for_window(7680, 1080), 2160);
     }
 
     #[test]
