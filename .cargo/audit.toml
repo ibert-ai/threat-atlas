@@ -8,4 +8,8 @@ ignore = [
   # fontdue's parser for the immutable, bundled font only; no user/network fonts.
   # No known exploit is reported, but upstream maintenance is a release risk.
   "RUSTSEC-2026-0192",
+  # chrono 0.4.45 marked unmaintained on 2026-09-14 (reviewed 2026-11-18). No
+  # vulnerability is reported; it is used for clock, offset and date parsing only.
+  # Replace it in the next version (planned: jiff).
+  "RUSTSEC-2026-0543",
 ]
