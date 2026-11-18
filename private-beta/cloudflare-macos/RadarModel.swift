@@ -45,6 +45,9 @@ enum RadarStatus: Equatable {
     case otherWorker, needsToken, denied, paused, waiting(Date), fetching, current, stale, unavailable
 }
 @MainActor final class RadarModel: ObservableObject {
+    /// The app's one Radar worker. Every window shows this model, so a second window or a view that
+    /// SwiftUI rebuilds never tries to take the worker lock a second time in the same process.
+    static let shared = RadarModel()
     @Published var result: RadarResult?
     @Published var message = "No data yet. Add a Cloudflare Radar Read token."
     @Published var busy = false
@@ -104,6 +107,7 @@ enum RadarStatus: Equatable {
             message = "Saved aggregate data. Not live individual events."
         }
     }
+    deinit { if lockFD >= 0 { close(lockFD) } }
     struct Snapshot: Codable { let result: RadarResult; let received: Date }
     var status: RadarStatus {
         if !running { return .otherWorker }
