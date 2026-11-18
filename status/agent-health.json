@@ -1,21 +1,21 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-18T02:01:55.539210Z",
+  "updated_at": "2026-11-18T03:03:00.350606Z",
   "monitoring_started_at": "2026-11-04T23:16:11.309183Z",
   "agents": [
     {
       "id": "mac",
       "name": "MacGyver (Crew)",
-      "last_reported_at": "2026-11-18T02:01:28.185782Z",
-      "last_heartbeat_at": "2026-11-18T02:01:28.185782Z",
+      "last_reported_at": "2026-11-18T03:02:28.950403Z",
+      "last_heartbeat_at": "2026-11-18T03:02:28.950403Z",
       "capacity": "unknown",
       "capacity_reported_at": "2026-11-17T17:35:55.720794Z"
     },
     {
       "id": "cl",
       "name": "Jean-Claude Van Damme (CBO \u2013 Chief Bot Officer)",
-      "last_reported_at": "2026-11-18T02:01:33Z",
-      "last_heartbeat_at": "2026-11-18T02:01:33Z",
+      "last_reported_at": "2026-11-18T03:02:34Z",
+      "last_heartbeat_at": "2026-11-18T03:02:34Z",
       "capacity": "available",
       "capacity_reported_at": "2026-11-17T16:08:46Z"
     },
