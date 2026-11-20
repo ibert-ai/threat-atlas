@@ -142,6 +142,8 @@ pub struct Renderer {
     theme: SaverTheme,
     pal: Palette,
     local_location: Option<(f64, f64)>,
+    /// The SOC frame is painted for the screensaver: no "SOC DESKTOP" badge and the saver's own version.
+    pub(crate) saver_identity: bool,
 }
 /// Column boundary between the map and the right-hand panels in the 1440x900 layout.
 pub(crate) const WIDE_SPLIT: f32 = 1015.;
@@ -259,6 +261,7 @@ impl Renderer {
             theme,
             pal,
             local_location: None,
+            saver_identity: false,
         }
     }
     /// Frame x for a layout x: right-hand column shifted in a wide SOC frame.
@@ -294,6 +297,10 @@ impl Renderer {
     }
     /// The Desktop app has its own identity, independent of the screensaver's version.json.
     fn desktop_version_label(&mut self) {
+        if self.saver_identity {
+            self.draw_release_label(include_str!("../../../version.json"));
+            return;
+        }
         self.draw_release_label(include_str!("../../../atlassoc-beta-version.json"));
     }
     fn draw_release_label(&mut self, release: &str) {

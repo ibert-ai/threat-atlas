@@ -343,7 +343,11 @@ impl Renderer {
     }
     /// "SOC DESKTOP" after the title, so this window is never mistaken for the screensaver, and an
     /// orange BETA stamp while the host says this is a beta build.
+    /// The screensaver shows only "THREAT ATLAS".
     fn desktop_badge(&mut self, x: i32, y: i32, size: u16) {
+        if self.saver_identity {
+            return;
+        }
         self.text(x, y, size, "SOC DESKTOP", [150, 190, 210]);
         let stamp = beta_stamp();
         if !stamp.is_empty() {
@@ -572,8 +576,11 @@ impl SocView {
         radar_received_ms: u64,
     ) -> &[u8] {
         self.counts = counts;
-        if self.options.theme != self.base_theme {
+        if self.options.theme != self.base_theme
+            || self.options.saver_identity != self.renderer.saver_identity
+        {
             self.base_theme = self.options.theme;
+            self.renderer.saver_identity = self.options.saver_identity;
             self.renderer.paint_soc_base(self.base_theme);
             self.overlay_key = None; // recompose tints and icons on the new base
         }
@@ -1742,6 +1749,34 @@ mod tests {
         assert_eq!(super::release_stamp(&id("\"rc.2\"", 16)), "RC2 0.8.0 B16");
         assert_eq!(super::release_stamp(&id("null", 17)), "");
         assert_eq!(super::release_stamp("not json"), "");
+    }
+
+    #[test]
+    fn the_saver_frame_has_no_soc_desktop_badge() {
+        use crate::feed::State;
+        let header = |saver: bool| {
+            let mut view = super::SocView::default();
+            view.options.saver_identity = saver;
+            let frame = view
+                .draw(&State::default().snapshot(0), (Vec::new(), [0; 3]), None, 0)
+                .to_vec();
+            let width = view.width() as usize;
+            // The badge sits right of "THREAT ATLAS" in the classic heading.
+            (25..60)
+                .flat_map(|y| (270..460).map(move |x| (y * width + x) * 4))
+                .map(|i| frame[i..i + 3].to_vec())
+                .collect::<Vec<_>>()
+        };
+        let desktop = header(false);
+        let saver = header(true);
+        assert_ne!(
+            desktop, saver,
+            "the saver header must differ from AtlasSOC's"
+        );
+        assert!(
+            saver.windows(2).all(|w| w[0] == w[1]),
+            "nothing is drawn after THREAT ATLAS in the saver header"
+        );
     }
 
     #[test]
