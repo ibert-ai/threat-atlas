@@ -25,6 +25,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1 (Node 24)
       - run: python3 -I tools/status/test_agent_health.py
+      - run: python3 -I tools/status/test_build_status.py
   publish:
     needs: test
     # Only scheduled/manual runs in the real repository publish; pull requests (incl. forks) never get the token.
@@ -33,9 +34,12 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1 (Node 24)
-      - name: Publish public agent health
+      - name: Publish public Atlas status (status page v2, 20 Nov 2026)
+        # Reads each agent's own status/<agent>.json (fallback: handovers) and the public releases;
+        # writes status/atlas-status.json. agent-health.json is no longer published (page v1 retired);
+        # agent_health.py stays as the shared helper module.
         env:
           # Fine-grained token with read-only Contents on Ibert-Iam/project-status-dashboard only.
           HANDOVER_TOKEN: ${{ secrets.AGENT_HEALTH_READ_TOKEN }}
           GH_TOKEN: ${{ github.token }}
-        run: python3 -I tools/status/agent_health.py
+        run: python3 -I tools/status/build_status.py
