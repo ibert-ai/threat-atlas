@@ -22,6 +22,7 @@ pub mod saver;
 pub mod saver_config;
 pub mod saver_ffi;
 pub mod update;
+pub mod update_feed;
 use feed::{Feed, Snapshot};
 use std::sync::Arc;
 pub const WIDTH: u32 = 1440;

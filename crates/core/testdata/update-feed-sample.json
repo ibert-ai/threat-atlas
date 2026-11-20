@@ -1,0 +1,215 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-11-16T00:00:00Z",
+  "products": {
+    "atlassoc": {
+      "channels": {
+        "stable": {
+          "version": "0.7.0",
+          "tag": "atlassoc-v0.7.0"
+        },
+        "rc": {
+          "version": "0.8.0-rc.1",
+          "tag": "atlassoc-v0.8.0-rc.1"
+        },
+        "beta": {
+          "version": "0.9.0-beta.1",
+          "tag": "atlassoc-v0.9.0-beta.1"
+        }
+      },
+      "releases": [
+        {
+          "version": "0.9.0-beta.1",
+          "build": 17,
+          "tag": "atlassoc-v0.9.0-beta.1",
+          "channel": "beta",
+          "published_at": "2026-11-01T00:00:00Z",
+          "assets": [
+            {
+              "platform": "macos-universal",
+              "kind": "portable",
+              "name": "AtlasSOC-macOS-universal-v0.9.0-beta.1-build17.zip",
+              "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/atlassoc-v0.9.0-beta.1/AtlasSOC-macOS-universal-v0.9.0-beta.1-build17.zip",
+              "sha256": "91768023e84c211ce8b980603ffafcc9625457a5473c9b89ff0ffd4d50cb1818",
+              "size": 1001
+            },
+            {
+              "platform": "windows-x64",
+              "kind": "installer",
+              "name": "AtlasSOC-Setup-0.9.0-build17.exe",
+              "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/atlassoc-v0.9.0-beta.1/AtlasSOC-Setup-0.9.0-build17.exe",
+              "sha256": "06f55023af15f5b5f9c2e29b7829e31f627beab100b1ec4c60062edbeaad0cf3",
+              "size": 1000
+            }
+          ],
+          "notes_url": "https://github.com/Ibert-Iam/threat-atlas/releases/tag/atlassoc-v0.9.0-beta.1"
+        },
+        {
+          "version": "0.8.0-rc.2",
+          "build": 16,
+          "tag": "atlassoc-v0.8.0-rc.2",
+          "channel": "rc",
+          "published_at": "2026-11-01T00:00:00Z",
+          "assets": [
+            {
+              "platform": "windows-x64",
+              "kind": "installer",
+              "name": "AtlasSOC-Setup-0.8.0-build16.exe",
+              "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/atlassoc-v0.8.0-rc.2/AtlasSOC-Setup-0.8.0-build16.exe",
+              "sha256": "14e57c2d5e913045150580195214f24ea06e739ebdb420ce6fa79398632555e9",
+              "size": 1000
+            }
+          ],
+          "notes_url": "https://github.com/Ibert-Iam/threat-atlas/releases/tag/atlassoc-v0.8.0-rc.2"
+        },
+        {
+          "version": "0.8.0-rc.1",
+          "build": 15,
+          "tag": "atlassoc-v0.8.0-rc.1",
+          "channel": "rc",
+          "published_at": "2026-11-01T00:00:00Z",
+          "assets": [
+            {
+              "platform": "any",
+              "kind": "checksums",
+              "name": "AtlasSOC-v0.8.0-rc.1-SHA256SUMS.txt",
+              "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/atlassoc-v0.8.0-rc.1/AtlasSOC-v0.8.0-rc.1-SHA256SUMS.txt",
+              "sha256": "969d2ea3445e4b7ea079a56b7a1b3bfde7a8f1d3b1debdb6030d49047439d1b8",
+              "size": 1002
+            },
+            {
+              "platform": "macos-universal",
+              "kind": "portable",
+              "name": "AtlasSOC-macOS-universal-v0.8.0-rc.1-build15.zip",
+              "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/atlassoc-v0.8.0-rc.1/AtlasSOC-macOS-universal-v0.8.0-rc.1-build15.zip",
+              "sha256": "024f3d81449096057ff7ab61da55087d9975e952b96ffdf3b2cb0cc1590face5",
+              "size": 1001
+            },
+            {
+              "platform": "windows-x64",
+              "kind": "installer",
+              "name": "AtlasSOC-Setup-0.8.0-build15.exe",
+              "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/atlassoc-v0.8.0-rc.1/AtlasSOC-Setup-0.8.0-build15.exe",
+              "sha256": "184ed91c711766245ae4b518eead4abb27bd7409cca3296c865489e1c860a595",
+              "size": 1000
+            }
+          ],
+          "notes_url": "https://github.com/Ibert-Iam/threat-atlas/releases/tag/atlassoc-v0.8.0-rc.1"
+        },
+        {
+          "version": "0.7.0",
+          "build": 13,
+          "tag": "atlassoc-v0.7.0",
+          "channel": "stable",
+          "published_at": "2026-11-01T00:00:00Z",
+          "assets": [
+            {
+              "platform": "any",
+              "kind": "checksums",
+              "name": "AtlasSOC-v0.7.0-SHA256SUMS.txt",
+              "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/atlassoc-v0.7.0/AtlasSOC-v0.7.0-SHA256SUMS.txt",
+              "sha256": "d2e51b1b81895f2d98c0a9690eb9ddbe48ef75afc58dbe8ebf3f47d4c36f38d9",
+              "size": 1003
+            },
+            {
+              "platform": "linux-x64",
+              "kind": "portable",
+              "name": "AtlasSOC-Linux-x86_64-v0.7.0-build13-preview.tar.gz",
+              "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/atlassoc-v0.7.0-linux/AtlasSOC-Linux-x86_64-v0.7.0-build13-preview.tar.gz",
+              "sha256": "72728b6bd0a6fb371b5884de883a1eb590757acaacfef0c4da9e964255b172f6",
+              "size": 1000
+            },
+            {
+              "platform": "macos-universal",
+              "kind": "portable",
+              "name": "AtlasSOC-macOS-universal-v0.7.0-build13-signed.zip",
+              "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/atlassoc-v0.7.0/AtlasSOC-macOS-universal-v0.7.0-build13-signed.zip",
+              "sha256": "1f1e21fb2022e5f093f37e8607ae4093af0af9e6be4dabbf12a04b309a9e86c8",
+              "size": 1002
+            },
+            {
+              "platform": "windows-x64",
+              "kind": "installer",
+              "name": "AtlasSOC-Setup-0.7.0-build13.exe",
+              "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/atlassoc-v0.7.0/AtlasSOC-Setup-0.7.0-build13.exe",
+              "sha256": "c61f5c72edab63f47fd1c82506a060d463a75ec47da4876bca6f84dc5e7b0322",
+              "size": 1000
+            },
+            {
+              "platform": "windows-x64",
+              "kind": "portable",
+              "name": "AtlasSOC-Windows-x64-v0.7.0-build13.zip",
+              "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/atlassoc-v0.7.0/AtlasSOC-Windows-x64-v0.7.0-build13.zip",
+              "sha256": "3d95352c819fcdfeab9675cd78b2489cfa144d59d56f96c9365242bf2c8ec0ab",
+              "size": 1001
+            }
+          ],
+          "notes_url": "https://github.com/Ibert-Iam/threat-atlas/releases/tag/atlassoc-v0.7.0"
+        }
+      ],
+      "withdrawn": [
+        "0.8.0-rc.2"
+      ]
+    },
+    "screensaver": {
+      "channels": {
+        "stable": {
+          "version": "0.4.8",
+          "tag": "v0.4.8"
+        },
+        "rc": {
+          "version": "0.4.9-rc.1",
+          "tag": "v0.4.9-rc.1"
+        },
+        "beta": null
+      },
+      "releases": [
+        {
+          "version": "0.4.9-rc.1",
+          "build": null,
+          "tag": "v0.4.9-rc.1",
+          "channel": "rc",
+          "published_at": "2026-11-01T00:00:00Z",
+          "assets": [
+            {
+              "platform": "windows-x64",
+              "kind": "installer",
+              "name": "ThreatAtlas-0.4.9-x64.msi",
+              "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/v0.4.9-rc.1/ThreatAtlas-0.4.9-x64.msi",
+              "sha256": "8e535b568caa9fe789a25a0c4cf67c2341cc3c5d4633d7fdda7998f5ba8cd565",
+              "size": 1000
+            }
+          ],
+          "notes_url": "https://github.com/Ibert-Iam/threat-atlas/releases/tag/v0.4.9-rc.1"
+        },
+        {
+          "version": "0.4.8",
+          "build": null,
+          "tag": "v0.4.8",
+          "channel": "stable",
+          "published_at": "2026-11-01T00:00:00Z",
+          "assets": [
+            {
+              "platform": "macos-universal",
+              "kind": "portable",
+              "name": "ThreatAtlas-macOS-signed.zip",
+              "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/v0.4.8/ThreatAtlas-macOS-signed.zip",
+              "sha256": "f5065004b327f5e12bbe5a461b8e1c1efa9bf03e13f164b00322d500c270c6bd",
+              "size": 1001
+            },
+            {
+              "platform": "windows-x64",
+              "kind": "installer",
+              "name": "ThreatAtlas-0.4.8-x64.msi",
+              "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/v0.4.8/ThreatAtlas-0.4.8-x64.msi",
+              "sha256": "10e4bf7c5dbcc948a2aa67a97709f2de74c3be751b77cec9d8f9db817b3e6da6",
+              "size": 1000
+            }
+          ],
+          "notes_url": "https://github.com/Ibert-Iam/threat-atlas/releases/tag/v0.4.8"
+        }
+      ],
+      "withdrawn": []
+    }
+  }
+}

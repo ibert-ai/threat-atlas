@@ -243,5 +243,16 @@ class SharedFixtureTests(unittest.TestCase):
             self.assertNotEqual(ver(sample["products"]["atlassoc"], ch, "windows-x64"), "0.8.0-rc.2")
 
 
+class FixtureCopyTests(unittest.TestCase):
+    """The Rust core tests read byte-identical copies of the shared fixtures from crates/core/testdata."""
+
+    def test_rust_copies_match_the_shared_fixtures(self):
+        root = pathlib.Path(__file__).resolve().parent.parent
+        for name in ("update-feed-sample.json", "update-feed-cases.json"):
+            copy = root / "crates" / "core" / "testdata" / name
+            if copy.exists():
+                self.assertEqual(copy.read_bytes(), (root / "scripts" / "fixtures" / name).read_bytes(), name)
+
+
 if __name__ == "__main__":
     unittest.main()
