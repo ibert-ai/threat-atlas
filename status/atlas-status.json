@@ -1,0 +1,174 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-11-20T16:03:14Z",
+  "project": {
+    "name": "Threat Atlas",
+    "repository_url": "https://github.com/Ibert-Iam/threat-atlas"
+  },
+  "products": [
+    {
+      "id": "screensaver",
+      "name": "Threat Atlas screensaver",
+      "stable": {
+        "tag": "v0.4.8",
+        "name": "Threat Atlas screensaver 0.4.8 \u2014 Stable \u00b7 Windows + Linux + macOS",
+        "published_at": "2026-11-11T11:38:59Z",
+        "url": "https://github.com/Ibert-Iam/threat-atlas/releases/tag/v0.4.8",
+        "assets": [
+          {
+            "name": "ThreatAtlas-0.4.8-x64.msi",
+            "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/v0.4.8/ThreatAtlas-0.4.8-x64.msi",
+            "sha256": "fde978feb110d783a623caaba23d543024e9f3ad59f82cd5c441bf6aea70dba0"
+          },
+          {
+            "name": "ThreatAtlas-Linux-0.4.8-x86_64.tar.gz",
+            "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/v0.4.8/ThreatAtlas-Linux-0.4.8-x86_64.tar.gz",
+            "sha256": "20837179f4efc0a0ac19cd1f336239a9f3fc094c6947186614d5aa08c4cad482"
+          },
+          {
+            "name": "ThreatAtlas-macOS-signed.zip",
+            "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/v0.4.8/ThreatAtlas-macOS-signed.zip",
+            "sha256": "520d9d8844ded00b4b1c20a2f610e819afa075b3a5f2c79f72cede1d0af52cc7"
+          },
+          {
+            "name": "ThreatAtlas-source-v0.4.8.zip",
+            "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/v0.4.8/ThreatAtlas-source-v0.4.8.zip",
+            "sha256": "0dd662c810c6ae10cb825b75d6e7687d3b4a9f9ba4a8980b7f036d18131b3c41"
+          },
+          {
+            "name": "ThreatAtlas-v0.4.8-macOS-signed-SHA256.txt",
+            "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/v0.4.8/ThreatAtlas-v0.4.8-macOS-signed-SHA256.txt",
+            "sha256": "39f741f575fce37ddb64316d1d622f2c9cbd013db995d2729654125240e4b6d1"
+          },
+          {
+            "name": "ThreatAtlas-v0.4.8-SHA256SUMS.txt",
+            "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/v0.4.8/ThreatAtlas-v0.4.8-SHA256SUMS.txt",
+            "sha256": "3ad4ed6fb801fd1ed8a405a6b20ff410f47b3ade0bdf79a0a3c6164846dcd5c3"
+          },
+          {
+            "name": "ThreatAtlas-Windows-v0.4.8.zip",
+            "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/v0.4.8/ThreatAtlas-Windows-v0.4.8.zip",
+            "sha256": "e954e07d8096ac93868240a035af1785504cc6961b51fd88ea702c470fe8d642"
+          }
+        ]
+      },
+      "preview": null
+    },
+    {
+      "id": "desktop",
+      "name": "AtlasSOC Desktop",
+      "stable": {
+        "tag": "atlassoc-v0.7.0",
+        "name": "AtlasSOC Desktop 0.7.0 \u2014 Stable \u00b7 Windows + macOS \u00b7 build 13",
+        "published_at": "2026-11-11T11:31:49Z",
+        "url": "https://github.com/Ibert-Iam/threat-atlas/releases/tag/atlassoc-v0.7.0",
+        "assets": [
+          {
+            "name": "AtlasSOC-macOS-universal-v0.7.0-build13-signed.zip",
+            "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/atlassoc-v0.7.0/AtlasSOC-macOS-universal-v0.7.0-build13-signed.zip",
+            "sha256": "f15fee1519b63b1e850823c84397f6917910ae4b473a7cc418dab8de17abce31"
+          },
+          {
+            "name": "AtlasSOC-Setup-0.7.0-build13.exe",
+            "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/atlassoc-v0.7.0/AtlasSOC-Setup-0.7.0-build13.exe",
+            "sha256": "d19fe9ba1423eebf7b4e71919029e73a5aae90cb6bacc820b4ce71fd6d9f3f11"
+          },
+          {
+            "name": "AtlasSOC-source-v0.7.0.zip",
+            "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/atlassoc-v0.7.0/AtlasSOC-source-v0.7.0.zip",
+            "sha256": "b47bdd25575710d9ca2f895aa7eceac1ac5c317007323f3de29e8de02ee1ae65"
+          },
+          {
+            "name": "AtlasSOC-v0.7.0-SHA256SUMS.txt",
+            "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/atlassoc-v0.7.0/AtlasSOC-v0.7.0-SHA256SUMS.txt",
+            "sha256": "88e236b7cd26eae472f67f3001c19ad9246d89df42c9b64c0398463376f24da7"
+          },
+          {
+            "name": "AtlasSOC-Windows-x64-v0.7.0-build13.zip",
+            "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/atlassoc-v0.7.0/AtlasSOC-Windows-x64-v0.7.0-build13.zip",
+            "sha256": "e82b270b67718fe24081da853121e37fa7d223dcf8cdfe5c2c0000f37878db4b"
+          }
+        ]
+      },
+      "preview": {
+        "tag": "atlassoc-v0.8.0-rc.1",
+        "name": "AtlasSOC Desktop 0.8.0-rc.1 (build 15) - release candidate",
+        "published_at": "2026-11-15T19:54:43Z",
+        "url": "https://github.com/Ibert-Iam/threat-atlas/releases/tag/atlassoc-v0.8.0-rc.1",
+        "assets": [
+          {
+            "name": "AtlasSOC-macOS-universal-v0.8.0-rc.1-build15.zip",
+            "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/atlassoc-v0.8.0-rc.1/AtlasSOC-macOS-universal-v0.8.0-rc.1-build15.zip",
+            "sha256": "dcbf8313482328b2e35e794c66248f1d884415b14d744cf845c4e21b4bd0c8f0"
+          },
+          {
+            "name": "AtlasSOC-Setup-0.8.0-build15.exe",
+            "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/atlassoc-v0.8.0-rc.1/AtlasSOC-Setup-0.8.0-build15.exe",
+            "sha256": "e86ecccc3f348de59d04af80637bae2e4d76829df27f8a4178e0bd39b31acc13"
+          },
+          {
+            "name": "AtlasSOC-v0.8.0-rc.1-SHA256SUMS.txt",
+            "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/atlassoc-v0.8.0-rc.1/AtlasSOC-v0.8.0-rc.1-SHA256SUMS.txt",
+            "sha256": "41f92a411a6845b3c39eeb54857b1b94c4c719c9e8506b8ffd05f1d5d7dd3487"
+          },
+          {
+            "name": "AtlasSOC-Windows-x64-v0.8.0-rc.1-build15.zip",
+            "url": "https://github.com/Ibert-Iam/threat-atlas/releases/download/atlassoc-v0.8.0-rc.1/AtlasSOC-Windows-x64-v0.8.0-rc.1-build15.zip",
+            "sha256": "9d5cc610cca083be41f6f381668a2c32aeb196bc5e6f6c7b458d89380396b91d"
+          }
+        ]
+      }
+    }
+  ],
+  "rules": {
+    "stall_after_minutes": 180,
+    "alert_hours_stockholm": [
+      7,
+      22
+    ],
+    "low_weekly_percent": 15,
+    "low_balance_usd": 1.0
+  },
+  "agents": [
+    {
+      "id": "cl",
+      "name": "Jean-Claude Van Damme",
+      "role": "CBO, Chief Bot Officer (Claude)",
+      "last_seen_at": "2026-11-20T15:31:11Z",
+      "state": "working",
+      "credits": "low",
+      "credits_checked_at": "2026-11-20T11:08:41Z",
+      "source": "status"
+    },
+    {
+      "id": "mac",
+      "name": "MacGyver",
+      "role": "Crew (Codex)",
+      "last_seen_at": "2026-11-20T16:00:08Z",
+      "state": "unknown",
+      "credits": "unknown",
+      "credits_checked_at": "2026-11-20T16:00:05Z",
+      "source": "handover"
+    },
+    {
+      "id": "noris",
+      "name": "Seek Norris",
+      "role": "CMO, Chief Marketing Officer (DeepSeek)",
+      "last_seen_at": "2026-11-20T16:00:06Z",
+      "state": "unknown",
+      "credits": "ok",
+      "credits_checked_at": "2026-11-20T16:00:06Z",
+      "source": "handover"
+    },
+    {
+      "id": "billy",
+      "name": "Billy Badass",
+      "role": "Crew (DeepSeek)",
+      "last_seen_at": "2026-11-20T16:00:02Z",
+      "state": "unknown",
+      "credits": "ok",
+      "credits_checked_at": "2026-11-20T14:05:03Z",
+      "source": "handover"
+    }
+  ]
+}
