@@ -1,5 +1,7 @@
 #![cfg_attr(target_os = "windows", windows_subsystem = "windows")]
 #[cfg(windows)]
+mod saver_host;
+#[cfg(windows)]
 mod windows;
 #[cfg(windows)]
 fn main() {
