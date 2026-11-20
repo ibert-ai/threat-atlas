@@ -34,6 +34,9 @@ pub struct OsintHandle {
 }
 
 impl OsintHandle {
+    pub(crate) fn new(osint: Osint) -> Self {
+        Self { osint }
+    }
     pub(crate) fn osint(&self) -> &Osint {
         &self.osint
     }

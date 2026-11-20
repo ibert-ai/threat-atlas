@@ -12,7 +12,9 @@ use tao::{
     platform::windows::WindowBuilderExtWindows,
     window::{Fullscreen, WindowBuilder},
 };
-use threat_atlas_core::{render::panorama, Session, HEIGHT, WIDTH};
+use threat_atlas_core::{
+    render::panorama, saver::SaverSession, saver_ffi::SaverWorker, Session, HEIGHT, WIDTH,
+};
 use windows_sys::Win32::{
     Foundation::{HWND, POINT, RECT},
     UI::{
@@ -40,14 +42,75 @@ pub fn show_error(message: &str) {
     }
 }
 
+#[cfg(test)]
 fn scaled_frame_layout(width: u32, height: u32) -> (u32, u32, u32, u32) {
-    let scale = (width as f32 / WIDTH as f32).min(height as f32 / HEIGHT as f32);
-    let draw_width = (WIDTH as f32 * scale) as u32;
-    let draw_height = (HEIGHT as f32 * scale) as u32;
+    scaled_layout(width, height, WIDTH, HEIGHT)
+}
+
+/// Largest centred rectangle of the frame's shape that fits the window: (width, height, x offset, y offset).
+fn scaled_layout(width: u32, height: u32, frame_w: u32, frame_h: u32) -> (u32, u32, u32, u32) {
+    let scale = (width as f32 / frame_w as f32).min(height as f32 / frame_h as f32);
+    let draw_width = ((frame_w as f32 * scale) as u32).min(width);
+    let draw_height = ((frame_h as f32 * scale) as u32).min(height);
     let offset_x = (width - draw_width) / 2;
     let offset_y = (height - draw_height) / 2;
     (draw_width, draw_height, offset_x, offset_y)
 }
+
+/// The AtlasSOC view with the OSINT worker, used by the real screensaver and `--windowed`. The preview and the
+/// panorama mode keep the classic view, and `ATLAS_SAVER_CLASSIC=1` forces it for before/after comparisons.
+struct SocHost {
+    session: SaverSession,
+    worker: Option<SaverWorker>,
+    frame_width: u32,
+    window: (u32, u32),
+    last_intel: Instant,
+    last_reload: Instant,
+}
+impl SocHost {
+    fn new() -> Self {
+        // Reads AtlasSOC's settings.json only; without it every OSINT source stays off (no request is made).
+        let worker = crate::saver_host::paths().map(|(settings, cache)| {
+            let _ = fs::create_dir_all(&cache);
+            SaverWorker::start(
+                cache,
+                settings,
+                Box::new(crate::saver_host::CredentialKeys),
+                None,
+            )
+        });
+        let now = Instant::now();
+        Self {
+            session: SaverSession::new(),
+            worker,
+            frame_width: 0,
+            window: (0, 0),
+            last_intel: now.checked_sub(Duration::from_secs(2)).unwrap_or(now),
+            last_reload: now,
+        }
+    }
+    /// One RGBA frame for a window of this size, with its dimensions.
+    fn frame(&mut self, width: u32, height: u32) -> (&[u8], u32, u32) {
+        if self.window != (width, height) {
+            self.window = (width, height);
+            self.frame_width = self.session.fit_window(width, height);
+        }
+        if let Some(worker) = self.worker.as_mut() {
+            if self.last_reload.elapsed() >= Duration::from_secs(10) {
+                self.last_reload = Instant::now();
+                worker.reload();
+            }
+            if self.last_intel.elapsed() >= Duration::from_secs(1) {
+                self.last_intel = Instant::now();
+                self.session.set_intel(worker.osint());
+            }
+        }
+        let frame_width = self.frame_width;
+        (self.session.frame(), frame_width, HEIGHT_SOC)
+    }
+}
+/// The SOC frame is always this high.
+const HEIGHT_SOC: u32 = 900;
 
 fn panorama_setting() -> Option<PathBuf> {
     std::env::var_os("LOCALAPPDATA").map(|root| {
@@ -68,7 +131,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         let enabled = fs::read_to_string(&path).is_ok_and(|mode| mode.trim() == "panorama");
         let mode = if enabled { "Panorama" } else { "Standard" };
         let message: Vec<u16> = format!(
-            "Current display mode: {mode}\n\nYes: Panorama across two matching side-by-side displays\nNo: Standard display mode\nCancel: Keep the current mode\n\nLive GreyNoise public threat-map telemetry. No cookies, browser, account or API key required.\nGreen LIVE means records arrived within 10 seconds. Routes expire after 6 seconds. Offline feeds reconnect automatically.\nThe header shows UTC and system local time. Observation times are receipt times in UTC.\nUse Windows Screen Saver Settings for idle time and lock behavior."
+            "Current display mode: {mode}\n\nYes: Panorama across two matching side-by-side displays\nNo: Standard display mode\nCancel: Keep the current mode\n\nLive GreyNoise public threat-map telemetry. No cookies, browser, account or API key required.\nThe AtlasSOC view with rotating OSINT cards is used here. OSINT sources, watched domains and API keys are chosen in AtlasSOC Settings; this screen saver only reads them. With nothing chosen, no OSINT request is made.\nGreen LIVE means records arrived within 10 seconds. Routes expire after 6 seconds. Offline feeds reconnect automatically.\nThe header shows UTC and system local time. Observation times are receipt times in UTC.\nUse Windows Screen Saver Settings for idle time and lock behavior."
         )
         .encode_utf16()
         .chain(Some(0))
@@ -178,11 +241,17 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     }
     let context = softbuffer::Context::new(window.clone())?;
     let mut surface = softbuffer::Surface::new(&context, window.clone())?;
-    let mut session = match panorama_size {
+    let soc_view = panorama_size.is_none()
+        && !preview
+        && std::env::var_os("ATLAS_SAVER_CLASSIC").is_none_or(|v| v != "1");
+    let mut soc = soc_view.then(SocHost::new);
+    let mut session = (!soc_view).then(|| match panorama_size {
         Some(size) => Session::panorama(size.width, size.height),
         None => Session::new(),
-    };
-    let (frame_width, frame_height) = session.renderer.size();
+    });
+    let (frame_width, frame_height) = session
+        .as_ref()
+        .map_or((WIDTH, HEIGHT), |s| s.renderer.size());
     let started = Instant::now();
     let mut origin: POINT = unsafe { std::mem::zeroed() };
     unsafe {
@@ -246,13 +315,17 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                     *flow = ControlFlow::Exit;
                     return;
                 }
-                let rgba = session.frame();
+                let (rgba, frame_width, frame_height) = match (soc.as_mut(), session.as_mut()) {
+                    (Some(host), _) => host.frame(size.width, size.height),
+                    (None, Some(classic)) => (classic.frame(), frame_width, frame_height),
+                    (None, None) => return,
+                };
                 if let Ok(mut buffer) = surface.buffer_mut() {
                     // The panorama frame already has the window's shape and fills it.
                     let (dw, dh, ox, oy) = if panorama_size.is_some() {
                         (size.width, size.height, 0, 0)
                     } else {
-                        scaled_frame_layout(size.width, size.height)
+                        scaled_layout(size.width, size.height, frame_width, frame_height)
                     };
                     let scale_x = dw as f32 / frame_width as f32;
                     let scale_y = if panorama_size.is_some() {
@@ -305,6 +378,21 @@ mod tests {
             let source_aspect = WIDTH as f64 / HEIGHT as f64;
             let drawn_aspect = draw_width as f64 / draw_height as f64;
             assert!((source_aspect - drawn_aspect).abs() < 0.003);
+        }
+    }
+
+    #[test]
+    fn soc_frames_of_any_width_fit_without_overflow() {
+        for (w, h) in [
+            (1920, 1080),
+            (2560, 1440),
+            (3440, 1440),
+            (1280, 800),
+            (1080, 1920),
+        ] {
+            let fw = threat_atlas_core::saver::frame_width_for_window(w, h);
+            let (dw, dh, ox, oy) = super::scaled_layout(w, h, fw, 900);
+            assert!(dw <= w && dh <= h && ox + dw <= w && oy + dh <= h);
         }
     }
 
