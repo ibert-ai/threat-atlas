@@ -74,6 +74,20 @@ The numeric version must advance when the Windows installer payload changes (see
 the 1920x1080 base scaling (SOC-RESOLUTIONS.md), a multi-screen option, a ransomware-by-country map layer, Tor map
 layer, trusted Windows code signing (Certum order of 14 November 2026), and the wishlist items below.
 
+### Threat Atlas screensaver 0.5.0 (planned, Beta channel first, not built into a release)
+
+Owner decisions D1-D4 of 16 November 2026 (see `SCREENSAVER-PARITY-PLAN.md`). The shared core, the Windows host (SP4) and
+the settings reader are merged into `codex/osint-sources`; the macOS host (SP5) is in progress; nothing is published.
+
+- The screensaver shows the AtlasSOC view: rotating OSINT cards for the sources the user has switched on in AtlasSOC
+  Settings, and the most-attacked-ports block. A focus rotation visits the five busiest countries, starting from the
+  world overview.
+- The screensaver only reads AtlasSOC's settings and keys. With no AtlasSOC settings file, no OSINT request is made.
+- Not in this version: Cloudflare Radar in the screensaver (D2, waits for Cloudflare's licence answer), a configuration
+  window in the screensaver (D4), Linux saver, panorama with the new view (panorama keeps the classic view).
+- Limits: not yet run on a real Windows PC or a Mac (SP8); the Windows saver uses the core's own HTTPS client, not the
+  system proxy; unsigned on Windows until the Certum certificate exists.
+
 ### Other planned changes
 
 - Trusted Windows code signing (Certum Open Source certificate ordered 14 November 2026, owner verification

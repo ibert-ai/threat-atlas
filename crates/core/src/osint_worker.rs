@@ -338,6 +338,45 @@ impl Osint {
         count
     }
 
+    /// Applies switches, keys and watch list as one update and wakes the worker once. All three are written while
+    /// holding their locks together (always in the order switches, keys, watch), and the worker reads the ones it
+    /// needs for a request under the same locks in the same order (`snapshot_key`, `snapshot_watch`). A request
+    /// therefore sees either the old settings or the new ones, never a removed domain with a new key or a source
+    /// that is off with a new key.
+    pub fn apply_config(
+        &self,
+        enabled: Vec<String>,
+        keys: Vec<(Source, Option<String>)>,
+        watch: Vec<String>,
+    ) {
+        let mut list = osint_certstream::WatchList::default();
+        for d in &watch {
+            let _ = list.add(d);
+        }
+        let watch = list.domains().to_vec();
+        let wanted: BTreeMap<String, String> = keys
+            .into_iter()
+            .filter_map(|(source, key)| {
+                let key = key?.trim().to_owned();
+                (!key.is_empty()).then(|| (osint::source_spec(source).id.to_owned(), key))
+            })
+            .collect();
+        {
+            let mut e = self.enabled.lock().unwrap();
+            let mut k = self.keys.lock().unwrap();
+            let mut w = self.watch.lock().unwrap();
+            *e = enabled;
+            *k = wanted;
+            *w = watch;
+        }
+        let _ = self.wake.send(Command::Refresh);
+    }
+
+    /// The certificate watch list in use.
+    pub fn watch(&self) -> Vec<String> {
+        self.watch.lock().unwrap().clone()
+    }
+
     pub fn view(&self) -> View {
         self.shared.lock().unwrap().clone()
     }
@@ -696,6 +735,39 @@ fn poll_otx(key: &str, since_ms: u64) -> Result<OtxSummary, (OtxError, Option<u6
         countries,
         newest: pulses.iter().take(3).map(|p| p.name.clone()).collect(),
     })
+}
+
+/// The key for `source` as the settings stand right now, or `None` when the source is off or has no key. Reads the
+/// switches and the keys under both locks (same order as `apply_config`).
+fn snapshot_key(
+    enabled: &Mutex<Vec<String>>,
+    keys: &Mutex<BTreeMap<String, String>>,
+    source: Source,
+) -> Option<String> {
+    let e = enabled.lock().unwrap();
+    let k = keys.lock().unwrap();
+    if !is_enabled(&e, source) {
+        return None;
+    }
+    k.get(osint::source_spec(source).id).cloned()
+}
+
+/// The certificate watch list and the key as one coherent pair; empty and `None` while the source is off.
+fn snapshot_watch(
+    enabled: &Mutex<Vec<String>>,
+    keys: &Mutex<BTreeMap<String, String>>,
+    watch: &Mutex<Vec<String>>,
+) -> (Vec<String>, Option<String>) {
+    let e = enabled.lock().unwrap();
+    let k = keys.lock().unwrap();
+    let w = watch.lock().unwrap();
+    if !is_enabled(&e, Source::CertStream) {
+        return (Vec::new(), None);
+    }
+    (
+        w.clone(),
+        k.get(osint::source_spec(Source::CertStream).id).cloned(),
+    )
 }
 
 fn worker(
@@ -1088,7 +1160,7 @@ fn worker(
 
         let otx_spec = osint::source_spec(Source::Otx);
         if on(Source::Otx) && gate(&mut gates, Source::Otx).due(now) {
-            let key = keys.lock().unwrap().get(otx_spec.id).cloned();
+            let key = snapshot_key(&enabled, &keys, Source::Otx);
             match key {
                 None => {
                     notes.insert(
@@ -1130,7 +1202,7 @@ fn worker(
 
         let urlhaus_spec = osint::source_spec(Source::Urlhaus);
         if on(Source::Urlhaus) && gate(&mut gates, Source::Urlhaus).due(now) {
-            let key = keys.lock().unwrap().get(urlhaus_spec.id).cloned();
+            let key = snapshot_key(&enabled, &keys, Source::Urlhaus);
             match key {
                 None => {
                     notes.insert(
@@ -1206,7 +1278,7 @@ fn worker(
 
         let threatfox_spec = osint::source_spec(Source::ThreatFox);
         if on(Source::ThreatFox) && gate(&mut gates, Source::ThreatFox).due(now) {
-            let key = keys.lock().unwrap().get(threatfox_spec.id).cloned();
+            let key = snapshot_key(&enabled, &keys, Source::ThreatFox);
             match key {
                 None => {
                     notes.insert(
@@ -1281,10 +1353,8 @@ fn worker(
             dirty = true;
         }
 
-        let ct_spec = osint::source_spec(Source::CertStream);
         if on(Source::CertStream) {
-            let domains = watch.lock().unwrap().clone();
-            let key = keys.lock().unwrap().get(ct_spec.id).cloned();
+            let (domains, key) = snapshot_watch(&enabled, &keys, &watch);
             // Forget domains that are no longer watched.
             let before = cache.ct.len();
             cache.ct.retain(|d, _| domains.contains(d));
@@ -1435,6 +1505,46 @@ fn worker(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn requests_see_one_generation_of_settings() {
+        let worker = Osint::start(
+            std::env::temp_dir().join("atlas-snapshot"),
+            Vec::new(),
+            |_, _, _, _| None,
+        );
+        let ct = osint::source_spec(Source::CertStream).id.to_string();
+        worker.apply_config(
+            vec![ct.clone()],
+            vec![(Source::CertStream, Some("old-key-0123456789".into()))],
+            vec!["old.example".into()],
+        );
+        let (domains, key) = snapshot_watch(&worker.enabled, &worker.keys, &worker.watch);
+        assert_eq!(domains, vec!["old.example".to_string()]);
+        assert_eq!(key.as_deref(), Some("old-key-0123456789"));
+        worker.apply_config(
+            vec![ct],
+            vec![(Source::CertStream, Some("new-key-0123456789".into()))],
+            vec!["new.example".into()],
+        );
+        let (domains, key) = snapshot_watch(&worker.enabled, &worker.keys, &worker.watch);
+        assert_eq!(domains, vec!["new.example".to_string()]);
+        assert_eq!(key.as_deref(), Some("new-key-0123456789"));
+        // Switched off: no domain and no key are handed out, whatever is stored.
+        worker.apply_config(
+            Vec::new(),
+            vec![(Source::CertStream, Some("new-key-0123456789".into()))],
+            vec!["new.example".into()],
+        );
+        assert_eq!(
+            snapshot_watch(&worker.enabled, &worker.keys, &worker.watch),
+            (Vec::new(), None)
+        );
+        assert_eq!(
+            snapshot_key(&worker.enabled, &worker.keys, Source::Otx),
+            None
+        );
+    }
+
     use super::*;
 
     #[test]
