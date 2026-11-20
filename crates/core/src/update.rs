@@ -1,8 +1,11 @@
 //! Picks the newest AtlasSOC installer from the public GitHub releases list. No network here.
+//!
+//! Legacy model (releases API, build-aware, no channels). The channel-aware feed model is in `update_feed`;
+//! WP3 replaces the callers of `newer` with it, so do not extend this module.
 use serde::Deserialize;
 
 pub const HOST: &str = "api.github.com";
-pub const PATH: &str = "/repos/ibert-ai/threat-atlas/releases?per_page=30";
+pub const PATH: &str = "/repos/Ibert-Iam/threat-atlas/releases?per_page=30";
 pub const MAX_BYTES: usize = 4 * 1024 * 1024;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
