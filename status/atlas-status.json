@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-20T16:04:05Z",
+  "generated_at": "2026-11-20T16:09:06Z",
   "project": {
     "name": "Threat Atlas",
     "repository_url": "https://github.com/Ibert-Iam/threat-atlas"
@@ -134,10 +134,10 @@
       "id": "cl",
       "name": "Jean-Claude Van Damme",
       "role": "CBO, Chief Bot Officer (Claude)",
-      "last_seen_at": "2026-11-20T16:03:44Z",
+      "last_seen_at": "2026-11-20T16:08:35Z",
       "state": "working",
-      "credits": "low",
-      "credits_checked_at": "2026-11-20T11:08:41Z",
+      "credits": "ok",
+      "credits_checked_at": "2026-11-20T16:08:35Z",
       "source": "status"
     },
     {
@@ -167,7 +167,7 @@
       "last_seen_at": "2026-11-20T16:00:02Z",
       "state": "unknown",
       "credits": "ok",
-      "credits_checked_at": "2026-11-20T14:05:03Z",
+      "credits_checked_at": "2026-11-20T16:05:02Z",
       "source": "handover"
     }
   ]
