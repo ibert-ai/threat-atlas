@@ -1392,39 +1392,57 @@ fn draw_port_block(r: &mut Renderer, card: &IntelCard, area: (f32, f32, f32, f32
     let top = (y + h) as i32 - 138;
     r.rect(x + 19., top as f32 - 8., w - 38., 1., INFO, 70);
     r.text(left, top, 13, port_block_title(w - 38.), INFO);
-    let chars = ((w - 38.) / 7.5).max(4.) as usize;
+    let room = w - 38.;
     for (i, row) in card.rows.iter().take(5).enumerate() {
         let yy = top + 22 + i as i32 * 22;
-        r.text(
-            left,
-            yy,
-            11,
-            &row.label.chars().take(12).collect::<String>(),
-            TEXT,
-        );
-        // The bar sits BEHIND the value: it runs the whole row width, is drawn first and dimmer,
-        // and the number is drawn on top in the bright text colour, so even the top port (a full
-        // length bar) never hides its own count, however narrow the column is.
-        if let Some(f) = row.fraction {
-            let bar = (w - 38.) - 78.;
-            r.rect(left as f32 + 78., yy as f32 - 1., bar, 12., INFO, 22);
+        let v: String = row.value.chars().take(10).collect();
+        let layout = port_row_layout(room, &row.label, &v);
+        r.text(left, yy, 11, &layout.label, TEXT);
+        // The bar sits BEHIND the value: it is drawn first and dimmer, and the number is drawn on
+        // top in the bright text colour, so even the top port never hides its own count.
+        if let (Some(f), Some((bx, bw))) = (row.fraction, layout.bar) {
+            r.rect(left as f32 + bx, yy as f32 - 1., bw, 12., INFO, 22);
             r.rect(
-                left as f32 + 78.,
+                left as f32 + bx,
                 yy as f32 - 1.,
-                (bar * f.clamp(0., 1.)).max(1.),
+                (bw * f.clamp(0., 1.)).max(1.),
                 12.,
                 INFO,
                 95,
             );
         }
-        let v: String = row.value.chars().take(10).collect();
-        r.text(
-            left + (chars.saturating_sub(v.len()) as f32 * 7.5) as i32,
-            yy,
-            11,
-            &v,
-            TEXT,
-        );
+        r.text(left + layout.value_x as i32, yy, 11, &v, TEXT);
+    }
+}
+
+/// Where one ports row goes inside `room` pixels (11 px text is about 7.5 px per character).
+struct PortRow {
+    label: String,
+    /// Bar start and width relative to the row's left edge; `None` when the column is too narrow.
+    bar: Option<(f32, f32)>,
+    value_x: f32,
+}
+
+/// Lays out a ports row so the label, bar and value never overlap: a narrow column drops the
+/// "PORT " prefix, then the bar, and the value always stays right-aligned after the label.
+fn port_row_layout(room: f32, label: &str, value: &str) -> PortRow {
+    const CHAR: f32 = 7.5;
+    const GAP: f32 = 8.;
+    let value_w = value.chars().count() as f32 * CHAR;
+    let mut label: String = label.chars().take(12).collect();
+    if label.chars().count() as f32 * CHAR + GAP + value_w > room {
+        if let Some(rest) = label.strip_prefix("PORT ") {
+            label = rest.to_string();
+        }
+    }
+    let label_w = label.chars().count() as f32 * CHAR;
+    let value_x = (room - value_w).max(label_w + GAP);
+    let bar_x = 78f32.max(label_w + GAP);
+    let bar_w = value_x - GAP - bar_x;
+    PortRow {
+        label,
+        bar: (bar_w >= 24.).then_some((bar_x, bar_w)),
+        value_x,
     }
 }
 
@@ -1715,6 +1733,33 @@ mod tests {
         assert_eq!(super::release_stamp(&id("\"rc.2\"", 16)), "RC2 0.8.0 B16");
         assert_eq!(super::release_stamp(&id("null", 17)), "");
         assert_eq!(super::release_stamp("not json"), "");
+    }
+
+    #[test]
+    fn port_rows_never_overlap_in_narrow_or_wide_columns() {
+        for room in [70f32, 90., 110., 130., 200., 360.] {
+            for value in ["7", "746725", "1234567890"] {
+                let row = super::port_row_layout(room, "PORT 22222", value);
+                let label_end = row.label.chars().count() as f32 * 7.5;
+                assert!(
+                    row.value_x >= label_end + 8.,
+                    "value overlaps label at {room}"
+                );
+                if let Some((x, w)) = row.bar {
+                    assert!(
+                        x >= label_end && x + w <= row.value_x,
+                        "bar overlaps at {room}"
+                    );
+                }
+            }
+        }
+        // Wide columns keep the full label and the bar; narrow ones keep only the port number.
+        let wide = super::port_row_layout(360., "PORT 22", "746725");
+        assert_eq!(wide.label, "PORT 22");
+        assert!(wide.bar.is_some());
+        let narrow = super::port_row_layout(100., "PORT 22", "746725");
+        assert_eq!(narrow.label, "22");
+        assert!(narrow.bar.is_none());
     }
 
     #[test]
