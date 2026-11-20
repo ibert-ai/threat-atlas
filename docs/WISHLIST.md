@@ -17,4 +17,22 @@ Requested by the owner on 16 November 2026 for the next version of all projects;
 - A release check opens every link and records HTTP 200 (or the provider's normal redirect to its own site) in the release evidence; a link that fails is fixed before the release.
 - The symbol is present and works in the screensaver (where its settings allow links), AtlasSOC on Windows, macOS and Linux. The Settings layout tests still pass at 1920x1080 at 125 % scaling.
 - Not part of RC1 and not urgent.
+
+## ATLAS-SAVER-MAP-001 — compass and hourly time zones on the screensaver map
+
+Requested by the owner on 18 November 2026 for the **next screensaver version** (0.5.0), so it has something new to show. Not part of the current builds.
+
+**What to build**
+
+- **Compass:** show the compass that AtlasSOC already draws on the map in the screensaver too. Reuse the core renderer's code; do not write a second compass.
+- **Time zones:** mark the world's time zones on the map, each labelled with its actual local hour as a whole number on the 24-hour clock, 0, 1, 2 … 23, relative to UTC.
+- **Update rhythm:** the hour labels change only on each full hour. No ticking clock on the map.
+- Layout, placement and colours are MAC's call (design owner). The labels must not cover the arcs, counters or attribution text, and must stay readable on dark and light themes.
+
+**Acceptance**
+
+- A unit test checks the hour for every zone against UTC at a fixed instant, including half-hour zones if they are shown.
+- A test with a clock just before and just after a full hour shows that the labels change once, on the hour, and not in between.
+- Visual check of the screensaver at 1920x1080 and 2560x1440 on Windows and macOS: compass and labels visible, nothing overlapping.
+- The screensaver's frame budget stays within its current limits.
 \n\n## Explicitly out of scope\n\n- **Feodo Tracker** — datasets empty at the time of writing; revisit when restored.\n- **VirusTotal public API, Shodan full API, Censys, SecurityTrails, commercial threat feeds** —\n  commercial or non-commercial-only terms that do not fit this project's distribution; do not\n  bundle them. A future owner decision could add a user-supplied integration after legal review.\n- **OpenPhish commercial feed** — the academic/non-commercial programme is not the same as the\n  commercial feed; do not ship until the terms are confirmed.\n- Any source that requires scraping a web page rather than a documented API/feed.\n\n## Delivery order\n\n1. **FAS 1:** OSINT-001, 002, 003, 004. No new secrets; foundation (registry, rate limiter,\n   cache, normalised events, UI toggles/panels).\n2. **FAS 2:** OSINT-005, 006, 007, 008, 009. Optional keys; click enrichment; aggregate panels.\n3. **FAS 3:** OSINT-010, 011, 012, 013. Network/high-volume sources; stricter caps.\n\nEach item is independently releasable and must not make the app depend on a source being\navailable. The app remains an observation tool; none of these sources turns it into prevention\nsoftware or a confirmed-attack feed.\n
