@@ -18,7 +18,7 @@ extension Notification.Name {
 }
 
 struct RadarView: View {
-    @StateObject private var model = RadarModel()
+    @ObservedObject private var model = RadarModel.shared
     @State private var token = ""
     @State private var showAtlas = true
     @State private var showTokenSheet = false
