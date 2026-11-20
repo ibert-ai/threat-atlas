@@ -136,6 +136,8 @@ pub struct Options {
     pub radar_hidden: Vec<String>,
     /// Host status shown while there is no Radar data; hosts know why, the view does not.
     pub radar_note: Option<String>,
+    /// Footer shows the screensaver's own version (`version.json`) instead of the Desktop's. Screensaver hosts set it.
+    pub saver_identity: bool,
     pub theme: Theme,
 }
 impl Default for Options {
@@ -148,6 +150,7 @@ impl Default for Options {
             radar_layer: true,
             radar_hidden: Vec::new(),
             radar_note: None,
+            saver_identity: false,
             theme: Theme::Classic,
         }
     }
@@ -1130,7 +1133,13 @@ impl Dashboard<'_> {
                 "GREYNOISE {}{error} | RADAR {} | {utc} | {local} | {}",
                 s.status,
                 self.radar_label,
-                crate::render::release_label(include_str!("../../../atlassoc-beta-version.json"))
+                if self.options.saver_identity {
+                    crate::render::release_label(include_str!("../../../version.json"))
+                } else {
+                    crate::render::release_label(include_str!(
+                        "../../../atlassoc-beta-version.json"
+                    ))
+                }
             ),
             TEXT,
         );
