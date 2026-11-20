@@ -24,7 +24,7 @@ Requested by the owner on 18 November 2026 for the **next screensaver version** 
 
 **What to build**
 
-- **Compass:** show the compass that AtlasSOC already draws on the map in the screensaver too. Reuse the core renderer's code; do not write a second compass.
+- **Compass:** the only compass today is the needle-less compass rose in the screensaver's Seeker theme (`seeker_overlay` in `crates/core/src/render.rs`). AtlasSOC and the standard screensaver view have none (checked by the owner in AtlasSOC 0.8.0-rc.1 on 20 November 2026). Make that compass rose a shared map element and show it in the standard screensaver view; do not write a second compass.
 - **Time zones:** mark the world's time zones on the map, each labelled with its actual local hour as a whole number on the 24-hour clock, 0, 1, 2 … 23, relative to UTC.
 - **Update rhythm:** the hour labels change only on each full hour. No ticking clock on the map.
 - Layout, placement and colours are MAC's call (design owner). The labels must not cover the arcs, counters or attribution text, and must stay readable on dark and light themes.
