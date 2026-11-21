@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-21T06:06:22Z",
+  "generated_at": "2026-11-21T06:44:09Z",
   "project": {
     "name": "Threat Atlas",
     "repository_url": "https://github.com/Ibert-Iam/threat-atlas"
@@ -134,17 +134,17 @@
       "id": "cl",
       "name": "Jean-Claude Van Damme",
       "role": "CBO, Chief Bot Officer (Claude)",
-      "last_seen_at": "2026-11-21T06:06:03Z",
+      "last_seen_at": "2026-11-21T06:43:53Z",
       "state": "working",
       "credits": "ok",
-      "credits_checked_at": "2026-11-20T16:08:35Z",
+      "credits_checked_at": "2026-11-21T06:43:53Z",
       "source": "status"
     },
     {
       "id": "mac",
       "name": "MacGyver",
       "role": "Crew (Codex)",
-      "last_seen_at": "2026-11-21T06:06:03Z",
+      "last_seen_at": "2026-11-21T06:43:48Z",
       "state": "unknown",
       "credits": "unknown",
       "credits_checked_at": "2026-11-20T16:00:05Z",
