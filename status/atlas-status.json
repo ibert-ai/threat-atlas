@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-21T12:30:25Z",
+  "generated_at": "2026-11-21T17:40:14Z",
   "project": {
     "name": "Threat Atlas",
     "repository_url": "https://github.com/Ibert-Iam/threat-atlas"
@@ -147,7 +147,7 @@
       "last_seen_at": "2026-11-21T12:30:07Z",
       "state": "unknown",
       "credits": "unknown",
-      "credits_checked_at": "2026-11-20T16:00:05Z",
+      "credits_checked_at": null,
       "source": "handover"
     },
     {
@@ -166,8 +166,8 @@
       "role": "Crew (DeepSeek)",
       "last_seen_at": "2026-11-20T22:00:02Z",
       "state": "working",
-      "credits": "ok",
-      "credits_checked_at": "2026-11-20T16:05:02Z",
+      "credits": "unknown",
+      "credits_checked_at": null,
       "source": "status"
     }
   ]
